@@ -1,0 +1,7 @@
+﻿*/bin/*
+*/node_modules/*
+Test/packages/
+Test/NorthBreeze/node_modules/
+*/obj/*
+Test/NorthBreeze/bin
+Test/NorthBreeze/obj/

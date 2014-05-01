@@ -1,0 +1,568 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.Default.props" Condition="Exists('$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.Default.props')" />
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>
+    </ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{B7155496-3C84-48B8-B6C0-176277ABB246}</ProjectGuid>
+    <ProjectTypeGuids>{349c5851-65df-11da-9384-00065b846f21};{fae04ec0-301f-11d3-bf4b-00c04f79efbc}</ProjectTypeGuids>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>NorthBreeze</RootNamespace>
+    <AssemblyName>NorthBreeze</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <UseIISExpress>true</UseIISExpress>
+    <IISExpressSSLPort />
+    <IISExpressAnonymousAuthentication />
+    <IISExpressWindowsAuthentication />
+    <IISExpressUseClassicPipelineMode />
+    <TypeScriptToolsVersion>0.9</TypeScriptToolsVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="App\browserCtrl.js" />
+    <Content Include="App\views\browsers.html" />
+    <Content Include="libs\angular-route.js" />
+    <Content Include="libs\bootstrap\css\bootstrap-theme.css.map" />
+    <Content Include="libs\bootstrap\css\bootstrap.css.map" />
+    <Content Include="libs\bootstrap\fonts\glyphicons-halflings-regular.eot" />
+    <Content Include="libs\bootstrap\fonts\glyphicons-halflings-regular.ttf" />
+    <Content Include="libs\bootstrap\fonts\glyphicons-halflings-regular.woff" />
+    <Content Include="libs\datatables\examples\resources\examples.php" />
+    <Content Include="libs\datatables\examples\resources\font\raleway_thin-webfont.eot" />
+    <Content Include="libs\datatables\examples\resources\font\raleway_thin-webfont.ttf" />
+    <Content Include="libs\datatables\examples\resources\font\raleway_thin-webfont.woff" />
+    <Content Include="libs\datatables\examples\resources\jqueryui\dataTables.jqueryui.css.map">
+      <DependentUpon>dataTables.jqueryui.css</DependentUpon>
+    </Content>
+    <Content Include="libs\datatables\examples\resources\jqueryui\dataTables.jqueryui.scss" />
+    <Content Include="libs\datatables\examples\resources\syntax\Syntax Highlighter license" />
+    <Content Include="libs\datatables\examples\server_side\scripts\ids-arrays.php" />
+    <Content Include="libs\datatables\examples\server_side\scripts\ids-objects.php" />
+    <Content Include="libs\datatables\examples\server_side\scripts\jsonp.php" />
+    <Content Include="libs\datatables\examples\server_side\scripts\objects.php" />
+    <Content Include="libs\datatables\examples\server_side\scripts\post.php" />
+    <Content Include="libs\datatables\examples\server_side\scripts\server_processing.php" />
+    <Content Include="libs\datatables\examples\server_side\scripts\ssp.class.php" />
+    <Content Include="libs\datatables\extensions\Scroller\examples\data\ssp.php" />
+    <Content Include="libs\datatables\extensions\TableTools\images\psd\collection.psd" />
+    <Content Include="libs\datatables\extensions\TableTools\images\psd\copy document.psd" />
+    <Content Include="libs\datatables\extensions\TableTools\images\psd\file_types.psd" />
+    <Content Include="libs\datatables\extensions\TableTools\images\psd\printer.psd" />
+    <Content Include="libs\datatables\images\Sorting icons.psd" />
+    <None Include="Scripts\breeze.intellisense.js" />
+    <Content Include="App\app.js" />
+    <Content Include="App\controllers.js" />
+    <Content Include="App\dataservice.js" />
+    <Content Include="App\directives.js" />
+    <Content Include="App\logger.js" />
+    <Content Include="App\style.css" />
+    <Content Include="App\views\customers.html" />
+    <Content Include="App\views\home.html" />
+    <Content Include="App\views\orders.html" />
+    <Content Include="App_Data\NorthwindIB.sdf" />
+    <Content Include="Content\bootstrap.css" />
+    <Content Include="Content\ng-grid.css" />
+    <Content Include="Content\toastr.css" />
+    <Content Include="index.html" />
+    <Content Include="libs\angular.js" />
+    <Content Include="libs\bootstrap\css\bootstrap-theme.css" />
+    <Content Include="libs\bootstrap\css\bootstrap-theme.min.css" />
+    <Content Include="libs\bootstrap\css\bootstrap.css" />
+    <Content Include="libs\bootstrap\css\bootstrap.min.css" />
+    <Content Include="libs\bootstrap\fonts\glyphicons-halflings-regular.svg" />
+    <Content Include="libs\bootstrap\js\bootstrap.js" />
+    <Content Include="libs\datatables\css\jquery.dataTables.css" />
+    <Content Include="libs\datatables\css\jquery.dataTables_themeroller.css" />
+    <Content Include="libs\datatables\examples\advanced_init\column_render.html" />
+    <Content Include="libs\datatables\examples\advanced_init\complex_header.html" />
+    <Content Include="libs\datatables\examples\advanced_init\defaults.html" />
+    <Content Include="libs\datatables\examples\advanced_init\dom_multiple_elements.html" />
+    <Content Include="libs\datatables\examples\advanced_init\dom_toolbar.html" />
+    <Content Include="libs\datatables\examples\advanced_init\dt_events.html" />
+    <Content Include="libs\datatables\examples\advanced_init\events_live.html" />
+    <Content Include="libs\datatables\examples\advanced_init\footer_callback.html" />
+    <Content Include="libs\datatables\examples\advanced_init\html5-data-attributes.html" />
+    <Content Include="libs\datatables\examples\advanced_init\index.html" />
+    <Content Include="libs\datatables\examples\advanced_init\language_file.html" />
+    <Content Include="libs\datatables\examples\advanced_init\length_menu.html" />
+    <Content Include="libs\datatables\examples\advanced_init\row_callback.html" />
+    <Content Include="libs\datatables\examples\advanced_init\row_grouping.html" />
+    <Content Include="libs\datatables\examples\advanced_init\sort_direction_control.html" />
+    <Content Include="libs\datatables\examples\ajax\custom_data_flat.html" />
+    <Content Include="libs\datatables\examples\ajax\custom_data_property.html" />
+    <Content Include="libs\datatables\examples\ajax\data\arrays.txt" />
+    <Content Include="libs\datatables\examples\ajax\data\arrays_custom_prop.txt" />
+    <Content Include="libs\datatables\examples\ajax\data\arrays_subobjects.txt" />
+    <Content Include="libs\datatables\examples\ajax\data\objects.txt" />
+    <Content Include="libs\datatables\examples\ajax\data\objects_deep.txt" />
+    <Content Include="libs\datatables\examples\ajax\data\objects_root_array.txt" />
+    <Content Include="libs\datatables\examples\ajax\data\objects_subarrays.txt" />
+    <Content Include="libs\datatables\examples\ajax\data\orthogonal.txt" />
+    <Content Include="libs\datatables\examples\ajax\deep.html" />
+    <Content Include="libs\datatables\examples\ajax\defer_render.html" />
+    <Content Include="libs\datatables\examples\ajax\index.html" />
+    <Content Include="libs\datatables\examples\ajax\null_data_source.html" />
+    <Content Include="libs\datatables\examples\ajax\objects.html" />
+    <Content Include="libs\datatables\examples\ajax\objects_subarrays.html" />
+    <Content Include="libs\datatables\examples\ajax\orthogonal-data.html" />
+    <Content Include="libs\datatables\examples\ajax\simple.html" />
+    <Content Include="libs\datatables\examples\api\add_row.html" />
+    <Content Include="libs\datatables\examples\api\api_in_init.html" />
+    <Content Include="libs\datatables\examples\api\counter_columns.html" />
+    <Content Include="libs\datatables\examples\api\form.html" />
+    <Content Include="libs\datatables\examples\api\highlight.html" />
+    <Content Include="libs\datatables\examples\api\index.html" />
+    <Content Include="libs\datatables\examples\api\multi_filter.html" />
+    <Content Include="libs\datatables\examples\api\multi_filter_select.html" />
+    <Content Include="libs\datatables\examples\api\regex.html" />
+    <Content Include="libs\datatables\examples\api\row_details.html" />
+    <Content Include="libs\datatables\examples\api\select_row.html" />
+    <Content Include="libs\datatables\examples\api\select_single_row.html" />
+    <Content Include="libs\datatables\examples\api\show_hide.html" />
+    <Content Include="libs\datatables\examples\api\tabs_and_scrolling.html" />
+    <Content Include="libs\datatables\examples\basic_init\alt_pagination.html" />
+    <Content Include="libs\datatables\examples\basic_init\comma-decimal.html" />
+    <Content Include="libs\datatables\examples\basic_init\complex_header.html" />
+    <Content Include="libs\datatables\examples\basic_init\dom.html" />
+    <Content Include="libs\datatables\examples\basic_init\filter_only.html" />
+    <Content Include="libs\datatables\examples\basic_init\flexible_width.html" />
+    <Content Include="libs\datatables\examples\basic_init\hidden_columns.html" />
+    <Content Include="libs\datatables\examples\basic_init\index.html" />
+    <Content Include="libs\datatables\examples\basic_init\language.html" />
+    <Content Include="libs\datatables\examples\basic_init\multiple_tables.html" />
+    <Content Include="libs\datatables\examples\basic_init\multi_col_sort.html" />
+    <Content Include="libs\datatables\examples\basic_init\scroll_x.html" />
+    <Content Include="libs\datatables\examples\basic_init\scroll_xy.html" />
+    <Content Include="libs\datatables\examples\basic_init\scroll_y.html" />
+    <Content Include="libs\datatables\examples\basic_init\scroll_y_theme.html" />
+    <Content Include="libs\datatables\examples\basic_init\state_save.html" />
+    <Content Include="libs\datatables\examples\basic_init\table_sorting.html" />
+    <Content Include="libs\datatables\examples\basic_init\zero_configuration.html" />
+    <Content Include="libs\datatables\examples\data_sources\ajax.html" />
+    <Content Include="libs\datatables\examples\data_sources\dom.html" />
+    <Content Include="libs\datatables\examples\data_sources\index.html" />
+    <Content Include="libs\datatables\examples\data_sources\js_array.html" />
+    <Content Include="libs\datatables\examples\data_sources\server_side.html" />
+    <Content Include="libs\datatables\examples\index.html" />
+    <Content Include="libs\datatables\examples\plug-ins\api.html" />
+    <Content Include="libs\datatables\examples\plug-ins\dom_sort.html" />
+    <Content Include="libs\datatables\examples\plug-ins\index.html" />
+    <Content Include="libs\datatables\examples\plug-ins\range_filtering.html" />
+    <Content Include="libs\datatables\examples\plug-ins\sorting_auto.html" />
+    <Content Include="libs\datatables\examples\plug-ins\sorting_manual.html" />
+    <Content Include="libs\datatables\examples\resources\bootstrap\3\dataTables.bootstrap.css" />
+    <Content Include="libs\datatables\examples\resources\bootstrap\3\dataTables.bootstrap.js" />
+    <Content Include="libs\datatables\examples\resources\bootstrap\3\index.html" />
+    <Content Include="libs\datatables\examples\resources\bootstrap\images\sort_asc.png" />
+    <Content Include="libs\datatables\examples\resources\bootstrap\images\sort_asc_disabled.png" />
+    <Content Include="libs\datatables\examples\resources\bootstrap\images\sort_both.png" />
+    <Content Include="libs\datatables\examples\resources\bootstrap\images\sort_desc.png" />
+    <Content Include="libs\datatables\examples\resources\bootstrap\images\sort_desc_disabled.png" />
+    <Content Include="libs\datatables\examples\resources\demo.css" />
+    <Content Include="libs\datatables\examples\resources\demo.js" />
+    <Content Include="libs\datatables\examples\resources\details_close.png" />
+    <Content Include="libs\datatables\examples\resources\details_open.png" />
+    <Content Include="libs\datatables\examples\resources\de_DE.txt" />
+    <Content Include="libs\datatables\examples\resources\foundation\dataTables.foundation.css" />
+    <Content Include="libs\datatables\examples\resources\foundation\dataTables.foundation.js" />
+    <Content Include="libs\datatables\examples\resources\foundation\images\sort_asc.png" />
+    <Content Include="libs\datatables\examples\resources\foundation\images\sort_asc_disabled.png" />
+    <Content Include="libs\datatables\examples\resources\foundation\images\sort_both.png" />
+    <Content Include="libs\datatables\examples\resources\foundation\images\sort_desc.png" />
+    <Content Include="libs\datatables\examples\resources\foundation\images\sort_desc_disabled.png" />
+    <Content Include="libs\datatables\examples\resources\jqueryui\dataTables.jqueryui.css">
+      <DependentUpon>dataTables.jqueryui.scss</DependentUpon>
+    </Content>
+    <Content Include="libs\datatables\examples\resources\jqueryui\dataTables.jqueryui.js" />
+    <Content Include="libs\datatables\examples\resources\jqueryui\index.html" />
+    <Content Include="libs\datatables\examples\resources\syntax\shCore.css" />
+    <Content Include="libs\datatables\examples\resources\syntax\shCore.js" />
+    <Content Include="libs\datatables\examples\server_side\custom_vars.html" />
+    <Content Include="libs\datatables\examples\server_side\defer_loading.html" />
+    <Content Include="libs\datatables\examples\server_side\ids.html" />
+    <Content Include="libs\datatables\examples\server_side\index.html" />
+    <Content Include="libs\datatables\examples\server_side\jsonp.html" />
+    <Content Include="libs\datatables\examples\server_side\object_data.html" />
+    <Content Include="libs\datatables\examples\server_side\pipeline.html" />
+    <Content Include="libs\datatables\examples\server_side\post.html" />
+    <Content Include="libs\datatables\examples\server_side\row_details.html" />
+    <Content Include="libs\datatables\examples\server_side\scripts\mysql.sql" />
+    <Content Include="libs\datatables\examples\server_side\scripts\postgres.sql" />
+    <Content Include="libs\datatables\examples\server_side\scripts\sqlite.sql" />
+    <Content Include="libs\datatables\examples\server_side\scripts\sqlserver.sql" />
+    <Content Include="libs\datatables\examples\server_side\select_rows.html" />
+    <Content Include="libs\datatables\examples\server_side\simple.html" />
+    <Content Include="libs\datatables\examples\styling\bootstrap.html" />
+    <Content Include="libs\datatables\examples\styling\cell-border.html" />
+    <Content Include="libs\datatables\examples\styling\display.html" />
+    <Content Include="libs\datatables\examples\styling\foundation.html" />
+    <Content Include="libs\datatables\examples\styling\hover.html" />
+    <Content Include="libs\datatables\examples\styling\index.html" />
+    <Content Include="libs\datatables\examples\styling\jqueryUI.html" />
+    <Content Include="libs\datatables\examples\styling\no-classes.html" />
+    <Content Include="libs\datatables\examples\styling\order-column.html" />
+    <Content Include="libs\datatables\examples\styling\row-border.html" />
+    <Content Include="libs\datatables\examples\styling\stripe.html" />
+    <Content Include="libs\datatables\extensions\AutoFill\css\dataTables.autoFill.css" />
+    <Content Include="libs\datatables\extensions\AutoFill\css\dataTables.autoFill.min.css" />
+    <Content Include="libs\datatables\extensions\AutoFill\examples\columns.html" />
+    <Content Include="libs\datatables\extensions\AutoFill\examples\complete-callback.html" />
+    <Content Include="libs\datatables\extensions\AutoFill\examples\fill-both.html" />
+    <Content Include="libs\datatables\extensions\AutoFill\examples\fill-horizontal.html" />
+    <Content Include="libs\datatables\extensions\AutoFill\examples\index.html" />
+    <Content Include="libs\datatables\extensions\AutoFill\examples\scrolling.html" />
+    <Content Include="libs\datatables\extensions\AutoFill\examples\simple.html" />
+    <Content Include="libs\datatables\extensions\AutoFill\examples\step-callback.html" />
+    <Content Include="libs\datatables\extensions\AutoFill\images\filler.png" />
+    <Content Include="libs\datatables\extensions\AutoFill\js\dataTables.autoFill.js" />
+    <Content Include="libs\datatables\extensions\AutoFill\js\dataTables.autoFill.min.js" />
+    <Content Include="libs\datatables\extensions\AutoFill\Readme.txt" />
+    <Content Include="libs\datatables\extensions\Bootstrap\css\dataTables.bootstrap.css" />
+    <Content Include="libs\datatables\extensions\Bootstrap\images\sort_asc.png" />
+    <Content Include="libs\datatables\extensions\Bootstrap\images\sort_asc_disabled.png" />
+    <Content Include="libs\datatables\extensions\Bootstrap\images\sort_both.png" />
+    <Content Include="libs\datatables\extensions\Bootstrap\images\sort_desc.png" />
+    <Content Include="libs\datatables\extensions\Bootstrap\images\sort_desc_disabled.png" />
+    <Content Include="libs\datatables\extensions\Bootstrap\js\dataTables.bootstrap.js" />
+    <Content Include="libs\datatables\extensions\ColReorder\css\dataTables.colReorder.css" />
+    <Content Include="libs\datatables\extensions\ColReorder\css\dataTables.colReorder.min.css" />
+    <Content Include="libs\datatables\extensions\ColReorder\examples\alt_insert.html" />
+    <Content Include="libs\datatables\extensions\ColReorder\examples\colvis.html" />
+    <Content Include="libs\datatables\extensions\ColReorder\examples\col_filter.html" />
+    <Content Include="libs\datatables\extensions\ColReorder\examples\fixedcolumns.html" />
+    <Content Include="libs\datatables\extensions\ColReorder\examples\fixedheader.html" />
+    <Content Include="libs\datatables\extensions\ColReorder\examples\index.html" />
+    <Content Include="libs\datatables\extensions\ColReorder\examples\jqueryui.html" />
+    <Content Include="libs\datatables\extensions\ColReorder\examples\new_init.html" />
+    <Content Include="libs\datatables\extensions\ColReorder\examples\predefined.html" />
+    <Content Include="libs\datatables\extensions\ColReorder\examples\realtime.html" />
+    <Content Include="libs\datatables\extensions\ColReorder\examples\reset.html" />
+    <Content Include="libs\datatables\extensions\ColReorder\examples\scrolling.html" />
+    <Content Include="libs\datatables\extensions\ColReorder\examples\server_side.html" />
+    <Content Include="libs\datatables\extensions\ColReorder\examples\simple.html" />
+    <Content Include="libs\datatables\extensions\ColReorder\examples\state_save.html" />
+    <Content Include="libs\datatables\extensions\ColReorder\images\insert.png" />
+    <Content Include="libs\datatables\extensions\ColReorder\js\dataTables.colReorder.js" />
+    <Content Include="libs\datatables\extensions\ColReorder\js\dataTables.colReorder.min.js" />
+    <Content Include="libs\datatables\extensions\ColReorder\Readme.txt" />
+    <Content Include="libs\datatables\extensions\ColVis\css\dataTables.colVis.css" />
+    <Content Include="libs\datatables\extensions\ColVis\css\dataTables.colvis.jqueryui.css" />
+    <Content Include="libs\datatables\extensions\ColVis\css\dataTables.colVis.min.css" />
+    <Content Include="libs\datatables\extensions\ColVis\examples\button_order.html" />
+    <Content Include="libs\datatables\extensions\ColVis\examples\exclude_columns.html" />
+    <Content Include="libs\datatables\extensions\ColVis\examples\group_columns.html" />
+    <Content Include="libs\datatables\extensions\ColVis\examples\index.html" />
+    <Content Include="libs\datatables\extensions\ColVis\examples\jqueryui.html" />
+    <Content Include="libs\datatables\extensions\ColVis\examples\mouseover.html" />
+    <Content Include="libs\datatables\extensions\ColVis\examples\new_init.html" />
+    <Content Include="libs\datatables\extensions\ColVis\examples\restore.html" />
+    <Content Include="libs\datatables\extensions\ColVis\examples\simple.html" />
+    <Content Include="libs\datatables\extensions\ColVis\examples\text.html" />
+    <Content Include="libs\datatables\extensions\ColVis\examples\title_callback.html" />
+    <Content Include="libs\datatables\extensions\ColVis\examples\two_tables.html" />
+    <Content Include="libs\datatables\extensions\ColVis\examples\two_tables_identical.html" />
+    <Content Include="libs\datatables\extensions\ColVis\js\dataTables.colVis.js" />
+    <Content Include="libs\datatables\extensions\ColVis\js\dataTables.colVis.min.js" />
+    <Content Include="libs\datatables\extensions\ColVis\Readme.txt" />
+    <Content Include="libs\datatables\extensions\FixedColumns\css\dataTables.fixedColumns.css" />
+    <Content Include="libs\datatables\extensions\FixedColumns\css\dataTables.fixedColumns.min.css" />
+    <Content Include="libs\datatables\extensions\FixedColumns\examples\bootstrap.html" />
+    <Content Include="libs\datatables\extensions\FixedColumns\examples\colvis.html" />
+    <Content Include="libs\datatables\extensions\FixedColumns\examples\col_filter.html" />
+    <Content Include="libs\datatables\extensions\FixedColumns\examples\css_size.html" />
+    <Content Include="libs\datatables\extensions\FixedColumns\examples\index.html" />
+    <Content Include="libs\datatables\extensions\FixedColumns\examples\index_column.html" />
+    <Content Include="libs\datatables\extensions\FixedColumns\examples\left_right_columns.html" />
+    <Content Include="libs\datatables\extensions\FixedColumns\examples\right_column.html" />
+    <Content Include="libs\datatables\extensions\FixedColumns\examples\rowspan.html" />
+    <Content Include="libs\datatables\extensions\FixedColumns\examples\server-side-processing.html" />
+    <Content Include="libs\datatables\extensions\FixedColumns\examples\simple.html" />
+    <Content Include="libs\datatables\extensions\FixedColumns\examples\size_fixed.html" />
+    <Content Include="libs\datatables\extensions\FixedColumns\examples\size_fluid.html" />
+    <Content Include="libs\datatables\extensions\FixedColumns\examples\two_columns.html" />
+    <Content Include="libs\datatables\extensions\FixedColumns\js\dataTables.fixedColumns.js" />
+    <Content Include="libs\datatables\extensions\FixedColumns\js\dataTables.fixedColumns.min.js" />
+    <Content Include="libs\datatables\extensions\FixedColumns\Readme.txt" />
+    <Content Include="libs\datatables\extensions\FixedHeader\css\dataTables.fixedHeader.css" />
+    <Content Include="libs\datatables\extensions\FixedHeader\css\dataTables.fixedHeader.min.css" />
+    <Content Include="libs\datatables\extensions\FixedHeader\examples\header_footer.html" />
+    <Content Include="libs\datatables\extensions\FixedHeader\examples\index.html" />
+    <Content Include="libs\datatables\extensions\FixedHeader\examples\simple.html" />
+    <Content Include="libs\datatables\extensions\FixedHeader\examples\top_left_right.html" />
+    <Content Include="libs\datatables\extensions\FixedHeader\examples\two_tables.html" />
+    <Content Include="libs\datatables\extensions\FixedHeader\examples\zIndexes.html" />
+    <Content Include="libs\datatables\extensions\FixedHeader\js\dataTables.fixedHeader.js" />
+    <Content Include="libs\datatables\extensions\FixedHeader\js\dataTables.fixedHeader.min.js" />
+    <Content Include="libs\datatables\extensions\FixedHeader\Readme.txt" />
+    <Content Include="libs\datatables\extensions\KeyTable\css\dataTables.keyTable.css" />
+    <Content Include="libs\datatables\extensions\KeyTable\css\dataTables.keyTable.min.css" />
+    <Content Include="libs\datatables\extensions\KeyTable\examples\ajax.html" />
+    <Content Include="libs\datatables\extensions\KeyTable\examples\events.html" />
+    <Content Include="libs\datatables\extensions\KeyTable\examples\html.html" />
+    <Content Include="libs\datatables\extensions\KeyTable\examples\index.html" />
+    <Content Include="libs\datatables\extensions\KeyTable\examples\scrolling.html" />
+    <Content Include="libs\datatables\extensions\KeyTable\examples\simple.html" />
+    <Content Include="libs\datatables\extensions\KeyTable\js\dataTables.keyTable.js" />
+    <Content Include="libs\datatables\extensions\KeyTable\js\dataTables.keyTable.min.js" />
+    <Content Include="libs\datatables\extensions\KeyTable\Readme.txt" />
+    <Content Include="libs\datatables\extensions\Scroller\css\dataTables.scroller.css" />
+    <Content Include="libs\datatables\extensions\Scroller\css\dataTables.scroller.min.css" />
+    <Content Include="libs\datatables\extensions\Scroller\examples\api_scrolling.html" />
+    <Content Include="libs\datatables\extensions\Scroller\examples\data\2500.txt" />
+    <Content Include="libs\datatables\extensions\Scroller\examples\index.html" />
+    <Content Include="libs\datatables\extensions\Scroller\examples\large_js_source.html" />
+    <Content Include="libs\datatables\extensions\Scroller\examples\server-side_processing.html" />
+    <Content Include="libs\datatables\extensions\Scroller\examples\simple.html" />
+    <Content Include="libs\datatables\extensions\Scroller\examples\state_saving.html" />
+    <Content Include="libs\datatables\extensions\Scroller\images\loading-background.png" />
+    <Content Include="libs\datatables\extensions\Scroller\js\dataTables.scroller.js" />
+    <Content Include="libs\datatables\extensions\Scroller\js\dataTables.scroller.min.js" />
+    <Content Include="libs\datatables\extensions\Scroller\Readme.txt" />
+    <Content Include="libs\datatables\extensions\TableTools\css\dataTables.tableTools.css" />
+    <Content Include="libs\datatables\extensions\TableTools\css\dataTables.tableTools.min.css" />
+    <Content Include="libs\datatables\extensions\TableTools\examples\alter_buttons.html" />
+    <Content Include="libs\datatables\extensions\TableTools\examples\bootstrap.html" />
+    <Content Include="libs\datatables\extensions\TableTools\examples\button_text.html" />
+    <Content Include="libs\datatables\extensions\TableTools\examples\collection.html" />
+    <Content Include="libs\datatables\extensions\TableTools\examples\defaults.html" />
+    <Content Include="libs\datatables\extensions\TableTools\examples\index.html" />
+    <Content Include="libs\datatables\extensions\TableTools\examples\multiple_tables.html" />
+    <Content Include="libs\datatables\extensions\TableTools\examples\multi_instance.html" />
+    <Content Include="libs\datatables\extensions\TableTools\examples\new_init.html" />
+    <Content Include="libs\datatables\extensions\TableTools\examples\pdf_message.html" />
+    <Content Include="libs\datatables\extensions\TableTools\examples\plug-in.html" />
+    <Content Include="libs\datatables\extensions\TableTools\examples\select_column.html" />
+    <Content Include="libs\datatables\extensions\TableTools\examples\select_multi.html" />
+    <Content Include="libs\datatables\extensions\TableTools\examples\select_os.html" />
+    <Content Include="libs\datatables\extensions\TableTools\examples\select_single.html" />
+    <Content Include="libs\datatables\extensions\TableTools\examples\simple.html" />
+    <Content Include="libs\datatables\extensions\TableTools\examples\swf_path.html" />
+    <Content Include="libs\datatables\extensions\TableTools\images\background.png" />
+    <Content Include="libs\datatables\extensions\TableTools\images\collection.png" />
+    <Content Include="libs\datatables\extensions\TableTools\images\collection_hover.png" />
+    <Content Include="libs\datatables\extensions\TableTools\images\copy.png" />
+    <Content Include="libs\datatables\extensions\TableTools\images\copy_hover.png" />
+    <Content Include="libs\datatables\extensions\TableTools\images\csv.png" />
+    <Content Include="libs\datatables\extensions\TableTools\images\csv_hover.png" />
+    <Content Include="libs\datatables\extensions\TableTools\images\pdf.png" />
+    <Content Include="libs\datatables\extensions\TableTools\images\pdf_hover.png" />
+    <Content Include="libs\datatables\extensions\TableTools\images\print.png" />
+    <Content Include="libs\datatables\extensions\TableTools\images\print_hover.png" />
+    <Content Include="libs\datatables\extensions\TableTools\images\xls.png" />
+    <Content Include="libs\datatables\extensions\TableTools\images\xls_hover.png" />
+    <Content Include="libs\datatables\extensions\TableTools\js\dataTables.tableTools.js" />
+    <Content Include="libs\datatables\extensions\TableTools\js\dataTables.tableTools.min.js" />
+    <Content Include="libs\datatables\extensions\TableTools\Readme.txt" />
+    <Content Include="libs\datatables\extensions\TableTools\swf\copy_csv_xls.swf" />
+    <Content Include="libs\datatables\extensions\TableTools\swf\copy_csv_xls_pdf.swf" />
+    <Content Include="libs\datatables\images\back_disabled.png" />
+    <Content Include="libs\datatables\images\back_enabled.png" />
+    <Content Include="libs\datatables\images\back_enabled_hover.png" />
+    <Content Include="libs\datatables\images\favicon.ico" />
+    <Content Include="libs\datatables\images\forward_disabled.png" />
+    <Content Include="libs\datatables\images\forward_enabled.png" />
+    <Content Include="libs\datatables\images\forward_enabled_hover.png" />
+    <Content Include="libs\datatables\images\sort_asc.png" />
+    <Content Include="libs\datatables\images\sort_asc_disabled.png" />
+    <Content Include="libs\datatables\images\sort_both.png" />
+    <Content Include="libs\datatables\images\sort_desc.png" />
+    <Content Include="libs\datatables\images\sort_desc_disabled.png" />
+    <Content Include="libs\datatables\js\jquery.dataTables.js" />
+    <Content Include="libs\datatables\js\jquery.js" />
+    <Content Include="libs\jquery-2.1.0.js" />
+    <Content Include="Scripts\angular.js" />
+    <Content Include="Scripts\breeze.debug.js" />
+    <Content Include="Scripts\breeze.min.js" />
+    <Content Include="Scripts\jquery-1.9.1.js" />
+    <Content Include="Scripts\q.js" />
+    <Content Include="Scripts\q.min.js" />
+    <Content Include="Scripts\toastr.js" />
+    <Content Include="src\angular.dataTables.breeze.js" />
+    <Content Include="src\angular.dataTables.js" />
+    <Content Include="src\angular.dataTables.rowDetails.js" />
+    <Content Include="src\angular.dataTables.selectable.js" />
+    <Content Include="src\dataTables.breeze.js" />
+    <Content Include="src\dataTables.remoteState.js" />
+    <Content Include="src\dataTables.rowDetails.js" />
+    <Content Include="Web.config">
+      <SubType>Designer</SubType>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="App_Start\BreezeWebApiConfig.cs" />
+    <Compile Include="Controllers\FixedMsSqlCe40Dialect.cs" />
+    <Compile Include="Controllers\NHConfig.cs" />
+    <Compile Include="Controllers\NorthBreezeController.cs" />
+    <Compile Include="Controllers\NorthwindContext.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="packages.config" />
+    <None Include="Web.Debug.config">
+      <DependentUpon>Web.config</DependentUpon>
+    </None>
+    <None Include="Web.Release.config">
+      <DependentUpon>Web.config</DependentUpon>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Model_NorthwindIB_NH\Model_NorthwindIB_NH.csproj">
+      <Project>{afc1c3a8-40d5-4db3-82be-19730091a4f2}</Project>
+      <Name>Model_NorthwindIB_NH</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Breeze.ContextProvider">
+      <HintPath>..\packages\Breeze.Server.ContextProvider.1.4.8\lib\Breeze.ContextProvider.dll</HintPath>
+    </Reference>
+    <Reference Include="Breeze.ContextProvider.NH">
+      <HintPath>..\packages\Breeze.Server.ContextProvider.NH.1.4.8\lib\Breeze.ContextProvider.NH.dll</HintPath>
+    </Reference>
+    <Reference Include="Breeze.WebApi2">
+      <HintPath>..\packages\Breeze.Server.WebApi2.1.4.8\lib\Breeze.WebApi2.dll</HintPath>
+    </Reference>
+    <Reference Include="Iesi.Collections">
+      <HintPath>..\packages\Iesi.Collections.3.2.0.4000\lib\Net35\Iesi.Collections.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Data.Edm, Version=5.6.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Microsoft.Data.Edm.5.6.0\lib\net40\Microsoft.Data.Edm.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Data.OData, Version=5.6.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Microsoft.Data.OData.5.6.0\lib\net40\Microsoft.Data.OData.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Web.Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <Private>True</Private>
+      <HintPath>..\packages\Microsoft.Web.Infrastructure.1.0.0.0\lib\net40\Microsoft.Web.Infrastructure.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\packages\Newtonsoft.Json.4.5.11\lib\net40\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="NHibernate">
+      <HintPath>..\packages\NHibernate.3.3.3.4001\lib\Net35\NHibernate.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Data.SqlServerCe, Version=4.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL">
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Net.Http.Formatting, Version=5.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Microsoft.AspNet.WebApi.Client.5.0.0\lib\net45\System.Net.Http.Formatting.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Spatial, Version=5.6.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\System.Spatial.5.6.0\lib\net40\System.Spatial.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web" />
+    <Reference Include="System.Web.Http, Version=5.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Microsoft.AspNet.WebApi.Core.5.0.0\lib\net45\System.Web.Http.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.Http.OData">
+      <HintPath>..\packages\Microsoft.AspNet.WebApi.OData.5.0.0\lib\net45\System.Web.Http.OData.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.Http.WebHost, Version=5.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Microsoft.AspNet.WebApi.WebHost.5.0.0\lib\net45\System.Web.Http.WebHost.dll</HintPath>
+    </Reference>
+    <Reference Include="WebActivator">
+      <HintPath>..\packages\WebActivator.1.5.3\lib\net40\WebActivator.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="libs\datatables\media\" />
+  </ItemGroup>
+  <ItemGroup>
+    <TypeScriptCompile Include="src\angular.dataTables.breeze.ts" />
+    <TypeScriptCompile Include="src\angular.dataTables.d.ts" />
+    <TypeScriptCompile Include="src\angular.dataTables.rowDetails.ts" />
+    <TypeScriptCompile Include="src\angular.dataTables.selectable.ts" />
+    <TypeScriptCompile Include="src\angular.dataTables.ts" />
+    <TypeScriptCompile Include="typings\angularjs\angular-animate.d.ts" />
+    <TypeScriptCompile Include="typings\angularjs\angular-cookies.d.ts" />
+    <TypeScriptCompile Include="typings\angularjs\angular-mocks.d.ts" />
+    <TypeScriptCompile Include="typings\angularjs\angular-resource.d.ts" />
+    <TypeScriptCompile Include="typings\angularjs\angular-route.d.ts" />
+    <TypeScriptCompile Include="typings\angularjs\angular-sanitize.d.ts" />
+    <TypeScriptCompile Include="typings\angularjs\angular-scenario.d.ts" />
+    <TypeScriptCompile Include="typings\angularjs\angular.breeze.storagewip.d.ts" />
+    <TypeScriptCompile Include="typings\angularjs\angular.d.ts" />
+    <TypeScriptCompile Include="typings\bootstrap\bootstrap.d.ts" />
+    <TypeScriptCompile Include="typings\breeze\breeze.d.ts" />
+    <TypeScriptCompile Include="typings\breeze\breeze.directives.validation.d.ts" />
+    <TypeScriptCompile Include="typings\jquery.dataTables\jquery.dataTables.d.ts" />
+    <TypeScriptCompile Include="typings\jquery\jquery.d.ts" />
+    <TypeScriptCompile Include="typings\q\Q.d.ts" />
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
+  </ItemGroup>
+  <PropertyGroup>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
+    <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
+  </PropertyGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.targets" Condition="Exists('$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.targets')" />
+  <Import Project="$(VSToolsPath)\WebApplications\Microsoft.WebApplication.targets" Condition="'$(VSToolsPath)' != ''" />
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v10.0\WebApplications\Microsoft.WebApplication.targets" Condition="false" />
+  <ProjectExtensions>
+    <VisualStudio>
+      <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}">
+        <WebProjectProperties>
+          <UseIIS>True</UseIIS>
+          <AutoAssignPort>True</AutoAssignPort>
+          <DevelopmentServerPort>0</DevelopmentServerPort>
+          <DevelopmentServerVPath>/</DevelopmentServerVPath>
+          <IISUrl>http://localhost:8211/</IISUrl>
+          <NTLMAuthentication>False</NTLMAuthentication>
+          <UseCustomServer>False</UseCustomServer>
+          <CustomServerUrl>
+          </CustomServerUrl>
+          <SaveServerSettingsInUserFile>False</SaveServerSettingsInUserFile>
+        </WebProjectProperties>
+      </FlavorProperties>
+    </VisualStudio>
+  </ProjectExtensions>
+  <PropertyGroup>
+    <PreBuildEvent>IF EXIST "$(ProjectDir)..\..\..\..\breeze.js\build\breeze.debug.js" GOTO breezeSourceExists
+  echo Source breeze.debug.js was not found in '$(ProjectDir)..\..\..\..\breeze.js\build\' and was not copied
+  GOTO :done
+  :breezeSourceExists
+  echo Copying breeze.*.js from '$(ProjectDir)..\..\..\..\breeze.js\build\' to Scripts\
+  XCOPY "$(ProjectDir)..\..\..\..\breeze.js\build\breeze.min.js" "$(ProjectDir)Scripts" /Y 2&gt;nul
+  XCOPY "$(ProjectDir)..\..\..\..\breeze.js\build\breeze.debug.js" "$(ProjectDir)Scripts" /Y 2&gt;nul
+  XCOPY "$(ProjectDir)..\..\..\..\breeze.js\build\breeze.intellisense.js" "$(ProjectDir)Scripts" /Y 2&gt;nul    
+  :done</PreBuildEvent>
+  </PropertyGroup>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

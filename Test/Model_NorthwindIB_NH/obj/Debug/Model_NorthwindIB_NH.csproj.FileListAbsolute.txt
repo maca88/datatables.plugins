@@ -1,0 +1,5 @@
+C:\Workspace\Git\datatables.plugins\tests\NorthBreeze\Model_NorthwindIB_NH\bin\Debug\Model_NorthwindIB_NH.dll
+C:\Workspace\Git\datatables.plugins\tests\NorthBreeze\Model_NorthwindIB_NH\bin\Debug\Model_NorthwindIB_NH.pdb
+C:\Workspace\Git\datatables.plugins\tests\NorthBreeze\Model_NorthwindIB_NH\obj\Debug\Model_NorthwindIB_NH.csprojResolveAssemblyReference.cache
+C:\Workspace\Git\datatables.plugins\tests\NorthBreeze\Model_NorthwindIB_NH\obj\Debug\Model_NorthwindIB_NH.dll
+C:\Workspace\Git\datatables.plugins\tests\NorthBreeze\Model_NorthwindIB_NH\obj\Debug\Model_NorthwindIB_NH.pdb

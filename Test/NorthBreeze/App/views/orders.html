@@ -1,0 +1,42 @@
+﻿<div>
+    <h3>Orders</h3>
+    <div id="order-opt-tpl" ng-non-bindable style="display: none">
+        <button ng-show="order.entityAspect.entityState.name != 'Detached'" ng-click="setState($index, 'modified')"><span>SetModified</span></button>
+        <button ng-show="order.entityAspect.entityState.name != 'Detached'"  ng-click="setState($index, 'deleted')"><span>SetDeleted</span></button>
+        <button ng-show="order.entityAspect.entityState.name != 'Detached'"  ng-click="setState($index, 'detached')"><span>SetDetached</span></button>
+        <button ng-show="order.entityAspect.entityState.name != 'Detached'"  ng-click="setState($index, 'unchanged')"><span>SetUnchanged</span></button>
+    </div>
+    <table class="table-striped table-bordered table-condensed table-small" dt-table="orderTable" dt-width="100%" dt-selectable dt-data="orders" dt-options="orderGridOpts" dt-item-name="order">
+        <thead>
+            <th dt-data="OrderID">Order ID</th>
+            <th dt-expression="order.Freight | currency">Freight</th>
+            <th dt-expression="order.OrderDate | date:'shortDate'">Order Date</th>
+            <th dt-expression="order.RequiredDate | date:'shortDate'">Required Date</th>
+            <th dt-expression="order.ShippedDate | date:'shortDate'">Shipped Date</th>
+            <th dt-data="ShipName">Name</th>
+            <th dt-data="ShipAddress">Address</th>
+            <th dt-data="ShipCity">City</th>
+            <th dt-data="ShipRegion">Region</th>
+            <th dt-data="ShipPostalCode">PostCode</th>
+            <th dt-data="ShipCountry">Country</th>
+            <th dt-data="entityAspect.entityState.name">Entity state</th>
+            <th dt-template="#order-opt-tpl">Options</th>
+        </thead>
+        <!--<tr ng-repeat="o in orders">
+            <td>{{o.OrderID}}</td>
+            <td>{{o.CustomerID}}</td>
+            <td>{{o.EmployeeID}}</td>
+            <td>{{o.Freight | currency}}</td>
+            <td>{{o.OrderDate | date:'shortDate'}}</td>
+            <td>{{o.RequiredDate | date:'shortDate'}}</td>
+            <td>{{o.ShippedDate | date:'shortDate'}}</td>
+            <td>{{o.ShipName}}</td>
+            <td>{{o.ShipAddress}}</td>
+            <td>{{o.ShipCity}}</td>
+            <td>{{o.ShipRegion}}</td>
+            <td>{{o.ShipPostalCode}}</td>
+            <td>{{o.ShipCountry}}</td>
+            <td>{{o.RowVersion}}</td>
+        </tr>-->
+    </table>
+</div>
