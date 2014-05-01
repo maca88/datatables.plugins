@@ -1,0 +1,2 @@
+datatables.plugins
+==================
