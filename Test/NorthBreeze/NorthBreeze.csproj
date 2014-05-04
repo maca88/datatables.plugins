@@ -171,7 +171,7 @@
     <Content Include="src\angular.dataTables.js" />
     <Content Include="src\angular.dataTables.rowDetails.js" />
     <Content Include="src\angular.dataTables.selectable.js" />
-    <Content Include="src\dataTables.breeze.js" />
+    <Content Include="src\dataTables.breeze.entityFilter.js" />
     <Content Include="src\dataTables.remoteState.js" />
     <Content Include="src\dataTables.rowDetails.js" />
     <Content Include="Web.config">
@@ -267,6 +267,7 @@
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="src\angular.dataTables.breeze.ts" />
+    <TypeScriptCompile Include="src\angular.dataTables.colReorder.ts" />
     <TypeScriptCompile Include="src\angular.dataTables.d.ts" />
     <TypeScriptCompile Include="src\angular.dataTables.rowDetails.ts" />
     <TypeScriptCompile Include="src\angular.dataTables.selectable.ts" />

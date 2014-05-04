@@ -80,7 +80,7 @@
             { data: "platform", title: "Platform" },
             { data: "version", title: "Version" },
             { data: "grade", title: "Grade" },
-            { defaultContent: "#options-tpl" }
+            { template: "#options-tpl" }
         ],
         rowDetails: {
             icon: {

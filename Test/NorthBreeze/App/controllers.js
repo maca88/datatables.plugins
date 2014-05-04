@@ -47,6 +47,7 @@ app.controller('CustomerCtrl', ['$scope', function ($scope) {
         info: true,
         autoWidth: true,
         deferRender: true,
+        processing: false,
         rowDetails: {
             icon: {
                 openHtml: '<span class="glyphicon glyphicon-plus row-detail-icon"></span>',
@@ -73,6 +74,7 @@ app.controller('CustomerCtrl', ['$scope', function ($scope) {
             entityName: "Customer",
             projectOnlyTableColumns: false //If true then server results will be plain objects (not breeze.Entity)
         },
+        order: [],
         dom: "<'row'<'col-xs-6'l><'col-xs-6'f>r>" +
         "D" + //RowDetails
         "C" + //ColVis
@@ -98,9 +100,28 @@ app.controller('OrderCtrl', function ($scope) {
         info: true,
         autoWidth: true,
         deferRender: true,
+        remoteState: {
+            storeId: 'OrderGrid',
+            getStatesFromServer: true,
+            ajax: {
+                'getAll': {
+                    url: '/breeze/NorthBreeze/RemoteState'
+                },
+                'save': {
+                    url: '/breeze/NorthBreeze/RemoteState'
+                },
+                'delete': {
+                    url: '/breeze/NorthBreeze/RemoteState'
+                },
+                'setDefault': {
+                    url: '/breeze/NorthBreeze/RemoteState'
+                }
+            }
+        },
         dom: "<'row'<'col-xs-6'l><'col-xs-6'f>r>" +
         "Y" + //Breeze filter
         "C" + //ColVis
+        "B" + //RemoteState
         "t" +
 		"<'row'<'col-xs-6'i><'col-xs-6'p>>R"
 

@@ -1,6 +1,19 @@
-﻿angular.module("dt").config([
+﻿//Breeze plugin
+angular.module("dt").config([
     "dtSettings", function (dtSettings) {
+        dtSettings.dtFillWatchedProperties.push(function (propArr, rowData) {
+            var idx = propArr.indexOf("entityAspect");
+            if (idx < 0)
+                return;
+            propArr.splice(idx, 1);
+            var store = rowData["_backingStore"] || {};
+            angular.forEach(store, function (val, key) {
+                propArr.push(key);
+            });
+        });
+
         dtSettings.dtTableCreatingCallbacks.push(function ($element, options, scope, attrs, $compile) {
+            //#region Breeze
             var breezeOpts = options.breeze;
             if (breezeOpts != null) {
                 options.serverSide = true;
@@ -12,6 +25,7 @@
                 var clientToServerNameFn = manager.metadataStore.namingConvention.clientPropertyNameToServer;
 
                 options.ajax = function (data, fn, oSettings) {
+                    //Clear query params
                     query.orderByClause = null;
                     query.parameters = {};
                     query.wherePredicate = null;
@@ -22,6 +36,7 @@
                     var columnPredicates = [];
                     var globalPredicates = [];
 
+                    //Columns
                     angular.forEach(data.columns, function (column) {
                         if (!column.data)
                             return;
@@ -33,18 +48,21 @@
                         if (!column.searchable)
                             return;
 
+                        //Column filter
                         if (column.search.value != "") {
                             var colPred = breeze.Predicate.create(serverSideName, "contains", column.search.value);
                             columnPredicates.push(colPred);
                         }
 
+                        //Global filter
                         if (data.search.value != "") {
                             var globalPred = breeze.Predicate.create(serverSideName, "contains", data.search.value);
                             globalPredicates.push(globalPred);
                         }
                     });
-                    select = select.substring(0, select.length - 1);
+                    select = select.substring(0, select.length - 1); //remove the last ,
 
+                    //Order
                     angular.forEach(data.order, function (ord) {
                         var col = data.columns[ord.column];
                         if (!col.data)
@@ -54,15 +72,17 @@
                         order += serverSideName + dir + ",";
                     });
                     if (order.length > 0) {
-                        order = order.substring(0, order.length - 1);
+                        order = order.substring(0, order.length - 1); //remove the last ,
                         query = query.orderBy(order);
                     }
 
+                    //Predicates (join global predicates with OR and columns predicate with AND
                     if (globalPredicates.length > 0)
                         columnPredicates.push(breeze.Predicate.or(globalPredicates));
                     if (columnPredicates.length > 0)
                         query = query.where(breeze.Predicate.and(columnPredicates));
 
+                    //Pojection (If true then server results will be plain objects, not breeze.Entity-ies)
                     if (breezeOpts.projectOnlyTableColumns === true)
                         query = query.select(select);
 
@@ -81,6 +101,8 @@
                     });
                 };
             }
+            //#endregion
         });
     }
 ]);
+//# sourceMappingURL=angular.dataTables.breeze.js.map

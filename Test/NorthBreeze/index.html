@@ -15,25 +15,25 @@
 </head>
 <body>
 
-<nav class="navbar navbar-fixed-top">
-    <div class="navbar-inner" ng-controller="RouteCtrl">
-        <a class="brand" href="#/">
-            <span class="title">NorthBreeze</span> 
-        </a>
-        <div class="btn-group">
-            <a ng-repeat="link in links" class="btn btn-info" ng-class="{active: $route.current.templateUrl == link.templateUrl}" href="#{{link.path}}">{{link.name}}</a>
+    <nav class="navbar-nav navbar-fixed-top">
+        <div class="container" ng-controller="RouteCtrl">
+            <a class="brand" href="#/">
+                <span class="title">NorthBreeze</span>
+            </a>
+            <div class="btn-group">
+                <a ng-repeat="link in links" class="btn btn-info" ng-class="{active: $route.current.templateUrl == link.templateUrl}" href="#{{link.path}}">{{link.name}}</a>
+            </div>
         </div>
-    </div>
-</nav>
+    </nav>
 
   <div ng-view style="margin: 50px"></div>
 
-<nav class="navbar navbar-fixed-bottom">
-    <div class="navbar-inner navbar-content-center" >
-        <span class="pull-left"><a href="http://www.breezejs.com" target="_blank">Rich data access by Breeze</a></span>
-        <span class="pull-right"></span>
-    </div>
-</nav>
+    <nav class="navbar-nav navbar-fixed-bottom">
+        <div class="navbar-inner navbar-content-center">
+            <span class="pull-left"><a href="http://www.breezejs.com" target="_blank">Rich data access by Breeze</a></span>
+            <span class="pull-right"></span>
+        </div>
+    </nav>
 
 
     <script src="Scripts/jquery-1.9.1.js"></script>
@@ -45,12 +45,14 @@
     <script type="text/javascript" language="javascript" src="libs/datatables/extensions/ColReorder/js/dataTables.colReorder.js"></script>
     <script type="text/javascript" language="javascript" src="libs/datatables/extensions/ColVis/js/dataTables.colVis.js"></script>
     <script type="text/javascript" language="javascript" src="libs/datatables/extensions/Bootstrap/js/dataTables.bootstrap.js"></script>
+    <script type="text/javascript" language="javascript" src="src/dataTables.remoteState.js"></script>
     <script type="text/javascript" language="javascript" src="src/dataTables.rowDetails.js"></script>
-    <script type="text/javascript" language="javascript" src="src/dataTables.breeze.js"></script>
+    <script type="text/javascript" language="javascript" src="src/dataTables.breeze.entityFilter.js"></script>
     <script type="text/javascript" language="javascript" src="src/angular.dataTables.js"></script>
     <script type="text/javascript" language="javascript" src="src/angular.dataTables.rowDetails.js"></script>
     <script type="text/javascript" language="javascript" src="src/angular.dataTables.breeze.js"></script>
     <script type="text/javascript" language="javascript" src="src/angular.dataTables.selectable.js"></script>
+    <script type="text/javascript" language="javascript" src="src/angular.dataTables.colReorder.js"></script>
 
     <script src="Scripts/toastr.js"></script>
 

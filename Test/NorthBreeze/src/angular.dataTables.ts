@@ -8,12 +8,14 @@
 angular.module("dt", [])
     .constant("dtSettings", {
         defaultDtOptions: {},
+        dtGetColumnIndexFn: null, //Nedded for colReorder plugin
+        dtFillWatchedProperties: [],
         dtTableCreatingCallbacks: [],
         dtTableCreatedCallbacks: [],
         dtColumnParsingCallbacks: [],
     })
-    .directive("dtTable", ["$compile", "dtSettings",
-        ($compile, dtSettings) => {
+    .directive("dtTable", ["$compile", "$parse", "dtSettings",
+        ($compile, $parse, dtSettings) => {
             return {
                 // Restricted it to A only. Thead elements are only valid inside table tag
                 restrict: 'A',
@@ -36,18 +38,21 @@ angular.module("dt", [])
                     if (!!attrs.dtWidth)
                         $element.css('width', attrs.dtWidth);
 
-                    //columns def from DOM (have the highest priority)
                     var explicitColumns = [];
-
                     angular.forEach(element.find('th'), (node) => {
                         var elem = angular.element(node);
                         var column: any = {
                             data: elem.attr('dt-data'),
                             title: elem.text(),
                             name: elem.attr('dt-name'),
-                            render: elem.attr('dt-render'),
+                            type: elem.attr('dt-type'),
+                            className: elem.attr('dt-class'),
+                            orderable: elem.attr('dt-orderable') == null ? true : elem.attr('dt-orderable') == "true",
+                            searchable: elem.attr('dt-searchable') == null ? true : elem.attr('dt-searchable') == "true",
+                            width: elem.attr('dt-width'),
                             expression: elem.attr('dt-expression'),
-                            defaultContent: elem.attr('dt-def-content') || elem.attr('dt-template') || '',
+                            template: elem.attr('dt-template'),
+                            defaultContent: elem.attr('dt-def-content')
                         };
 
                         angular.forEach(dtSettings.dtColumnParsingCallbacks, fn => {
@@ -57,22 +62,64 @@ angular.module("dt", [])
 
                         explicitColumns.push(column);
                     });
+                    //columns def from DOM (have the highest priority)
                     if (explicitColumns.length > 0) {
                         options.columns = explicitColumns;
                     }
 
                     var columns = options.columns || options.columnDefs;
 
+                    angular.forEach(columns, (col, idx) => {
+                        if (col.data == null && col.defaultContent == null)
+                            col.defaultContent = ""; //we have to set defaultContent otherwise dt will throw an error
+
+                        //for template we will not support sorting and searching
+                        if (col.template != null) {
+                            col.orderable = false;
+                            col.searchable = false;
+                            col.type = "html";
+                        }
+
+                        if (!!col.expression) {
+                            col.expressionFn = $parse(col.expression);
+                        }
+                        
+                        if (col.render == null) {
+                            col.render = (innerData, sSpecific, oData) => {
+                                switch (sSpecific) {
+                                case "display":
+                                    return innerData; //we will handle what will be displayed in rowCreatedCallback
+                                case "type":
+                                case "filter":
+                                case "sort":
+                                    var colOpts = angular.isFunction(dtSettings.dtGetColumnIndexFn) //Get the right column
+                                        ? columns[dtSettings.dtGetColumnIndexFn(options, dataTable, columns, idx)]
+                                        : columns[idx];
+                                    if (!!colOpts.expressionFn) { //support expression for searching and filtering
+                                        var arg = {};
+                                        arg[itemName] = oData;
+                                        return colOpts.expressionFn(arg);
+                                    }
+                                    return innerData;
+                                default:
+                                    throw "Unknown sSpecific: " + sSpecific;
+                                }
+                            };
+                        }
+                    });
+
                     //Wrap custom createdRow
                     var origCreatedRow = options.createdRow;
-                    options.createdRow = (node: Node, rowData: any[], dataIndex: number) => {
+                    options.createdRow = function (node: Node, rowData: any[], dataIndex: number) {
+                        var api = this.api();
+                        //var aoColumns = api.settings()[0].aoColumns;
                         var elem = angular.element(node);
                         var rowScope = scope.$new();
                         rowScope[itemName] = rowData;
                         //Define property for index so we dont have to take care of modifying it each time a row is deleted
                         Object.defineProperty(rowScope, "$index", {
                             get: function () {
-                                return dataTable.row(node).index();
+                                return api.row(node).index();
                             }
                         });
                         Object.defineProperty(rowScope, "$first", {
@@ -82,7 +129,7 @@ angular.module("dt", [])
                         });
                         Object.defineProperty(rowScope, "$last", {
                             get: function () {
-                                return this.$index === (dataTable.page.info().recordsTotal - 1);
+                                return this.$index === (api.page.info().recordsTotal - 1);
                             }
                         });
                         Object.defineProperty(rowScope, "$middle", {
@@ -95,27 +142,50 @@ angular.module("dt", [])
                                 return !(this.$even = (this.$index & 1) === 0);
                             }
                         });
-                        $('td', elem).each((idx, td) => {
+                        $('td', elem).each((idx, td:any) => {
                             var $td = angular.element(td);
-                            var colOpts = columns[idx];
-                            if (colOpts.data == null) {
-                                if (colOpts.defaultContent != null && $(colOpts.defaultContent).length > 0) {
-                                    var tpl = $(colOpts.defaultContent);
-                                    if (tpl.length > 0)
-                                        $td.html($(colOpts.defaultContent).clone().removeAttr('ng-non-bindable').show());
-                                    else
-                                        $td.html(colOpts.defaultContent);
-                                }
-                                if (colOpts.expression != null && angular.isString(colOpts.expression))
-                                    $td.attr('ng-bind', colOpts.expression);
+                            var colIdx = angular.isFunction(dtSettings.dtGetColumnIndexFn) //Get the right column
+                                ? dtSettings.dtGetColumnIndexFn(options, api, columns, idx)
+                                : idx;
+                            var colOpts = columns[colIdx];
+                            //var oColumn = aoColumns[colIdx];
+                            if (colOpts.data != null) {
+                                $td.attr('ng-bind', itemName + '.' + colOpts.data);
                                 return;
                             }
-                            $td.attr('ng-bind', itemName + '.' + colOpts.data);
+                            if (colOpts.template != null) {
+                                var tpl = $(colOpts.template).clone().removeAttr('ng-non-bindable').show();
+                                $td.html(tpl);
+                                return;
+                            }
+                            if (colOpts.expression != null && angular.isString(colOpts.expression)) {
+                                $td.attr('ng-bind', colOpts.expression);
+                                return;
+                            }   
+                            if (colOpts.defaultContent != "")
+                                $td.html(colOpts.defaultContent);
                         });
-
                         $compile(elem)(rowScope);
+
                         if (angular.isFunction(origCreatedRow))
                             origCreatedRow(node, rowData, dataIndex);
+
+                        var propNames = Object.keys(rowData);
+
+                        angular.forEach(dtSettings.dtFillWatchedProperties, fn => {
+                            if (!angular.isFunction(fn)) return;
+                            fn(propNames, rowData, options);
+                        });
+
+                        //For serverside processing we dont have to invalidate rows (searching/ordering is done by server) 
+                        if (options.serverSide != true) {
+                            angular.forEach(propNames, propName => {
+                                //If row data is changed we have to invalidate dt row
+                                rowScope.$watch(itemName + '.' + propName, () => {
+                                    api.row(node).invalidate();
+                                }, false);
+                            });
+                        }
                     };
                 
                     //Wrap custom drawCallback
@@ -143,7 +213,6 @@ angular.module("dt", [])
                         if (!angular.isFunction(fn)) return;
                         fn(dataTable, $element, options, scope, attrs, $compile);
                     });
-
 
                     if (!attrs.dtData) return;
 

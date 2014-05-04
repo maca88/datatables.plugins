@@ -82,6 +82,7 @@ angular.module("dt")
                     $element.on('click', 'tbody tr', (e) => {
                         var elem = e.currentTarget;
                         var row = dataTable.row(elem);
+                        if (row.length == 0) return; //this happens when user click on a child table row
                         tblScope.$selectedRow = row;
                         if (!tblScope.$$phase)
                             tblScope.$apply();

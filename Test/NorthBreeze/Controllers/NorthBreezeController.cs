@@ -15,10 +15,49 @@ namespace NorthBreeze.Controllers
     {
         private NorthwindContext northwind;
 
+        //Dictionary<storeId, Tuple<detaultState, Dictionary<stateName, data>>>
+        private static readonly Dictionary<string, Tuple<string, Dictionary<string, object>>> DtStates = new Dictionary<string, Tuple<string, Dictionary<string, object>>>();
+
+        static NorthBreezeController() { }
+
         protected override void Initialize(System.Web.Http.Controllers.HttpControllerContext controllerContext)
         {
             base.Initialize(controllerContext);
             northwind = new NorthwindContext();
+        }
+
+        [HttpPost]
+        public object RemoteState(JObject state)
+        {
+            var action = state.GetValue("action").Value<string>();
+            var storeId = state.GetValue("storeId").Value<string>();
+            var stateName = state.GetValue("stateName").Value<string>();
+            var data = state.GetValue("data").Value<JObject>();
+            switch (action)
+            {
+                case "getAll":
+                    return DtStates.ContainsKey(storeId) 
+                        ? new
+                            {
+                                defaultState = DtStates[storeId].Item1,
+                                states = DtStates[storeId].Item2
+                            } 
+                        : new object();
+                case "setDefault":
+                    if (DtStates.ContainsKey(storeId))
+                        DtStates[storeId] = new Tuple<string, Dictionary<string, object>>(stateName, DtStates[storeId].Item2);
+                    break;
+                case "delete":
+                    if (DtStates.ContainsKey(storeId) && DtStates[storeId].Item2.ContainsKey(stateName))
+                        DtStates[storeId].Item2.Remove(stateName);
+                    break;
+                case "save":
+                    if (!DtStates.ContainsKey(storeId))
+                        DtStates[storeId] = new Tuple<string, Dictionary<string, object>>(null, new Dictionary<string, object>());
+                    DtStates[storeId].Item2[stateName] = data;
+                    break;
+            }
+            return null;
         }
 
         [HttpGet]

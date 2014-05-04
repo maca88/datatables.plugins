@@ -8,7 +8,7 @@ app.routes = [
     { path: '/', name: 'Home', templateUrl: 'App/views/home.html', controller: 'HomeCtrl' },
     { path: '/customers', name: 'Customers (Datatables[RowDetails, Selectable, Breeze])', templateUrl: 'App/views/customers.html', controller: 'CustomerCtrl' },
     { path: '/browsers', name: 'Browsers (Datatables[RowDetails, Selectable])', templateUrl: 'App/views/browsers.html', controller: 'BrowserCtrl' },
-    { path: '/orders', name: 'Orders', templateUrl: 'App/views/orders.html', controller: 'OrderCtrl' }
+    { path: '/orders', name: 'Orders[EntityFilter, RemoteState]', templateUrl: 'App/views/orders.html', controller: 'OrderCtrl' }
 ];
 
 // Configure the routeProvider, which displays a view in the ng-view div in index.html, based on the URI path (e.g. /customers)

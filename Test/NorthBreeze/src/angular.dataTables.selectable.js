@@ -1,6 +1,8 @@
-﻿angular.module("dt").config([
+﻿//Selectable plugin
+angular.module("dt").config([
     "dtSettings", function (dtSettings) {
         dtSettings.dtTableCreatedCallbacks.push(function (dataTable, $element, options, scope, attrs, $compile) {
+            //#region Selectable
             if (attrs.dtSelectable != null || options.selectable != null) {
                 var tblScope = $element.scope();
                 var selectedRow = null;
@@ -75,14 +77,19 @@
                     }
                 });
 
+                // respond to click for selecting a row
                 $element.on('click', 'tbody tr', function (e) {
                     var elem = e.currentTarget;
                     var row = dataTable.row(elem);
+                    if (row.length == 0)
+                        return;
                     tblScope.$selectedRow = row;
                     if (!tblScope.$$phase)
                         tblScope.$apply();
                 });
             }
+            //#endregion
         });
     }
 ]);
+//# sourceMappingURL=angular.dataTables.selectable.js.map

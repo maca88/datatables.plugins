@@ -10,3 +10,7 @@
 table .table-small {
     font-size: smaller;
 }
+
+tr.dt-selected-row {
+    color: red;
+}

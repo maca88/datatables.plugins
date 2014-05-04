@@ -2,6 +2,16 @@
 angular.module("dt")
     .config([
         "dtSettings", (dtSettings) => {
+            dtSettings.dtFillWatchedProperties.push((propArr, rowData) => {
+                var idx = propArr.indexOf("entityAspect");
+                if (idx < 0) return;
+                propArr.splice(idx, 1);
+                var store = rowData["_backingStore"] || {};
+                angular.forEach(store, (val, key) => {
+                    propArr.push(key);
+                });
+            });
+
             dtSettings.dtTableCreatingCallbacks.push(($element, options, scope, attrs, $compile) => {
                 //#region Breeze
 

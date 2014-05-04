@@ -12,7 +12,8 @@
         storeId: null,
         defaultState: '',
         currentState: null,
-        states: {},
+        states: null,
+        getStatesFromServer: false,
         language: {
             'settings': 'Settings',
             'load': 'Load',
@@ -24,6 +25,13 @@
         },
         settingsDisplayAction: null,
         ajax: {
+            'getAll': {
+                url: null,
+                type: 'POST',
+                beforeSendAction: null,
+                doneAction: null,
+                failAction: null
+            },
             'save': {
                 url: null,
                 type: 'POST',
@@ -88,6 +96,7 @@
         var stateOptions = [];
         stateOptions.push($('<option/>', { 'value': '', 'text': 'None' }));
         $.each(settings.states, function (key) {
+            if (key.lastIndexOf('$', 0) == 0) return; //skip all values that startswith $ (i.e. $type, $id)
             stateOptions.push($('<option/>', { 'value': key, 'text': key, selected: curState == key }));
         });
         var select = $('<select />', {}).append(stateOptions);
@@ -203,6 +212,16 @@
         oSettings.iInitDisplayStart = data.displayStart;
         oSettings._iDisplayLength = data.pageLength;
     
+        /*Order*/
+        var savedSort = data.order;
+        oSettings.aaSorting = [];
+        for (i = 0, ien = savedSort.length; i < ien; i++) {
+            oSettings.aaSorting.push(savedSort[i][0] >= columns.length ?
+                [0, savedSort[i][1]] :
+                savedSort[i]
+            );
+        }
+
         /*ColReorder*/
         if ($.isArray(data.colReorder) && data.colReorder.length == columns.length) {
             if (dtInitialized) {
@@ -214,16 +233,6 @@
             }
         }
     
-        /*Order*/
-        var savedSort = data.order;
-        oSettings.aaSorting = [];
-        for (i = 0, ien = savedSort.length; i < ien; i++) {
-            oSettings.aaSorting.push(savedSort[i][0] >= columns.length ?
-                [0, savedSort[i][1]] :
-                savedSort[i]
-            );
-        }
-
         /* Search filtering  */
         $.extend(oSettings.oPreviousSearch, data.filter);
         $.extend(true, oSettings.aoPreSearchCols, data.searchCols); //TODO: verify if we need to do something more if dt is initialized
@@ -236,7 +245,7 @@
                     return $(this).hasClass(filterClass);
                 });
             }
-            filterInput.val(data.filter.search.replace('"', '&quot;'));
+            filterInput.val(data.filter.sSearch.replace('"', '&quot;'));
         }
 
         /* Column visibility state */
@@ -250,6 +259,42 @@
         if (dtInitialized) {
             api.draw(false);
         }
+    };
+
+    var getRemoteStates = function (settings, api) {
+        var getAllSettings = $.extend({}, defaultSettings.ajax.getAll, settings.ajax.getAll);
+        if (getAllSettings.url == null)
+            throw 'ajax.getAll.url must be defined.';
+
+        if ($.isFunction(getAllSettings.beforeSendAction))
+            getAllSettings.beforeSendAction(api);
+
+        try {
+            var result = $.parseJSON($.ajax({
+                data: JSON.stringify({
+                    storeId: settings.storeId,
+                    action: 'getAll',
+                    stateName: null,
+                    data: null
+                }),
+                contentType: 'application/json; charset=utf-8',
+                dataType: 'json',
+                type: getAllSettings.type,
+                url: getAllSettings.url,
+                async: false
+            }).responseText);
+
+            settings.states = result.states;
+            settings.defaultState = result.defaultState;
+
+        } catch (err) {
+            if ($.isFunction(getAllSettings.doneAction))
+                getAllSettings.failAction(err, api);
+            throw err;
+        }
+
+        if ($.isFunction(getAllSettings.doneAction))
+            getAllSettings.doneAction(states, api);
     };
 
     /*
@@ -279,8 +324,13 @@
         var api = this;
         var dtSettings = this.context[0];
         settings = $.extend({}, defaultSettings, settings);
-
         var loc = settings.language;
+
+        if (settings.getStatesFromServer == true) { //We have to get them from the remote source
+            getRemoteStates(settings, api);
+        }
+
+        settings.states = settings.states || {};
 
         //Change and set default
         var changeSelect = createSelectStates(settings);
@@ -304,7 +354,8 @@
             var requestData = {
                 'storeId': settings.storeId,
                 'stateName': name,
-                'action': 'setDefault'
+                'action': 'setDefault',
+                'data': null
             };
             createRequest($.extend({}, defaultSettings.ajax.setDefault, settings.ajax.setDefault),
                 requestData,
@@ -330,7 +381,8 @@
             var requestData = {
                 'storeId': settings.storeId,
                 'stateName': name,
-                'action': 'delete'
+                'action': 'delete',
+                'data': null
             };
             createRequest($.extend({}, defaultSettings.ajax.delete, settings.ajax.delete),
                 requestData,

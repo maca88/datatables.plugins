@@ -1,12 +1,24 @@
-﻿angular.module("dt").config([
+﻿//RowDetails plugin
+angular.module("dt").config([
     "dtSettings", function (dtSettings) {
         dtSettings.dtColumnParsingCallbacks.push(function (elem, column) {
             if (elem.attr('dt-row-detail-icon') != null) {
                 column.iconColumn = true;
-                column.orderable = false;
             }
         });
         dtSettings.dtTableCreatingCallbacks.push(function ($element, options, scope, attrs, $compile) {
+            //#region RowDetails
+            var columns = options.columns || options.columnDefs;
+
+            //Icon column is not orderable
+            angular.forEach(columns, function (col) {
+                if (!col.iconColumn)
+                    return;
+                col.orderable = false;
+                col.searchable = false;
+                col.type = "html";
+            });
+
             var origRowDetailCreated = options.rowDetailCreated;
             options.rowDetailCreated = function (row, innerDetails, detailSettings) {
                 var tplSelector = $element.attr('dt-row-detail-tpl');
@@ -38,9 +50,12 @@
 
             var origRowDetailDestroying = options.rowDetailDestroying;
             options.rowDetailDestroying = function (row) {
+                //TODO: check if needed to destroy nested dtTables scopes
                 if (angular.isFunction(origRowDetailDestroying))
                     origRowDetailCreated(row);
             };
+            //#endregion
         });
     }
 ]);
+//# sourceMappingURL=angular.dataTables.rowDetails.js.map

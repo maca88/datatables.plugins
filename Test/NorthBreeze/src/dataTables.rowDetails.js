@@ -10,7 +10,7 @@
         },
         destroyOnClose: false,
         trClass: 'sub',
-        tdClass: 'todo'
+        tdClass: ''
     };
 
     $.fn.DataTable.Api.register('settings().init()', function () {
@@ -169,7 +169,8 @@
         $.each(columns, function (idx, column) {
             if (column.iconColumn !== true) return;
             var iconColumn = table.settings()[0].aoColumns[idx];
-            iconColumn.mRender = column.render = iconColumn.fnGetData = function (innerData, sSpecific, oData) {
+
+            iconColumn.mRender = column.render = function (innerData, sSpecific, oData) {
                 var hasIcon = true;
                 if ($.isFunction(settings.icon.hasIcon))
                     hasIcon = settings.icon.hasIcon(oData, table);
@@ -189,6 +190,10 @@
                 var cell = $('<div/>', { 'class': 'dt-cell-icon' });
                 cell.append(openIcon, closeIcon);
                 return cell.html();
+            };
+
+            iconColumn.fnGetData = function (oData, sSpecific) {
+                return iconColumn.mRender(null, sSpecific, oData);
             };
 
         });
