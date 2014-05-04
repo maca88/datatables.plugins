@@ -105,16 +105,16 @@ app.controller('OrderCtrl', function ($scope) {
             getStatesFromServer: true,
             ajax: {
                 'getAll': {
-                    url: '/breeze/NorthBreeze/RemoteState'
+                    url: 'breeze/NorthBreeze/RemoteState'
                 },
                 'save': {
-                    url: '/breeze/NorthBreeze/RemoteState'
+                    url: 'breeze/NorthBreeze/RemoteState'
                 },
                 'delete': {
-                    url: '/breeze/NorthBreeze/RemoteState'
+                    url: 'breeze/NorthBreeze/RemoteState'
                 },
                 'setDefault': {
-                    url: '/breeze/NorthBreeze/RemoteState'
+                    url: 'breeze/NorthBreeze/RemoteState'
                 }
             }
         },
