@@ -8,6 +8,8 @@ angular.module("dt").config([
             propArr.splice(idx, 1);
             var store = rowData["_backingStore"] || {};
             angular.forEach(store, function (val, key) {
+                if (propArr.indexOf(key) >= 0)
+                    return;
                 propArr.push(key);
             });
         });

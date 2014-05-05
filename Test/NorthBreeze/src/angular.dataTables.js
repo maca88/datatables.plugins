@@ -92,7 +92,7 @@ angular.module("dt", []).constant("dtSettings", {
                                 case "type":
                                 case "filter":
                                 case "sort":
-                                    var colOpts = angular.isFunction(dtSettings.dtGetColumnIndexFn) ? columns[dtSettings.dtGetColumnIndexFn(options, dataTable, columns, idx)] : columns[idx];
+                                    var colOpts = columns[idx];
                                     if (!!colOpts.expressionFn) {
                                         var arg = {};
                                         arg[itemName] = oData;
@@ -170,6 +170,11 @@ angular.module("dt", []).constant("dtSettings", {
                         origCreatedRow(node, rowData, dataIndex);
 
                     var propNames = Object.keys(rowData);
+                    angular.forEach(columns, function (col) {
+                        if (col.data == null || propNames.indexOf(col.data) >= 0)
+                            return;
+                        propNames.push(col.data);
+                    });
 
                     angular.forEach(dtSettings.dtFillWatchedProperties, function (fn) {
                         if (!angular.isFunction(fn))
