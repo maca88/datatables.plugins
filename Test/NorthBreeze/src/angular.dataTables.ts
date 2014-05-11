@@ -5,10 +5,125 @@
 
 'use strict';
 
+//We have to update the original collection if datatables api is used to manipulate dt collection 
+// in additon we fire an event before remove/add so that 
+$.fn.DataTable.Api.registerPlural('rows().remove()', 'row().remove()', function (bindOneWay) {
+    var that = this;
+    var internal = $.fn.DataTable.ext.internal;
+    return this.iterator('row', function (settings, row, thatIdx) {
+        if ($.isFunction(settings.oInit.removingRow))
+            settings.oInit.removingRow(settings, row, thatIdx);
+
+        if (bindOneWay == null && settings.oInit.data != null) { //if no argument is pass update original collection
+            var rowData = settings.aoData[row]._aData;
+            settings._rowsRemoved = settings._rowsRemoved || [];
+            settings._rowsRemoved.push(rowData);
+            settings.oInit.data.splice(row, 1);
+        }
+
+        var data = settings.aoData;
+        data.splice(row, 1);
+
+        // Update the _DT_RowIndex parameter on all rows in the table
+        for (var i = 0, ien = data.length; i < ien; i++) {
+            if (data[i].nTr !== null) {
+                data[i].nTr._DT_RowIndex = i;
+            }
+        }
+
+        // Remove the target row from the search array
+        var displayIndex = $.inArray(row, settings.aiDisplay);
+
+        // Delete from the display arrays
+        internal._fnDeleteIndex(settings.aiDisplayMaster, row);
+        internal._fnDeleteIndex(settings.aiDisplay, row);
+        internal._fnDeleteIndex(that[thatIdx], row, false); // maintain local indexes
+
+        // Check for an 'overflow' they case for displaying the table
+        internal._fnLengthOverflow(settings);
+
+        if ($.isFunction(settings.oInit.removedRow))
+            settings.oInit.removedRow(settings, row, thatIdx);
+    });
+});
+$.fn.DataTable.Api.register('rows.add()', function (rows, bindOneWay) {
+    var internal = $.fn.DataTable.ext.internal;
+    var newRows = this.iterator('table', function (settings) {
+        var row, i, ien;
+        var out = [];
+
+        for (i = 0, ien = rows.length; i < ien; i++) {
+            row = rows[i];
+
+            if (row.nodeName && row.nodeName.toUpperCase() === 'TR') {
+                out.push(internal._fnAddTr(settings, row)[0]);
+            }
+            else {
+                out.push(internal._fnAddData(settings, row));
+            }
+
+            if (bindOneWay == null && settings.oInit.data != null) { //push to model collection and memorize it
+                settings._rowsInserted = settings._rowsInserted || [];
+                settings._rowsInserted.push(row);
+                settings.oInit.data.push(row);
+            }
+        }
+        return out;
+    });
+
+    // Return an Api.rows() extended instance, so rows().nodes() etc can be used
+    var modRows = this.rows(-1);
+    modRows.pop();
+    modRows.push.apply(modRows, newRows.toArray());
+
+    return modRows;
+});
+$.fn.DataTable.Api.register('row.add()', function (row, bindOneWay) {
+    var internal = $.fn.DataTable.ext.internal;
+    // Allow a jQuery object to be passed in - only a single row is added from
+    // it though - the first element in the set
+    if (row instanceof $ && row.length) {
+        row = row[0];
+    }
+
+    var rows = this.iterator('table', function (settings) {
+        if (bindOneWay == null && settings.oInit.data != null) { //push to model collection and memorize it
+            settings._rowsInserted = settings._rowsInserted || [];
+            settings._rowsInserted.push(row);
+            settings.oInit.data.push(row);
+        }
+        if (row.nodeName && row.nodeName.toUpperCase() === 'TR') {
+            return internal._fnAddTr(settings, row)[0];
+        }
+        return internal._fnAddData(settings, row);
+    });
+
+    // Return an Api.rows() extended instance, with the newly added row selected
+    return this.row(rows[0]);
+});
+
+//Getting cell by node or by index
+$.fn.DataTable.Api.register('row().cell()', function (column) {
+    var rIdx = this.index();
+    var cIdx;
+    var ctx = this.settings()[0];
+    var cells = ctx.aoData[rIdx].anCells;
+    if ($.isNumeric(column)) {
+        cIdx = parseInt(column);
+        if (cIdx >= ctx.aoColumns.length) return null;
+        return this.table().cell(rIdx, cIdx);
+    }
+        
+    if (cells == null) return null;
+    cIdx = cells.indexOf(column); //treat column as Element
+    if (cIdx < 0) return null;
+    return this.table().cell(rIdx, cIdx);
+});
+
 angular.module("dt", [])
     .constant("dtSettings", {
         defaultDtOptions: {},
-        dtGetColumnIndexFn: null, //Nedded for colReorder plugin
+        dtGetColumnIndexFuncs: [], //Nedded for colReorder plugin
         dtFillWatchedProperties: [],
         dtTableCreatingCallbacks: [],
         dtTableCreatedCallbacks: [],
@@ -20,9 +135,10 @@ angular.module("dt", [])
                 // Restricted it to A only. Thead elements are only valid inside table tag
                 restrict: 'A',
 
-                link: (scope, element, attrs) => {
+                link: (scope, element, attrs) => { //postLink
                     var $element = angular.element(element);
                     var dataTable: any = null;
+                    var oSettings = null;
                     var itemName = attrs.dtItemName || "item";
                     var defaultOptions: any = dtSettings.defaultDtOptions || {};
                     //We only need to change page when a new item is added and will be shown on an new page
@@ -32,8 +148,17 @@ angular.module("dt", [])
                         if (info.page < lastPageIdx)
                             dt.page(lastPageIdx);
                     };
+                    var inputOptions = !!attrs.dtOptions ? scope.$eval(attrs.dtOptions) : {};
+                    var dtOptionsAttrData = !!inputOptions.data ? inputOptions.data : null;
+                    var dtDataAttrData = !!attrs.dtData ? scope.$eval(attrs.dtData) : null;
+                    inputOptions.data = null; //we dont want to deep clone data
                     //Merge options
-                    var options: any = angular.extend({}, defaultOptions, scope.$eval(attrs.dtOptions), (attrs.dtData != null ? { data: scope.$eval(attrs.dtData) } : {}));
+                    var options: any = $.extend(true, {}, defaultOptions, inputOptions); //deep clone with jQuery as angular does not support this feature
+                    //Copy the array reference to datatables init options (dt-data has higher priority than data prop from dt-options)
+                    if (!!dtDataAttrData)
+                        options.data = dtDataAttrData;
+                    else if (!!dtOptionsAttrData)
+                        options.data = dtOptionsAttrData;
 
                     if (!!attrs.dtWidth)
                         $element.css('width', attrs.dtWidth);
@@ -106,28 +231,40 @@ angular.module("dt", [])
                         }
                     });
 
+                    /*
+                    var origCreatedCell = options.createdCell;
+                    options.createdCell = function(node: Node, cellData, rowData, iRow: number, celIdx: number) {
+                        var api = this.api();
+                        if (oSettings == null)
+                            oSettings = api.settings()[0];
+
+                    };*/
+
                     //Wrap custom createdRow
                     var origCreatedRow = options.createdRow;
                     options.createdRow = function (node: Node, rowData: any[], dataIndex: number) {
                         var api = this.api();
-                        //var aoColumns = api.settings()[0].aoColumns;
+                        if (oSettings == null)
+                            oSettings = api.settings()[0];
+                        var oData = oSettings.aoData[dataIndex];
                         var elem = angular.element(node);
                         var rowScope = scope.$new();
                         rowScope[itemName] = rowData;
                         //Define property for index so we dont have to take care of modifying it each time a row is deleted
-                        Object.defineProperty(rowScope, "$index", {
+                        Object.defineProperty(rowScope, "$rowIndex", {
                             get: function () {
-                                return api.row(node).index();
+                                var idx = api.row(node).index(); //TODO: investigate why on row.remove() index() occasionaly returns api instance
+                                return angular.isNumber(idx) ? idx : null;
                             }
                         });
                         Object.defineProperty(rowScope, "$first", {
                             get: function () {
-                                return this.$index === 0;
+                                return this.$rowIndex === 0;
                             }
                         });
                         Object.defineProperty(rowScope, "$last", {
                             get: function () {
-                                return this.$index === (api.page.info().recordsTotal - 1);
+                                return this.$rowIndex === (api.page.info().recordsTotal - 1);
                             }
                         });
                         Object.defineProperty(rowScope, "$middle", {
@@ -137,34 +274,43 @@ angular.module("dt", [])
                         });
                         Object.defineProperty(rowScope, "$odd", {
                             get: function () {
-                                return !(this.$even = (this.$index & 1) === 0);
+                                return !(this.$even = (this.$rowIndex & 1) === 0);
                             }
                         });
-                        $('td', elem).each((idx, td:any) => {
+                        angular.forEach(oData.anCells, (td, idx) => {
                             var $td = angular.element(td);
-                            var colIdx = angular.isFunction(dtSettings.dtGetColumnIndexFn) //Get the right column
-                                ? dtSettings.dtGetColumnIndexFn(options, api, columns, idx)
-                                : idx;
+                            var oColumn = oSettings.aoColumns[idx];
+                            //Get column index
+                            var colIdx = idx;
+                            var cellScope = rowScope.$new();
+                            Object.defineProperty(cellScope, "$cellIndex", {
+                                get: function () {
+                                    return oSettings.aoColumns.indexOf(oColumn);
+                                }
+                            });
+                            
+                            angular.forEach(dtSettings.dtGetColumnIndexFuncs, fn => {
+                                if (!angular.isFunction(fn)) return;
+                                colIdx = fn(options, api, columns, colIdx);
+                            });
                             var colOpts = columns[colIdx];
-                            //var oColumn = aoColumns[colIdx];
+                           
                             if (colOpts.data != null) {
                                 $td.attr('ng-bind', itemName + '.' + colOpts.data);
-                                return;
                             }
-                            if (colOpts.template != null) {
+                            else if (colOpts.template != null) {
                                 var tpl = $(colOpts.template).clone().removeAttr('ng-non-bindable').show();
                                 $td.html(tpl);
-                                return;
                             }
-                            if (colOpts.expression != null && angular.isString(colOpts.expression)) {
+                            else if (colOpts.expression != null && angular.isString(colOpts.expression)) {
                                 $td.attr('ng-bind', colOpts.expression);
-                                return;
-                            }   
-                            if (colOpts.defaultContent != "")
+                            }
+                            else if (colOpts.defaultContent != "") {
                                 $td.html(colOpts.defaultContent);
+                            } 
+                            $compile($td)(cellScope); //We have to bind each td (not tr) because of detached cells.
                         });
                         $compile(elem)(rowScope);
-
                         if (angular.isFunction(origCreatedRow))
                             origCreatedRow(node, rowData, dataIndex);
 
@@ -207,6 +353,10 @@ angular.module("dt", [])
 
                     // Initialize datatables
                     dataTable = $element.DataTable(options);
+                    oSettings = dataTable.settings()[0];
+                    oSettings._rowsInserted = oSettings._rowsInserted || [];
+                    oSettings._rowsRemoved = oSettings._rowsRemoved || [];
+                    oSettings.oInit.data = oSettings.oInit.aoData = options.data; //set init data to be the same as binding collection
 
                     if (!!attrs.dtTable)
                         scope[attrs.dtTable] = dataTable;
@@ -218,8 +368,15 @@ angular.module("dt", [])
 
                     if (!attrs.dtData) return;
 
-                    scope.$watchCollection(attrs.dtData, (newValue: any, oldValue: any, collScope: ng.IScope) => {
+                    var collPath = !!attrs.dtData ? attrs.dtData : (!!inputOptions.data ? attrs.dtOptions + '.data' : null);
+                    if (collPath == null) return;
+
+                    scope.$watchCollection(collPath, (newValue: any, oldValue: any, collScope: ng.IScope) => {
                         if (!newValue) return;
+                        var idx;
+                        var rIdx;
+                        var rowsAdded = false;
+                        var rowsRemoved = false;
                         var added = [];
                         var removed = [];
                         if (newValue.length > oldValue.length) {
@@ -232,23 +389,55 @@ angular.module("dt", [])
                         else if (newValue.length < oldValue.length) {
                             //Find removed items
                             angular.forEach(oldValue, (val, key) => {
-                                var idx = newValue.indexOf(val);
+                                idx = newValue.indexOf(val);
                                 if (-1 === idx) 
                                     removed.push({ index: key, value: val});
                             });
                         }
-                        if (added.length > 0)
-                            dataTable.rows.add(added);
 
-                        angular.forEach(removed, (item) => {
-                            var row = dataTable.row(item.index);
-                            if (row.node() != null) { //deferRender
-                                angular.element(row.node()).scope().$destroy();
+                        //Handle added rows
+                        if (added.length > 0) {
+                            rowsAdded = true;
+                            //Do not add rows that were already been added (by datatables api)
+                            idx = 0;
+                            while (idx < added.length) {
+                                rIdx = oSettings._rowsInserted.indexOf(added[idx]);
+                                if (rIdx < 0) {
+                                    idx++;
+                                    continue;
+                                }
+                                added.splice(idx, 1);
+                                oSettings._rowsInserted.splice(rIdx, 1);
                             }
-                            row.remove();
-                        });
-                        if (removed.length > 0 || added.length > 0) {
-                            if (added.length > 0) //when adding item we want the item to be displayed
+                            dataTable.rows.add(added, true);
+                        }
+                            
+                        //Handle removed rows
+                        if (removed.length > 0) {
+                            rowsRemoved = true;
+                            //Do not remove rows that were already been removed (by datatables api)
+                            idx = 0;
+                            while (idx < removed.length) {
+                                rIdx = oSettings._rowsRemoved.indexOf(removed[idx].value);
+                                if (rIdx < 0) {
+                                    idx++;
+                                    continue;
+                                }
+                                removed.splice(idx, 1);
+                                oSettings._rowsRemoved.splice(rIdx, 1);
+                            }
+                            //Remove remained rows
+                            angular.forEach(removed, (item) => {
+                                var row = dataTable.row(item.index);
+                                if (row.node() != null) { //deferRender
+                                    angular.element(row.node()).scope().$destroy();
+                                }
+                                row.remove(true);
+                            });
+                        }
+
+                        if (rowsRemoved || rowsAdded) {
+                            if (rowsAdded) //when adding we want the new items to be displayed
                                 gotoLastPage(dataTable);
                             dataTable.draw(false);
                         }

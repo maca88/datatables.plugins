@@ -6,3 +6,7 @@ Test/NorthBreeze/node_modules/
 Test/NorthBreeze/bin
 Test/NorthBreeze/obj/
 Test/Model_NorthwindIB_NH/obj/*
+*.suo
+Test/Model_NorthwindIB_NH/bin/Debug/
+Test/Model_NorthwindIB_NH/obj/
+*.user

@@ -172,6 +172,7 @@
     <Content Include="src\angular.dataTables.rowDetails.js" />
     <Content Include="src\angular.dataTables.selectable.js" />
     <Content Include="src\dataTables.breeze.entityFilter.js" />
+    <Content Include="src\dataTables.remoteState.css" />
     <Content Include="src\dataTables.remoteState.js" />
     <Content Include="src\dataTables.rowDetails.js" />
     <Content Include="Web.config">

@@ -14,21 +14,32 @@
 
     var idx = 0;
     var itemCount = !!getUrlParameter('itemcount') ? parseInt(getUrlParameter('itemcount')) : 100;
-    $scope.addItem = function () {
-        $scope.data.push(
-            {
-                "engine": "Trident" + idx,
-                "browser": "Internet Explorer 4.0" + idx,
-                "platform": "Win 95+" + idx,
-                "version": "4" + idx,
-                "grade": "X" + idx
-            }
-        );
+    var getNewItem = function () {
+        var item = {
+            "engine": "Trident" + idx,
+            "browser": "Internet Explorer 4.0" + idx,
+            "platform": "Win 95+" + idx,
+            "version": "4" + idx,
+            "grade": "X" + idx
+        };
         idx++;
+        return item;
+    };
+
+    $scope.addItem = function () {
+        $scope.data.push(getNewItem());
+    };
+
+    $scope.addItemViaDt = function() {
+        $scope.dtTable.row.add(getNewItem());
     };
 
     $scope.removeItem = function (rowIndex) {
         $scope.data.splice(rowIndex, 1);
+    };
+
+    $scope.removeItemViaDt = function (rowIndex) {
+        $scope.dtTable.row(rowIndex).remove();
     };
 
     $scope.canRemoveItem = function () {

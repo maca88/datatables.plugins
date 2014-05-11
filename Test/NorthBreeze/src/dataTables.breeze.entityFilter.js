@@ -1,65 +1,105 @@
-﻿$.fn.DataTable.Api.register('settings().hasFeature()', function (c) {
-    return this[0].aanFeatures[c] !== undefined;
-});
+﻿(function( window, document ) {
 
-$.fn.DataTable.ext.feature.push({
-    "fnInit": function (settings) {
-        var dtInstance = settings.oInstance;
 
-        if (settings.oInit.serverSide) {
-            console.warn('This feature is not supported when serverSide is true');
-            return null;
+    var defaultSettings = {
+
+        selectedState: 'default',
+
+        states: {
+            'default': { 'filter': ['Added', 'Modified', 'Unchanged', 'Detached'] },
+            'all': { 'filter': [] },
+            'added': { 'filter': ['Added'] },
+            'modified': { 'filter': ['Modified'] },
+            'unchanged': { 'filter': ['Unchanged'] },
+            'edited': { 'filter': ['Added', 'Modified'] },
+            'detached': { 'filter': ['Detached'] },
+            'deleted': { 'filter': ['Deleted'] }
+        },
+
+        dom: {
+            containerClass: '',
+            selectClass: 'form-control'  
+        },
+
+        language: {
+            'entityFilter': 'Entity filter',
+            'default': 'Default',
+            'all': 'All',
+            'added': 'Added',
+            'modified': 'Modified',
+            'unchanged': 'Unchanged',
+            'edited': 'Edited',
+            'detached': 'Detached',
+            'deleted': 'Deleted'
         }
+    };
 
-        var options = settings.oInit.entityFilter || {
-            'default': { 'text': 'Default', 'filter': ['Added', 'Modified', 'Unchanged', 'Detached'], 'selected': true },
-            'all': { 'text': 'All', 'filter': [] },
-            'added': { 'text': 'Added', 'filter': ['Added'] },
-            'modified': { 'text': 'Modified', 'filter': ['Modified'] },
-            'unchanged': { 'text': 'Unchanged', 'filter': ['Unchanged'] },
-            'edited': { 'text': 'Edited', 'filter': ['Added', 'Modified'] },
-            'detached': { 'text': 'Detached', 'filter': ['Detached'] },
-            'deleted': { 'text': 'Deleted', 'filter': ['Deleted'] }
-        };
+    $.fn.DataTable.Api.register('settings().hasFeature()', function (c) {
+        return this[0].aanFeatures[c] != null;
+    });
 
-        var select = $('<select/>', { 'class': 'classFilter' });
+    $.fn.DataTable.ext.feature.push({
+        "fnInit": function (dtSettings) {
+            var dtInstance = dtSettings.oInstance;
 
-        $.each(options, function (value, option) {
-            select.append($('<option/>', { 'value': value, 'text': option.text }).prop('selected', (option.selected != null && option.selected)));
-        });
+            if (dtSettings.oInit.serverSide) {
+                console.warn('This feature is not supported when serverSide is true');
+                return null;
+            }
 
-        $(settings.oInstance).data('entityFilter', select);
+            var settings = $.extend(true, {}, dtSettings.oInit.entityFilter, defaultSettings);
 
-        select.change(function () {
+            var select = $('<select/>')
+                .addClass(settings.dom.selectClass);
+
+            $.each(settings.states, function (value, option) {
+                select.append($('<option/>', {
+                    'value': value,
+                    'text': !!option.text ? option.text : (!!settings.language[value] ? settings.language[value] : value)
+                    })
+                    .prop('selected', (!!option.selected || settings.selectedState == value)));
+            });
+
+            $(dtSettings.oInstance).data('entityFilter', select);
+
+            select.change(function () {
+                setFilter();
+                dtInstance.fnFilter();
+            });
+
             setFilter();
-            dtInstance.fnFilter();
-        });
 
-        setFilter();
+            var container = $('<div />')
+                .addClass('dt-entity-filter')
+                .addClass(settings.dom.containerClass);
+            if (!!settings.language.entityFilter)
+                container.append($('<label />').html(settings.language.entityFilter));
+            container.append(select);
 
-        return select.get(0);
+            return container.get(0);
 
-        function setFilter() {
-            dtInstance.data('entityFilter', options[select.val()].filter);
+            function setFilter() {
+                dtInstance.data('entityFilter', settings.states[select.val()].filter);
+            }
+        },
+        "cFeature": "Y",
+        "sFeature": "entityFilter"
+    });
+
+    $.fn.DataTable.ext.search.push(
+        function (dtSettings, data, dataIndex) {
+            var dtInstance = dtSettings.oInstance;
+            var api = dtInstance.api();
+            if (!api.settings().hasFeature('Y') || dtSettings.oInit.serverSide) return true;
+            var rowData = api.row(dataIndex).data();
+            if (rowData.entityAspect == null || rowData.entityAspect.entityState == null) return true;
+
+            var entityFilters = dtInstance.data('entityFilter');
+
+            if (entityFilters.length == 0)
+                return true;
+
+            return entityFilters.indexOf(rowData.entityAspect.entityState.name) >= 0;
         }
-    },
-    "cFeature": "Y",
-    "sFeature": "entityFilter"
-});
-
-$.fn.DataTable.ext.search.push(
-    function (settings, data, dataIndex) {
-        var dtInstance = settings.oInstance;
-        var api = dtInstance.api();
-        if (!api.settings().hasFeature('Y') || settings.oInit.serverSide) return true;
-        var rowData = api.row(dataIndex).data();
-        if (rowData.entityAspect == null || rowData.entityAspect.entityState == null) return true;
-
-        var entityFilters = dtInstance.data('entityFilter');
-
-        if (entityFilters.length == 0)
-            return true;
-
-        return entityFilters.indexOf(rowData.entityAspect.entityState.name) >= 0;
-    }
-);
+    );
+}(window, document));

@@ -1,0 +1,27 @@
+﻿div.remote-state-container {
+    padding: 15px;
+    border-radius: 5px;
+    background-color: #f3f3f3;
+    z-index: 2002;
+    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.3);
+}
+
+div.remote-state-background {
+	position: fixed;
+	top: 0;
+	left: 0;
+	height: 100%;
+	width: 100%;
+	background-color: black;
+	z-index: 1100;
+    opacity: 0.1;
+}
+
+div.state-main-control label, div.state-main-control select, form.state-delete-control select, form.state-save-control select,
+form.state-save-control input {
+    margin-right: 10px;
+}
+
+div.state-main-control button {
+    margin-right: 5px;
+}

@@ -91,8 +91,6 @@ app.controller('OrderCtrl', function ($scope) {
         .then(querySucceeded)
         .fail(queryFailed);
 
-
-
     $scope.orderGridOpts = {
         paging: true,
         lengthChange: true,
@@ -119,7 +117,7 @@ app.controller('OrderCtrl', function ($scope) {
             }
         },
         dom: "<'row'<'col-xs-6'l><'col-xs-6'f>r>" +
-        "Y" + //Breeze filter
+        "Y" + //Entity Filter
         "C" + //ColVis
         "B" + //RemoteState
         "t" +

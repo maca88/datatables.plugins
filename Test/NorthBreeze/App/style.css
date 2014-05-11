@@ -14,3 +14,19 @@ table .table-small {
 tr.dt-selected-row {
     color: red;
 }
+td.dt-selected-cell {
+    color: green;
+}
+
+div.dt-feature-row {
+    padding-right: 15px;
+}
+
+div.dt-feature {
+    float: left;
+    margin-right: 20px;
+}
+
+div.dt-entity-filter label {
+    margin-right: 10px;
+}

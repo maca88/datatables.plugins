@@ -1,15 +1,22 @@
 ﻿<div class="container">
-    <button class="btn" ng-click="addItem()"><span>Add Item</span></button>
+    <button class="btn" ng-click="addItem()"><span>Add Item via model collection</span></button>
+    <button class="btn" ng-click="addItemViaDt()"><span>Add Item via datatables</span></button>
 
-    <button class="btn" ng-show="canRemoveItem()" ng-click="removeItem($selectedRowIndex)"><span>Remove Item (index: {{$selectedRowIndex}})</span></button>
-
+    <button class="btn" ng-show="canRemoveItem()" ng-click="removeItem($selectedRowIndex)"><span>Remove Item via model collection (index: {{$selectedRowIndex}})</span></button>
+    <button class="btn" ng-show="canRemoveItem()" ng-click="removeItemViaDt($selectedRowIndex)"><span>Remove Item via datatables (index: {{$selectedRowIndex}})</span></button>
 
     <h4>Item</h4>
     <form class="form-horizontal" role="form">
         <div class="form-group">
-            <label class="col-sm-2">Item index</label>
+            <label class="col-sm-2">Row index</label>
             <div class="col-sm-10">
                 <input type="text" class="form-control" ng-model="$selectedRowIndex" />
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-2">Cell index</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" ng-model="$selectedCellIndex" />
             </div>
         </div>
         <div class="form-group">
@@ -45,8 +52,8 @@
     </form>
 
     <div id="options-tpl" ng-non-bindable style="display: none">
-        <span>({{$index}} - {{$first == true ? 'First' : ($last == true ? 'Last' : 'Middle')}} - {{$odd == true ? 'Odd' : 'Even'}})</span>
-        <button ng-click="removeItem($index)"><span>Delete</span></button>
+        <span>({{$rowIndex}}/{{$cellIndex}} - {{$first == true ? 'First' : ($last == true ? 'Last' : 'Middle')}} - {{$odd == true ? 'Odd' : 'Even'}})</span>
+        <button ng-click="removeItem($rowIndex)"><span>Delete</span></button>
     </div>
 
     <div id="icon-tpl" ng-non-bindable style="display: none">
@@ -65,7 +72,7 @@
     </div>
 
     <h1>DataTables</h1>
-    <table class="table table-striped table-bordered" dt-table dt-data="data" dt-options="options" dt-row-detail-tpl="#row-details-tpl" dt-selectable>
+    <table class="table table-striped table-bordered" dt-table="dtTable" dt-data="data" dt-options="options" dt-row-detail-tpl="#row-details-tpl" dt-selectable>
         <!--<thead>
             <tr>
                 <th dt-row-detail-icon></th>

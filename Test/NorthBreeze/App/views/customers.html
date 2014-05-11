@@ -37,19 +37,19 @@
             <form class="form-horizontal">
                 <!-- We do field-level validation based on the validation rules in the metadata,
                 and twitter bootstrap styles to show invalid fields.  See the breezeinput directive in directives.js -->
-                <breezeinput label="Company Name" ng-model="$selectedItem.CompanyName"></breezeinput>
-                <breezeinput label="Contact Name" ng-model="$selectedItem.ContactName"></breezeinput>
-                <breezeinput label="Contact Title" ng-model="$selectedItem.ContactTitle"></breezeinput>
-                <breezeinput label="Address" ng-model="$selectedItem.Address"></breezeinput>
-                <breezeinput label="City" ng-model="$selectedItem.City"></breezeinput>
-                <breezeinput label="Region" ng-model="$selectedItem.Region"></breezeinput>
-                <breezeinput label="Postal Code" ng-model="$selectedItem.PostalCode"></breezeinput>
-                <breezeinput label="Country" ng-model="$selectedItem.Country"></breezeinput>
-                <breezeinput label="Phone" ng-model="$selectedItem.Phone"></breezeinput>
-                <breezeinput label="Fax" ng-model="$selectedItem.Fax"></breezeinput>
+                <breezeinput label="Company Name" ng-model="$selectedRowData.CompanyName"></breezeinput>
+                <breezeinput label="Contact Name" ng-model="$selectedRowData.ContactName"></breezeinput>
+                <breezeinput label="Contact Title" ng-model="$selectedRowData.ContactTitle"></breezeinput>
+                <breezeinput label="Address" ng-model="$selectedRowData.Address"></breezeinput>
+                <breezeinput label="City" ng-model="$selectedRowData.City"></breezeinput>
+                <breezeinput label="Region" ng-model="$selectedRowData.Region"></breezeinput>
+                <breezeinput label="Postal Code" ng-model="$selectedRowData.PostalCode"></breezeinput>
+                <breezeinput label="Country" ng-model="$selectedRowData.Country"></breezeinput>
+                <breezeinput label="Phone" ng-model="$selectedRowData.Phone"></breezeinput>
+                <breezeinput label="Fax" ng-model="$selectedRowData.Fax"></breezeinput>
                 <div style="text-align: center">
-                    <button class="btn" ng-click="reset($selectedItem)">Reset Customer</button>
-                    <button class="btn" ng-click="update($selectedItem)">Save Customer</button>
+                    <button class="btn" ng-click="reset($selectedRowData)">Reset Customer</button>
+                    <button class="btn" ng-click="update($selectedRowData)">Save Customer</button>
                 </div>
             </form>
         </div>
