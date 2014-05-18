@@ -3,6 +3,7 @@
 ///<reference path='../typings/angularjs/angular.d.ts' />
 ///<reference path='../typings/breeze/breeze.d.ts' />
 'use strict';
+//#region Extensions
 //We have to update the original collection if datatables api is used to manipulate dt collection
 // in additon we fire an event before remove/add so that
 $.fn.DataTable.Api.registerPlural('rows().remove()', 'row().remove()', function (bindOneWay) {
@@ -119,41 +120,42 @@ $.fn.DataTable.Api.register('row().cell()', function (column) {
         return null;
     return this.table().cell(rIdx, cIdx);
 });
+$.fn.DataTable.Api.register('gotoLastPage()', function () {
+    var info = this.page.info();
+    var lastPageIdx = Math.ceil(info.recordsTotal / info.length) - 1;
+    if (info.page < lastPageIdx)
+        this.page(lastPageIdx);
+});
 
+//#endregion
 angular.module("dt", []).constant("dtSettings", {
     defaultDtOptions: {},
-    dtGetColumnIndexFuncs: [],
-    dtFillWatchedProperties: [],
-    dtTableCreatingCallbacks: [],
-    dtTableCreatedCallbacks: [],
-    dtColumnParsingCallbacks: []
+    dtCellCompilingActions: [],
+    dtFillWatchedPropertiesActions: [],
+    dtTableCreatingActions: [],
+    dtTableCreatedActions: [],
+    dtColumnParsingActions: []
 }).directive("dtTable", [
-    "$compile", "$parse", "dtSettings",
-    function ($compile, $parse, dtSettings) {
+    "$compile", "$parse", "$rootScope", "dtSettings",
+    function ($compile, $parse, $rootScope, dtSettings) {
         return {
             // Restricted it to A only. Thead elements are only valid inside table tag
             restrict: 'A',
+            priority: 10000,
+            scope: true,
             link: function (scope, element, attrs) {
                 var $element = angular.element(element);
                 var dataTable = null;
                 var oSettings = null;
-                var itemName = attrs.dtItemName || "item";
+                var rowDataPath = attrs.dtRowDataPath || "data";
                 var defaultOptions = dtSettings.defaultDtOptions || {};
-
-                //We only need to change page when a new item is added and will be shown on an new page
-                var gotoLastPage = function (dt) {
-                    var info = dataTable.page.info();
-                    var lastPageIdx = Math.ceil(info.recordsTotal / info.length) - 1;
-                    if (info.page < lastPageIdx)
-                        dt.page(lastPageIdx);
-                };
                 var inputOptions = !!attrs.dtOptions ? scope.$eval(attrs.dtOptions) : {};
                 var dtOptionsAttrData = !!inputOptions.data ? inputOptions.data : null;
                 var dtDataAttrData = !!attrs.dtData ? scope.$eval(attrs.dtData) : null;
                 inputOptions.data = null; //we dont want to deep clone data
 
                 //Merge options
-                var options = $.extend(true, {}, defaultOptions, inputOptions);
+                var options = $.extend(true, {}, defaultOptions, inputOptions, { rowDataPath: rowDataPath });
 
                 //Copy the array reference to datatables init options (dt-data has higher priority than data prop from dt-options)
                 if (!!dtDataAttrData)
@@ -181,10 +183,10 @@ angular.module("dt", []).constant("dtSettings", {
                         defaultContent: elem.attr('dt-def-content')
                     };
 
-                    angular.forEach(dtSettings.dtColumnParsingCallbacks, function (fn) {
+                    angular.forEach(dtSettings.dtColumnParsingActions, function (fn) {
                         if (!angular.isFunction(fn))
                             return;
-                        fn(elem, column, explicitColumns, options, $element, scope, attrs, $compile);
+                        fn(elem, column, explicitColumns, options, $element, scope, attrs, $compile, $rootScope);
                     });
 
                     explicitColumns.push(column);
@@ -223,7 +225,7 @@ angular.module("dt", []).constant("dtSettings", {
                                     var colOpts = columns[idx];
                                     if (!!colOpts.expressionFn) {
                                         var arg = {};
-                                        arg[itemName] = oData;
+                                        arg[rowDataPath] = oData;
                                         return colOpts.expressionFn(arg);
                                     }
                                     return innerData;
@@ -251,7 +253,8 @@ angular.module("dt", []).constant("dtSettings", {
                     var oData = oSettings.aoData[dataIndex];
                     var elem = angular.element(node);
                     var rowScope = scope.$new();
-                    rowScope[itemName] = rowData;
+                    node._DT_Scope = rowScope;
+                    rowScope[rowDataPath] = rowData;
 
                     //Define property for index so we dont have to take care of modifying it each time a row is deleted
                     Object.defineProperty(rowScope, "$rowIndex", {
@@ -260,70 +263,72 @@ angular.module("dt", []).constant("dtSettings", {
                             return angular.isNumber(idx) ? idx : null;
                         }
                     });
-                    Object.defineProperty(rowScope, "$first", {
+                    Object.defineProperty(rowScope, "$firstRow", {
                         get: function () {
                             return this.$rowIndex === 0;
                         }
                     });
-                    Object.defineProperty(rowScope, "$last", {
+                    Object.defineProperty(rowScope, "$lastRow", {
                         get: function () {
                             return this.$rowIndex === (api.page.info().recordsTotal - 1);
                         }
                     });
-                    Object.defineProperty(rowScope, "$middle", {
+                    Object.defineProperty(rowScope, "$middleRow", {
                         get: function () {
                             return !(this.$first || this.$last);
                         }
                     });
-                    Object.defineProperty(rowScope, "$odd", {
+                    Object.defineProperty(rowScope, "$oddRow", {
                         get: function () {
                             return !(this.$even = (this.$rowIndex & 1) === 0);
                         }
                     });
                     angular.forEach(oData.anCells, function (td, idx) {
                         var $td = angular.element(td);
-                        var oColumn = oSettings.aoColumns[idx];
+                        var colOpts = oSettings.aoColumns[idx];
 
                         //Get column index
-                        var colIdx = idx;
                         var cellScope = rowScope.$new();
+                        td._DT_Scope = cellScope;
+                        cellScope.cellNode = td;
+
                         Object.defineProperty(cellScope, "$cellIndex", {
                             get: function () {
-                                return oSettings.aoColumns.indexOf(oColumn);
+                                return oSettings.aoColumns.indexOf(colOpts);
                             }
                         });
 
-                        angular.forEach(dtSettings.dtGetColumnIndexFuncs, function (fn) {
-                            if (!angular.isFunction(fn))
-                                return;
-                            colIdx = fn(options, api, columns, colIdx);
-                        });
-                        var colOpts = columns[colIdx];
-
-                        if (colOpts.data != null) {
-                            $td.attr('ng-bind', itemName + '.' + colOpts.data);
-                        } else if (colOpts.template != null) {
+                        if (colOpts.template != null) {
                             var tpl = $(colOpts.template).clone().removeAttr('ng-non-bindable').show();
                             $td.html(tpl);
                         } else if (colOpts.expression != null && angular.isString(colOpts.expression)) {
                             $td.attr('ng-bind', colOpts.expression);
+                        } else if (colOpts.data != null) {
+                            $td.attr('ng-bind', rowDataPath + '.' + colOpts.data);
                         } else if (colOpts.defaultContent != "") {
                             $td.html(colOpts.defaultContent);
                         }
-                        $compile($td)(cellScope); //We have to bind each td (not tr) because of detached cells.
+
+                        angular.forEach(dtSettings.dtCellCompilingActions, function (fn) {
+                            if (!angular.isFunction(fn))
+                                return;
+                            fn($td, colOpts, cellScope, rowData, rowDataPath, options, $element, scope);
+                        });
+
+                        $compile($td)(cellScope); //We have to bind each td because of detached cells.
                     });
                     $compile(elem)(rowScope);
                     if (angular.isFunction(origCreatedRow))
                         origCreatedRow(node, rowData, dataIndex);
 
                     var propNames = Object.keys(rowData);
-                    angular.forEach(columns, function (col) {
-                        if (col.data == null || propNames.indexOf(col.data) >= 0)
+                    angular.forEach(oSettings.aoColumns, function (col) {
+                        if (col.mData == null || propNames.indexOf(col.mData) >= 0)
                             return;
-                        propNames.push(col.data);
+                        propNames.push(col.mData);
                     });
 
-                    angular.forEach(dtSettings.dtFillWatchedProperties, function (fn) {
+                    angular.forEach(dtSettings.dtFillWatchedPropertiesActions, function (fn) {
                         if (!angular.isFunction(fn))
                             return;
                         fn(propNames, rowData, options);
@@ -333,7 +338,7 @@ angular.module("dt", []).constant("dtSettings", {
                     if (options.serverSide != true) {
                         angular.forEach(propNames, function (propName) {
                             //If row data is changed we have to invalidate dt row
-                            rowScope.$watch(itemName + '.' + propName, function () {
+                            rowScope.$watch(rowDataPath + '.' + propName, function () {
                                 api.row(node).invalidate();
                             }, false);
                         });
@@ -343,17 +348,16 @@ angular.module("dt", []).constant("dtSettings", {
                 //Wrap custom drawCallback
                 var origDrawCallback = options.drawCallback;
                 options.drawCallback = function (settings) {
-                    var tblScope = $element.scope();
-                    if (settings.bInitialised === true && !tblScope.$$phase)
-                        tblScope.$apply();
+                    if (settings.bInitialised === true && !scope.$$phase)
+                        scope.$digest();
                     if (angular.isFunction(origDrawCallback))
                         origDrawCallback(settings);
                 };
 
-                angular.forEach(dtSettings.dtTableCreatingCallbacks, function (fn) {
+                angular.forEach(dtSettings.dtTableCreatingActions, function (fn) {
                     if (!angular.isFunction(fn))
                         return;
-                    fn($element, options, scope, attrs, $compile);
+                    fn($element, options, scope, attrs, $compile, $rootScope);
                 });
 
                 // Initialize datatables
@@ -363,13 +367,25 @@ angular.module("dt", []).constant("dtSettings", {
                 oSettings._rowsRemoved = oSettings._rowsRemoved || [];
                 oSettings.oInit.data = oSettings.oInit.aoData = options.data; //set init data to be the same as binding collection
 
-                if (!!attrs.dtTable)
-                    scope[attrs.dtTable] = dataTable;
+                //Copy the custom column parameters to the aoColumns
+                angular.forEach(oSettings.aoColumns, function (oCol, idx) {
+                    var origIdx = oCol._ColReorder_iOrigCol;
+                    origIdx = origIdx == null ? idx : origIdx;
+                    var col = columns[origIdx];
+                    angular.forEach(col, function (val, key) {
+                        if (!!oCol[key] || val === undefined)
+                            return;
+                        oCol[key] = val;
+                    });
+                });
 
-                angular.forEach(dtSettings.dtTableCreatedCallbacks, function (fn) {
+                if (!!attrs.dtTable)
+                    scope.$parent[attrs.dtTable] = dataTable;
+
+                angular.forEach(dtSettings.dtTableCreatedActions, function (fn) {
                     if (!angular.isFunction(fn))
                         return;
-                    fn(dataTable, $element, options, scope, attrs, $compile);
+                    fn(dataTable, $element, options, scope, attrs, $compile, $rootScope);
                 });
 
                 if (!attrs.dtData)
@@ -388,10 +404,10 @@ angular.module("dt", []).constant("dtSettings", {
                     var rowsRemoved = false;
                     var added = [];
                     var removed = [];
-                    if (newValue.length > oldValue.length) {
+                    if (oldValue == null || newValue.length > oldValue.length) {
                         //Find added items
                         angular.forEach(newValue, function (val) {
-                            if (-1 === oldValue.indexOf(val))
+                            if (oldValue == null || -1 === oldValue.indexOf(val))
                                 added.push(val);
                         });
                     } else if (newValue.length < oldValue.length) {
@@ -449,7 +465,7 @@ angular.module("dt", []).constant("dtSettings", {
 
                     if (rowsRemoved || rowsAdded) {
                         if (rowsAdded)
-                            gotoLastPage(dataTable);
+                            dataTable.gotoLastPage(); //We only need to change page when a new item is added and will be shown on an new page
                         dataTable.draw(false);
                     }
                 });

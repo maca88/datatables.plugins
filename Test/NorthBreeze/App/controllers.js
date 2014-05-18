@@ -69,13 +69,18 @@ app.controller('CustomerCtrl', ['$scope', function ($scope) {
                     throw error;
                 });
         },
-        breeze: {
+        breezeRemote: {
             query: app.dataservice.getCustomersQuery(),
             entityName: "Customer",
             projectOnlyTableColumns: false //If true then server results will be plain objects (not breeze.Entity)
         },
         order: [],
+        tableTools: {
+            "sRowSelect": "single",
+            "sSwfPath": "libs/datatables/extensions/TableTools/swf/copy_csv_xls_pdf.swf",
+        },
         dom: "<'row'<'col-xs-6'l><'col-xs-6'f>r>" +
+        "T" + //TableTools
         "D" + //RowDetails
         "C" + //ColVis
         "t" +

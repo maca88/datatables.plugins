@@ -87,6 +87,13 @@ namespace NorthBreeze.Controllers
         }
 
         [HttpGet]
+        public IQueryable<OrderDetail> OrderDetails()
+        {
+            var query = northwind.OrderDetails;
+            return query;
+        }
+
+        [HttpGet]
         public IQueryable<Employee> Employees()
         {
             return northwind.Employees;

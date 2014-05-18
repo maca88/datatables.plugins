@@ -42,7 +42,12 @@
   </PropertyGroup>
   <ItemGroup>
     <Content Include="App\browserCtrl.js" />
+    <Content Include="App\employeeEditorCtrl.js" />
     <Content Include="App\views\browsers.html" />
+    <Content Include="App\views\employeeEditor.html" />
+    <Content Include="Content\font-awesome.css" />
+    <Content Include="Content\font-awesome.min.css" />
+    <Content Include="fonts\fontawesome-webfont.svg" />
     <Content Include="libs\angular-route.js" />
     <Content Include="libs\bootstrap\css\bootstrap-theme.css.map" />
     <Content Include="libs\bootstrap\css\bootstrap.css.map" />
@@ -54,6 +59,10 @@
     <Content Include="libs\datatables\extensions\TableTools\images\psd\file_types.psd" />
     <Content Include="libs\datatables\extensions\TableTools\images\psd\printer.psd" />
     <Content Include="libs\datatables\images\Sorting icons.psd" />
+    <Content Include="fonts\fontawesome-webfont.woff" />
+    <Content Include="fonts\fontawesome-webfont.ttf" />
+    <Content Include="fonts\fontawesome-webfont.eot" />
+    <Content Include="fonts\FontAwesome.otf" />
     <None Include="Properties\PublishProfiles\Debug.pubxml" />
     <None Include="Scripts\breeze.intellisense.js" />
     <Content Include="App\app.js" />
@@ -167,10 +176,13 @@
     <Content Include="Scripts\q.js" />
     <Content Include="Scripts\q.min.js" />
     <Content Include="Scripts\toastr.js" />
+    <Content Include="src\angular.dataTables.breeze.editable.js" />
     <Content Include="src\angular.dataTables.breeze.js" />
+    <Content Include="src\angular.dataTables.breeze.remote.js" />
     <Content Include="src\angular.dataTables.js" />
     <Content Include="src\angular.dataTables.rowDetails.js" />
     <Content Include="src\angular.dataTables.selectable.js" />
+    <Content Include="src\angular.dataTables.tableTools.js" />
     <Content Include="src\dataTables.breeze.entityFilter.js" />
     <Content Include="src\dataTables.remoteState.css" />
     <Content Include="src\dataTables.remoteState.js" />
@@ -267,12 +279,15 @@
     <Folder Include="libs\datatables\media\" />
   </ItemGroup>
   <ItemGroup>
+    <TypeScriptCompile Include="src\angular.dataTables.breeze.remote.ts" />
     <TypeScriptCompile Include="src\angular.dataTables.breeze.ts" />
-    <TypeScriptCompile Include="src\angular.dataTables.colReorder.ts" />
     <TypeScriptCompile Include="src\angular.dataTables.d.ts" />
+    <TypeScriptCompile Include="src\angular.dataTables.breeze.editable.ts" />
     <TypeScriptCompile Include="src\angular.dataTables.rowDetails.ts" />
     <TypeScriptCompile Include="src\angular.dataTables.selectable.ts" />
+    <TypeScriptCompile Include="src\angular.dataTables.tableTools.ts" />
     <TypeScriptCompile Include="src\angular.dataTables.ts" />
+    <Content Include="src\dataTables.breeze.editable.js" />
     <TypeScriptCompile Include="typings\angularjs\angular-animate.d.ts" />
     <TypeScriptCompile Include="typings\angularjs\angular-cookies.d.ts" />
     <TypeScriptCompile Include="typings\angularjs\angular-mocks.d.ts" />

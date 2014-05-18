@@ -2,7 +2,7 @@
 angular.module("dt").config([
     "dtSettings", function (dtSettings) {
         //We have to remove the selected row/cell if the selected cell will be removed
-        dtSettings.dtTableCreatingCallbacks.push(function ($element, options, scope, attrs, $compile) {
+        dtSettings.dtTableCreatingActions.push(function ($element, options, scope, attrs, $compile) {
             if (attrs.dtSelectable == null && options.selectable == null)
                 return;
             var tblScope = $element.scope();
@@ -16,7 +16,7 @@ angular.module("dt").config([
             };
         });
 
-        dtSettings.dtTableCreatedCallbacks.push(function (dataTable, $element, options, scope, attrs, $compile) {
+        dtSettings.dtTableCreatedActions.push(function (dataTable, $element, options, scope, attrs, $compile) {
             if (attrs.dtSelectable == null && options.selectable == null)
                 return;
             var tblScope = $element.scope();

@@ -10,6 +10,7 @@
 
     return {
         getAllCustomers: getAllCustomers,
+        getAllEmployees: getAllEmployees,
         getCustomerPage: getCustomerPage,
         getOrders: getOrders,
         createCustomer: createCustomer,
@@ -27,6 +28,13 @@
         var query = breeze.EntityQuery
                 .from("Customers")
                 .orderBy("CompanyName").take(10);
+
+        return manager.executeQuery(query);
+    }
+
+    function getAllEmployees() {
+        var query = breeze.EntityQuery
+                .from("Employees").take(10);
 
         return manager.executeQuery(query);
     }

@@ -1,12 +1,12 @@
 ﻿//RowDetails plugin
 angular.module("dt").config([
     "dtSettings", function (dtSettings) {
-        dtSettings.dtColumnParsingCallbacks.push(function (elem, column) {
+        dtSettings.dtColumnParsingActions.push(function (elem, column) {
             if (elem.attr('dt-row-detail-icon') != null) {
                 column.iconColumn = true;
             }
         });
-        dtSettings.dtTableCreatingCallbacks.push(function ($element, options, scope, attrs, $compile) {
+        dtSettings.dtTableCreatingActions.push(function ($element, options, scope, attrs, $compile) {
             //#region RowDetails
             var columns = options.columns || options.columnDefs;
 
@@ -28,14 +28,14 @@ angular.module("dt").config([
                 var tpl = $(tplSelector).clone().removeAttr('ng-non-bindable').show();
                 innerDetails.html(tpl);
                 $compile(row.child())(rowScope);
-                rowScope.$apply();
+                rowScope.$digest();
                 if (angular.isFunction(origRowDetailCreated))
                     origRowDetailCreated(row, innerDetails, detailSettings);
             };
             var origRowDetailClosed = options.rowDetailClosed;
             options.rowDetailClosed = function (row) {
                 var rowScope = angular.element(row.node()).scope();
-                rowScope.$apply();
+                rowScope.$digest();
                 if (angular.isFunction(origRowDetailClosed))
                     origRowDetailClosed(row);
             };
@@ -43,7 +43,7 @@ angular.module("dt").config([
             var origRowDetailOpened = options.rowDetailOpened;
             options.rowDetailOpened = function (row) {
                 var rowScope = angular.element(row.node()).scope();
-                rowScope.$apply();
+                rowScope.$digest();
                 if (angular.isFunction(origRowDetailOpened))
                     origRowDetailOpened(row);
             };

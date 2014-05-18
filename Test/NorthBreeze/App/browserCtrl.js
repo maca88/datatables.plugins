@@ -86,7 +86,7 @@
         ],
         columns: [
             { iconColumn: true },
-            { data: "engine", title: "Engine" },
+            { data: "engine", title: "Engine", className: "text-right" },
             { data: "browser", title: "Browser" },
             { data: "platform", title: "Platform" },
             { data: "version", title: "Version" },
@@ -100,7 +100,13 @@
                 'class': 'row-detail-icon',
             }
         },
+        tableTools: {
+            "sRowSelect": "os",
+            "sSwfPath": "libs/datatables/extensions/TableTools/swf/copy_csv_xls_pdf.swf",
+            "aButtons": ["copy", "pdf", "select_all", "select_none"]
+        },
         dom: "<'row'<'col-xs-6'l><'col-xs-6'f>r>" +
+        "T" + //TableTools
         "D" + //RowDetails
         "C" + //ColVis
         "t" +

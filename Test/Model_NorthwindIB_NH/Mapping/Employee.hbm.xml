@@ -22,7 +22,7 @@
     <property name="PhotoPath" type="string" length="255" />
     <many-to-one name="Manager" column="`ReportsToEmployeeID`" class="Employee" />
     <property name="ReportsToEmployeeID" type="int" insert="false" update="false"/>
-    <property name="FullName" generated="always" />
+    <!--<property name="FullName" generated="always" />-->
     <!--Foreign key to Employee (Employee)-->
     <set name="DirectReports" table="`Employee`" cascade="all-delete-orphan" inverse="true">
       <key column="`ReportsToEmployeeID`" foreign-key="FK_Employee_Employee" />

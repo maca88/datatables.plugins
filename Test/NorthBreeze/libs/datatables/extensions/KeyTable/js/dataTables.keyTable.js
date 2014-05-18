@@ -384,7 +384,7 @@ KeyTable = function ( oInit )
 	 *           but that would mean that only one function of a particular type can be
 	 *           subscribed to a particular node.
 	 */
-	function _fnEventFire ( sType, x, y )
+	function _fnEventFire ( sType, x, y, event )
 	{
 		var iFired = 0;
 		var aEvents = _oaoEvents[sType];
@@ -396,7 +396,7 @@ KeyTable = function ( oInit )
 				 (aEvents[i].x === null && aEvents[i].y === null )
 			)
 			{
-				aEvents[i].fn( _fnCellFromCoords(x,y), x, y );
+			    aEvents[i].fn(_fnCellFromCoords(x, y), x, y, event);
 				iFired++;
 			}
 		}
@@ -416,7 +416,7 @@ KeyTable = function ( oInit )
 	 * Inputs:   node:nTarget - node we want to focus on
 	 *           bool:bAutoScroll - optional - should we scroll the view port to the display
 	 */
-	function _fnSetFocus( nTarget, bAutoScroll )
+	function _fnSetFocus( nTarget, bAutoScroll, event)
 	{
 		/* If node already has focus, just ignore this call */
 		if ( _nOldFocus == nTarget )
@@ -576,7 +576,7 @@ KeyTable = function ( oInit )
 		_fnCaptureKeys();
 
 		/* Fire of the focus event if there is one */
-		_fnEventFire( "focus", _iOldX, _iOldY );
+		_fnEventFire("focus", _iOldX, _iOldY, event);
 	}
 
 
@@ -624,7 +624,7 @@ KeyTable = function ( oInit )
 			nTarget = nTarget.parentNode;
 		}
 
-		_fnSetFocus( nTarget );
+		_fnSetFocus( nTarget, null, e );
 		_fnCaptureKeys();
 	}
 
@@ -818,7 +818,7 @@ KeyTable = function ( oInit )
 				return true;
 		}
 
-		_fnSetFocus( _fnCellFromCoords(x, y) );
+		_fnSetFocus( _fnCellFromCoords(x, y), null, e );
 		return false;
 	}
 
@@ -970,11 +970,22 @@ KeyTable = function ( oInit )
 	 * Returns:  array[2] int: [x, y] coords. or null if not found
 	 * Inputs:   node:nTarget - the node of interest
 	 */
-	function _fnFindDtCell( nTarget )
-	{
+	function _fnFindDtCell(nTarget) {
+	    var tr = $(nTarget).parent();
+	    if (tr.length > 0) {
+	        var rIdx = tr.get(0)._DT_RowIndex;
+	        var result;
+	        $("td", tr).each(function(cIdx) {
+	            if (this == nTarget)
+	                result = [cIdx, rIdx];
+	        });
+	        return result;
+	    }
+
 		for ( var i=0, iLen=_oDatatable.aiDisplay.length ; i<iLen ; i++ )
 		{
-			var nTr = _oDatatable.aoData[ _oDatatable.aiDisplay[i] ].nTr;
+		    var nTr = _oDatatable.aoData[_oDatatable.aiDisplay[i]].nTr;
+		    if (!nTr) continue;
 			var nTds = nTr.getElementsByTagName('td');
 			for ( var j=0, jLen=nTds.length ; j<jLen ; j++ )
 			{
@@ -1061,7 +1072,7 @@ KeyTable = function ( oInit )
 			nDiv.appendChild(_nInput);
 			oInit.table.parentNode.insertBefore( nDiv, oInit.table.nextSibling );
 
-			$(_nInput).focus( function () {
+			$(_nInput).focus( function (e) {
 				/* See if we want to 'tab into' the table or out */
 				if ( !_bInputFocused )
 				{
@@ -1069,11 +1080,11 @@ KeyTable = function ( oInit )
 					_bInputFocused = false;
 					if ( typeof oInit.focus.nodeName != "undefined" )
 					{
-						_fnSetFocus( oInit.focus, oInit.initScroll );
+						_fnSetFocus( oInit.focus, oInit.initScroll, e );
 					}
 					else
 					{
-						_fnSetFocus( _fnCellFromCoords( oInit.focus[0], oInit.focus[1]), oInit.initScroll );
+						_fnSetFocus( _fnCellFromCoords( oInit.focus[0], oInit.focus[1]), oInit.initScroll, e );
 					}
 
 					/* Need to interup the thread for this to work */
@@ -1091,7 +1102,7 @@ KeyTable = function ( oInit )
 			}
 			else
 			{
-				_fnSetFocus( _fnCellFromCoords( oInit.focus[0], oInit.focus[1]), oInit.initScroll );
+			    _fnSetFocus(_fnCellFromCoords(oInit.focus[0], oInit.focus[1]), oInit.initScroll);
 			}
 			_fnCaptureKeys();
 		}

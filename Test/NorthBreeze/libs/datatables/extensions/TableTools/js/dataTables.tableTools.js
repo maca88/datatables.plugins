@@ -1552,7 +1552,7 @@ var TableTools;
 
                     // Post-selection function
                     if (this.s.select.postSelected !== null) {
-                        this.s.select.postSelected.call(this, anSelected);
+                        this.s.select.postSelected.call(this, anSelected, src, e);
                     }
 
                     TableTools._fnEventDispatch(this, 'select', anSelected, true);
@@ -1594,7 +1594,7 @@ var TableTools;
 
                     // Post-deselection function
                     if (this.s.select.postDeselected !== null) {
-                        this.s.select.postDeselected.call(this, anDeselectedTrs);
+                        this.s.select.postDeselected.call(this, anDeselectedTrs, src, e);
                     }
 
                     TableTools._fnEventDispatch(this, 'select', anDeselectedTrs, false);

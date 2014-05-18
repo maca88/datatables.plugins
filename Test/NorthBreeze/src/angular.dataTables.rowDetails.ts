@@ -2,12 +2,12 @@
 angular.module("dt")
     .config([
         "dtSettings", (dtSettings) => {
-            dtSettings.dtColumnParsingCallbacks.push((elem, column) => {
+            dtSettings.dtColumnParsingActions.push((elem, column) => {
                 if (elem.attr('dt-row-detail-icon') != null) {
                     column.iconColumn = true;
                 }
             });
-            dtSettings.dtTableCreatingCallbacks.push(($element, options, scope, attrs, $compile) => {
+            dtSettings.dtTableCreatingActions.push(($element, options, scope, attrs, $compile) => {
                 //#region RowDetails
 
                 var columns = options.columns || options.columnDefs;
@@ -27,14 +27,14 @@ angular.module("dt")
                     var tpl = $(tplSelector).clone().removeAttr('ng-non-bindable').show();
                     innerDetails.html(tpl);
                     $compile(row.child())(rowScope);
-                    rowScope.$apply();
+                    rowScope.$digest();
                     if (angular.isFunction(origRowDetailCreated))
                         origRowDetailCreated(row, innerDetails, detailSettings);
                 };
                 var origRowDetailClosed = options.rowDetailClosed;
                 options.rowDetailClosed = (row) => {
                     var rowScope = angular.element(row.node()).scope();
-                    rowScope.$apply();
+                    rowScope.$digest();
                     if (angular.isFunction(origRowDetailClosed))
                         origRowDetailClosed(row);
                 };
@@ -42,7 +42,7 @@ angular.module("dt")
                 var origRowDetailOpened = options.rowDetailOpened;
                 options.rowDetailOpened = (row) => {
                     var rowScope = angular.element(row.node()).scope();
-                    rowScope.$apply();
+                    rowScope.$digest();
                     if (angular.isFunction(origRowDetailOpened))
                         origRowDetailOpened(row);
                 };

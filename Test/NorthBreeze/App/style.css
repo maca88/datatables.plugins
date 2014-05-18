@@ -30,3 +30,16 @@ div.dt-feature {
 div.dt-entity-filter label {
     margin-right: 10px;
 }
+
+table.dataTable tr td.checkbox {
+    text-align: center;
+}
+ 
+table.dataTable tr td.checkbox:before {
+    content: "\f096"; /* fa-square-o */
+    font-family: FontAwesome;
+}
+ 
+table.dataTable tr.selected td.checkbox:before {
+    content: "\f046"; /* fa-check-square-o */
+}

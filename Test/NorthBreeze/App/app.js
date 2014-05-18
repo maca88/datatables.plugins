@@ -6,9 +6,10 @@ var app = angular.module('NorthBreeze', ['ngRoute', 'dt']);
 // Define route objects, which are used by the routeProvider (for loading ng-view) and by the RouteCtrl (for displaying navigation bar)
 app.routes = [
     { path: '/', name: 'Home', templateUrl: 'App/views/home.html', controller: 'HomeCtrl' },
-    { path: '/customers', name: 'Customers (Datatables[RowDetails, Selectable, Breeze])', templateUrl: 'App/views/customers.html', controller: 'CustomerCtrl' },
-    { path: '/browsers', name: 'Browsers (Datatables[RowDetails, Selectable])', templateUrl: 'App/views/browsers.html', controller: 'BrowserCtrl' },
-    { path: '/orders', name: 'Orders[EntityFilter, RemoteState]', templateUrl: 'App/views/orders.html', controller: 'OrderCtrl' }
+    { path: '/customers', name: 'Customers[RowDetails, TableTools, BreezeRemote]', templateUrl: 'App/views/customers.html', controller: 'CustomerCtrl' },
+    { path: '/browsers', name: 'Browsers[RowDetails, TableTools]', templateUrl: 'App/views/browsers.html', controller: 'BrowserCtrl' },
+    { path: '/orders', name: 'Orders[EntityFilter, RemoteState]', templateUrl: 'App/views/orders.html', controller: 'OrderCtrl' },
+    { path: '/employee-editor', name: 'Employee[BreezeEditable]', templateUrl: 'App/views/employeeEditor.html', controller: 'EmployeeEditorCtrl' }
 ];
 
 // Configure the routeProvider, which displays a view in the ng-view div in index.html, based on the URI path (e.g. /customers)

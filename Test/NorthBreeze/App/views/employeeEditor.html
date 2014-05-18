@@ -1,0 +1,41 @@
+﻿<div>
+    <h3>Order</h3>
+    <div style="text-align: center">
+        <button class="btn" ng-click="reset(dtTable.selectedRow.data)">Reset Customer</button>
+        <button class="btn" ng-click="update(dtTable.selectedRow.data)">Save Customer</button>
+    </div>
+    <form class="form-horizontal">
+        <!-- We do field-level validation based on the validation rules in the metadata,
+            and twitter bootstrap styles to show invalid fields.  See the breezeinput directive in directives.js -->
+        <breezeinput label="FirstName" ng-model="employee.FirstName"></breezeinput>
+        <breezeinput label="LastName" ng-model="employee.LastName"></breezeinput>
+        <breezeinput label="BirthDate" ng-model="employee.BirthDate" type="date"></breezeinput>
+        <breezeinput label="Address" ng-model="employee.Address"></breezeinput>
+        <div class="form-group">
+            <label class="col-sm-4">State</label>
+            <label class="col-sm-8" ng-bind="employee.entityAspect.entityState.name"></label>
+        </div>
+        <table class="table table-bordered" dt-table dt-data="employee.Orders" dt-options="options">
+            <thead>
+                <tr>
+                    <th dt-class="checkbox" dt-orderable="false" dt-searchable="false" dt-editable="false"></th>
+                    <th dt-data="OrderID" dt-editable="false">Id</th>
+                    <th dt-data="Freight" dt-expression="data.Freight | currency">Freight</th>
+                    <th dt-data="OrderDate" dt-expression="data.OrderDate | date:'shortDate'">Order Date</th>
+                    <th dt-data="RequiredDate" dt-expression="data.RequiredDate | date:'shortDate'">Required Date</th>
+                    <th dt-data="ShippedDate" dt-expression="data.ShippedDate | date:'shortDate'">Shipped Date</th>
+                    <th dt-data="ShipName">Name</th>
+                    <th dt-data="ShipAddress">Address</th>
+                    <th dt-data="ShipCity">City</th>
+                    <th dt-data="ShipRegion">Region</th>
+                    <th dt-data="ShipPostalCode">PostCode</th>
+                    <th dt-data="ShipCountry">Country</th>
+                    <th dt-data="entityAspect.entityState.name" dt-editable="false">Entity state</th>
+                </tr>
+            </thead>
+        </table>
+
+</form>
+
+
+</div>
