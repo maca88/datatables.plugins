@@ -13,7 +13,7 @@
     };
 
     var idx = 0;
-    var itemCount = !!getUrlParameter('itemcount') ? parseInt(getUrlParameter('itemcount')) : 100;
+    var itemCount = !!getUrlParameter('itemcount') ? parseInt(getUrlParameter('itemcount')) : 1000;
     var getNewItem = function () {
         var item = {
             "engine": "Trident" + idx,
@@ -34,17 +34,29 @@
         $scope.dtTable.row.add(getNewItem());
     };
 
-    $scope.removeItem = function (rowIndex) {
-        $scope.data.splice(rowIndex, 1);
+    $scope.removeItem = function (item) {
+        $scope.data.splice(item.index, 1);
     };
 
-    $scope.removeItemViaDt = function (rowIndex) {
-        $scope.dtTable.row(rowIndex).remove();
+    var eIdx = 30;
+    $scope.editRandomItem = function () {
+        $scope.data[eIdx].engine = "1" + $scope.data[eIdx].engine;
+        $scope.dtTable.row(eIdx).invalidate(); //manual invalidation for items that has not been rendered yet
+        eIdx++;
+    };
+
+    $scope.editItem = function (item) {
+        $scope.data[item.index].engine = "1" + $scope.data[item.index].engine;
+    };
+
+    $scope.removeItemViaDt = function (item) {
+        $scope.dtTable.row(item.index).remove();
     };
 
     $scope.canRemoveItem = function () {
-        return angular.isNumber($scope.$selectedRowIndex);
+        return $scope.dtTable.selectedRows.count > 0;
     }
+
 
     var data = [];
     for (var i = 0; i < itemCount; i++) {

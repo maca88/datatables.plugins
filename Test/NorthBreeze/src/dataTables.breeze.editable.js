@@ -10,12 +10,13 @@
                 .addClass("form-control dt-editor-control")
                 .on('keydown', function (e) {
                     switch (e.keyCode) {
+                        case 38: /* up arrow */
+                        case 40: /* down arrow */
                         case 37: /* left arrow */
-                            e.stopPropagation(); //not supported
-                            break;
                         case 39: /* right arrow */
                             e.stopPropagation(); //not supported
                             break;
+                        
                     }
                 });
             if(manualBinding)

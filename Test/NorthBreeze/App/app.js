@@ -9,7 +9,8 @@ app.routes = [
     { path: '/customers', name: 'Customers[RowDetails, TableTools, BreezeRemote]', templateUrl: 'App/views/customers.html', controller: 'CustomerCtrl' },
     { path: '/browsers', name: 'Browsers[RowDetails, TableTools]', templateUrl: 'App/views/browsers.html', controller: 'BrowserCtrl' },
     { path: '/orders', name: 'Orders[EntityFilter, RemoteState]', templateUrl: 'App/views/orders.html', controller: 'OrderCtrl' },
-    { path: '/employee-editor', name: 'Employee[BreezeEditable]', templateUrl: 'App/views/employeeEditor.html', controller: 'EmployeeEditorCtrl' }
+    { path: '/employee-editor', name: 'Employee[BreezeEditable]', templateUrl: 'App/views/employeeEditor.html', controller: 'EmployeeEditorCtrl' },
+    { path: '/performance', name: 'PerformanceTest', templateUrl: 'App/views/performance.html', controller: 'PerformanceCtrl' }
 ];
 
 // Configure the routeProvider, which displays a view in the ng-view div in index.html, based on the URI path (e.g. /customers)

@@ -7,9 +7,23 @@ angular.module("dt").config([
                 return;
             var tblScope = $element.scope();
             var selectedRows = {};
+
+            //Create properties that are not enumerable so that Object.keys will not find them
+            Object.defineProperty(selectedRows, "first", {
+                get: function () {
+                    if (Object.keys(this).length === 0)
+                        return null;
+                    return this[Object.keys(this)[0]];
+                }
+            });
+            Object.defineProperty(selectedRows, "count", {
+                get: function () {
+                    return Object.keys(this).length;
+                }
+            });
+
             var dtProps = {
-                selectedRows: selectedRows,
-                selectedRow: null
+                selectedRows: selectedRows
             };
             $element.data('DT_Properties', dtProps);
 
@@ -42,6 +56,7 @@ angular.module("dt").config([
                         dtRow = aoData == src ? api.row(i) : api.row(obj); //src will be equal aoData on selectAll
                         idx = dtRow.index();
                         selectedRows[idx] = {
+                            index: idx,
                             data: dtRow.data(),
                             node: dtRow.node()
                         };
@@ -49,16 +64,17 @@ angular.module("dt").config([
                 } else if (angular.isElement(src)) {
                     dtRow = api.row(src);
                     idx = dtRow.index();
-
-                    if (selectType == "single") {
-                        dtProps.selectedRow = src._DT_Scope; //Scope will be always defined so we can use it
+                    selectedRows[idx] = {
+                        index: idx,
+                        data: dtRow.data(),
+                        node: dtRow.node()
+                    };
+                    /*
+                    if (selectType == "single") { //if single fill selectedRow otherwise selectedRows
+                    dtProps.selectedRow = src._DT_Scope; //Scope will be always defined so we can use it
                     } else {
-                        selectedRows[idx] = {
-                            data: dtRow.data(),
-                            node: dtRow.node(),
-                            selectionOrder: Object.keys(selectedRows).length
-                        };
-                    }
+                    
+                    }*/
                 }
 
                 //we have to digest the parent table scope in order to refresh bindings that are related to datatable instance
@@ -83,10 +99,12 @@ angular.module("dt").config([
                     } else
                         toRemove = src.slice(); //Clone the array of indexes
                 } else if (angular.isElement(src)) {
+                    toRemove.push(src._DT_RowIndex);
+                    /*
                     if (selectType == "single") {
-                        dtProps.selectedRow = null;
-                    } else
-                        toRemove.push(src._DT_RowIndex);
+                    dtProps.selectedRow = null;
+                    }
+                    else*/
                 }
 
                 while (toRemove.length > 0) {
@@ -119,11 +137,12 @@ angular.module("dt").config([
                     return angular.element(this.table().node()).data("DT_Properties").selectedRows;
                 }
             });
+            /*
             Object.defineProperty(dataTable, "selectedRow", {
-                get: function () {
-                    return angular.element(this.table().node()).data("DT_Properties").selectedRow;
-                }
-            });
+            get: function () {
+            return angular.element(this.table().node()).data("DT_Properties").selectedRow;
+            }
+            });*/
         });
     }]);
 //# sourceMappingURL=angular.dataTables.tableTools.js.map

@@ -864,10 +864,12 @@ KeyTable = function ( oInit )
 	 */
 	function _fnCellFromCoords( x, y )
 	{
-		if ( _oDatatable )
-		{
-			if ( typeof _oDatatable.aoData[ _oDatatable.aiDisplay[ y ] ] != 'undefined' )
-			{
+		if ( _oDatatable ) {
+		    var oData = _oDatatable.aoData[_oDatatable.aiDisplay[y]];
+		    if (oData != null) {
+                if (!oData.nTr) {
+                    _oDatatable.oApi._fnCreateTr(_oDatatable, y);
+                }
 				return _oDatatable.aoData[ _oDatatable.aiDisplay[ y ] ].nTr.getElementsByTagName('td')[x];
 			}
 			else
@@ -971,30 +973,17 @@ KeyTable = function ( oInit )
 	 * Inputs:   node:nTarget - the node of interest
 	 */
 	function _fnFindDtCell(nTarget) {
-	    var tr = $(nTarget).parent();
-	    if (tr.length > 0) {
-	        var rIdx = tr.get(0)._DT_RowIndex;
-	        var result;
-	        $("td", tr).each(function(cIdx) {
-	            if (this == nTarget)
-	                result = [cIdx, rIdx];
-	        });
-	        return result;
+	    var nTr = nTarget.parentNode;
+	    if (nTr != null) {
+	        var nTds = nTr.getElementsByTagName('td');
+	        for ( var j=0, jLen=nTds.length ; j<jLen ; j++ )
+	        {
+	            if ( nTds[j] == nTarget )
+	            {
+	                return [j, nTr._DT_RowIndex];
+	            }
+	        }
 	    }
-
-		for ( var i=0, iLen=_oDatatable.aiDisplay.length ; i<iLen ; i++ )
-		{
-		    var nTr = _oDatatable.aoData[_oDatatable.aiDisplay[i]].nTr;
-		    if (!nTr) continue;
-			var nTds = nTr.getElementsByTagName('td');
-			for ( var j=0, jLen=nTds.length ; j<jLen ; j++ )
-			{
-				if ( nTds[j] == nTarget )
-				{
-					return [ j, i ];
-				}
-			}
-		}
 		return null;
 	}
 

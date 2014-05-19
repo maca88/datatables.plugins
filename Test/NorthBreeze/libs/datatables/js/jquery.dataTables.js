@@ -578,8 +578,8 @@
 	 *  @param {object} oOptions object with sType, bVisible and bSearchable etc
 	 *  @memberof DataTable#oApi
 	 */
-	function _fnColumnOptions( oSettings, iCol, oOptions )
-	{
+	function _fnColumnOptions( oSettings, iCol, oOptions ) {
+
 		var oCol = oSettings.aoColumns[ iCol ];
 		var oClasses = oSettings.oClasses;
 		var th = $(oCol.nTh);
@@ -1981,15 +1981,18 @@
 	 */
 	function _fnReDraw( settings, holdPosition )
 	{
+	    
+	    
 		var
 			features = settings.oFeatures,
 			sort     = features.bSort,
 			filter   = features.bFilter;
-	
+		
 		if ( sort ) {
 			_fnSort( settings );
 		}
-	
+		console.time("Test");
+		
 		if ( filter ) {
 			_fnFilterComplete( settings, settings.oPreviousSearch );
 		}
@@ -1997,11 +2000,11 @@
 			// No filtering, so we want to just use the display master
 			settings.aiDisplay = settings.aiDisplayMaster.slice();
 		}
-	
+		console.timeEnd("Test");
 		if ( holdPosition !== true ) {
 			settings._iDisplayStart = 0;
 		}
-	
+		
 		_fnDraw( settings );
 	}
 	
@@ -3078,7 +3081,8 @@
 			setTimeout( function(){ _fnInitialise( settings ); }, 200 );
 			return;
 		}
-	
+		
+		
 		/* Show the display HTML options */
 		_fnAddOptionsHtml( settings );
 	
@@ -3102,13 +3106,13 @@
 				column.nTh.style.width = _fnStringToCss( column.sWidth );
 			}
 		}
-	
+		
 		// If there is default sorting required - let's do it. The sort function
 		// will do the drawing for us. Otherwise we draw the table regardless of the
 		// Ajax source - this allows the table to look initialised for Ajax sourcing
 		// data (show 'loading' message possibly)
-		_fnReDraw( settings );
-	
+		_fnReDraw(settings);
+		
 		// Server-side processing init complete is done by _fnAjaxUpdateDraw
 		var dataSrc = _fnDataSource( settings );
 		if ( dataSrc != 'ssp' ) {
@@ -5834,7 +5838,7 @@
 				this[fn] = _fnExternApiFunc(fn);
 			}
 		}
-
+        
 		this.each(function() {
 			// For each initialisation we want to give it a clean initialisation
 			// object that can be bashed around
@@ -5913,6 +5917,10 @@
 				this.id = sId;
 			}
 			
+			var tmpData = oInit.data;
+			var tmpaaData = oInit.aaData;
+			delete oInit["data"];
+			delete oInit["aaData"];
 			/* Create the settings object for this table and set some of the default parameters */
 			var oSettings = $.extend( true, {}, DataTable.models.oSettings, {
 				"nTable":        this,
@@ -5921,12 +5929,22 @@
 				"sDestroyWidth": $(this)[0].style.width,
 				"sInstance":     sId,
 				"sTableId":      sId
-			} );
+			});
+		    if (!!tmpData) {
+		        oSettings.oInit.data = tmpData;
+		        oInit.data = tmpData;
+		    }
+		    if (!!tmpaaData) {
+		        oSettings.oInit.aaData = tmpaaData;
+		        oInit.aaData = tmpaaData;
+		    }
+		        
 			allSettings.push( oSettings );
 			
 			// Need to add the instance after the instance after the settings object has been added
 			// to the settings array, so we can self reference the table instance if more than one
-			oSettings.oInstance = (_that.length===1) ? _that : $(this).dataTable();
+			oSettings.oInstance = (_that.length === 1) ? _that : $(this).dataTable();
+			
 			
 			// Backwards compatibility, before we apply all the defaults
 			_fnCompatOpts( oInit );
@@ -6270,6 +6288,7 @@
 				_fnDetectHeader( oSettings.aoFooter, oSettings.nTFoot );
 			}
 			
+			
 			/* Check if there is data passing into the constructor */
 			if ( oInit.aaData )
 			{
@@ -6287,6 +6306,7 @@
 				_fnAddTr( oSettings, $(oSettings.nTBody).children('tr') );
 			}
 			
+			
 			/* Copy the data index array */
 			oSettings.aiDisplay = oSettings.aiDisplayMaster.slice();
 			
@@ -6300,8 +6320,10 @@
 			{
 				_fnInitialise( oSettings );
 			}
+			
 		} );
 		_that = null;
+		
 		return this;
 	};
 

@@ -34,10 +34,6 @@
         }
     };
 
-    $.fn.DataTable.Api.register('settings().hasFeature()', function (c) {
-        return this[0].aanFeatures[c] != null;
-    });
-
     $.fn.DataTable.ext.feature.push({
         "fnInit": function (dtSettings) {
             var dtInstance = dtSettings.oInstance;
@@ -88,9 +84,10 @@
 
     $.fn.DataTable.ext.search.push(
         function (dtSettings, data, dataIndex) {
+            if (dtSettings.aanFeatures['Y'] === undefined) return true;
             var dtInstance = dtSettings.oInstance;
             var api = dtInstance.api();
-            if (!api.settings().hasFeature('Y') || dtSettings.oInit.serverSide) return true;
+            if (dtSettings.oInit.serverSide) return true;
             var rowData = api.row(dataIndex).data();
             if (rowData.entityAspect == null || rowData.entityAspect.entityState == null) return true;
 

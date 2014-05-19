@@ -124,6 +124,13 @@ $.fn.DataTable.Api.register('gotoLastPage()', function () {
     if (info.page < lastPageIdx)
         this.page(lastPageIdx);
 });
+$.fn.DataTable.Api.register('digestDisplayedPage()', function () {
+    //Digest only rendered rows
+    $("#" + this.table().node().id + " > tbody > tr").each(function(tr) {
+        var rowScope = angular.element(this).scope();
+        rowScope.$digest();
+    });
+});
 //#endregion
 
 angular.module("dt", [])
@@ -137,15 +144,19 @@ angular.module("dt", [])
     })
     .directive("dtTable", ["$compile", "$parse", "$rootScope", "dtSettings",
         ($compile, $parse, $rootScope, dtSettings) => {
-            return {
-                // Restricted it to A only. Thead elements are only valid inside table tag
-                restrict: 'A',
+            return { 
+                restrict: 'A', // Restricted it to A only. Thead elements are only valid inside table tag
                 priority: 10000,
                 scope: true, //whitin new scope
                 link: (scope, element, attrs) => { //postLink
                     var $element = angular.element(element);
                     var dataTable: any = null;
                     var oSettings = null;
+                    var watchedProperties = [];
+                    var watchedPropertiesFilled = false;
+                    var dtRowWatcher = attrs.dtRowWatcher === "rendered" ? "rendered" : "none"; ///default do not watch rows
+                    var dtDrawDigest = !attrs.dtDrawDigest ? true : (attrs.dtDrawDigest == "true");
+                    var debug = attrs.dtDebug == "true";
                     var rowDataPath = attrs.dtRowDataPath || "data";
                     var defaultOptions: any = dtSettings.defaultDtOptions || {};
                     var inputOptions = !!attrs.dtOptions ? scope.$eval(attrs.dtOptions) : {};
@@ -159,7 +170,7 @@ angular.module("dt", [])
                         options.data = dtDataAttrData;
                     else if (!!dtOptionsAttrData)
                         options.data = dtOptionsAttrData;
-
+                    var collPath = !!attrs.dtData ? attrs.dtData : (!!inputOptions.data ? attrs.dtOptions + '.data' : null);
                     if (!!attrs.dtWidth)
                         $element.css('width', attrs.dtWidth);
 
@@ -192,6 +203,54 @@ angular.module("dt", [])
                         options.columns = explicitColumns;
                     }
 
+                    //#region Private functions
+
+                    var fillWatchedProperties = (row) => {
+                        if (watchedPropertiesFilled) return; //do it only once
+                        //watchedProperties = Object.keys(row);
+                        angular.forEach(oSettings.aoColumns, col => { //watch only properties that are binded to the table
+                            if (angular.isNumber(col.mData) || !col.mData || watchedProperties.indexOf(col.mData) >= 0) return;
+                            watchedProperties.push(col.mData);
+                        });
+
+                        angular.forEach(dtSettings.dtFillWatchedPropertiesActions, fn => {
+                            if (!angular.isFunction(fn)) return;
+                            fn(watchedProperties, row, options);
+                        });
+                        watchedPropertiesFilled = true;
+                    };
+
+                    var createRowGroupWatcher = (row, rIdx) => {
+                        var watchPaths = [];
+                        for (var i = 0; i < watchedProperties.length; i++) {
+                            watchPaths.push(collPath + "[" + rIdx + "]." + watchedProperties[i]);
+                        }
+                        scope.$watchCollection("[" + watchPaths.join(", ") + "]", (newValue: any, oldValue: any, collScope: ng.IScope) => {
+                            if (debug) console.time('$watchCollection row ' + rIdx);
+                            if (newValue !== oldValue)
+                                dataTable.row(rIdx).invalidate();
+                            if (debug) console.timeEnd('$watchCollection row ' + rIdx);
+                        });
+
+                        /* TOO SLOW
+                        var watchGroup = [];
+                        angular.forEach(watchedProperties, (prop, idx) => {
+                            watchGroup.push(watchedProperties[idx] = collPath + "[" + idx + "][" + prop + "]");
+                        });
+                        var unregisterWatchGroupFn = scope.$watchGroup(watchGroup, (newValue: any, oldValue: any, collScope: ng.IScope) => {
+                            if (debug) console.time('$watchCollection row ' + rIdx);
+                            if (newValue !== oldValue)
+                                dataTable.row(rIdx).invalidate();
+                            if (debug) console.timeEnd('$watchCollection row ' + rIdx);
+                        });
+                        oSettings._rowsGroupWatchers.push(unregisterWatchGroupFn);
+                        */
+
+
+                    };
+
+                    //#endregion
+
                     var columns = options.columns || options.columnDefs;
 
                     angular.forEach(columns, (col, idx) => {
@@ -208,7 +267,6 @@ angular.module("dt", [])
                         if (!!col.expression) {
                             col.expressionFn = $parse(col.expression);
                         }
-                        
                         if (col.render == null) {
                             col.render = (innerData, sSpecific, oData) => {
                                 switch (sSpecific) {
@@ -239,10 +297,12 @@ angular.module("dt", [])
                             oSettings = api.settings()[0];
 
                     };*/
-
+                    //#region CreatedRow
                     //Wrap custom createdRow
                     var origCreatedRow = options.createdRow;
                     options.createdRow = function (node: any, rowData: any[], dataIndex: number) {
+                        if (debug) console.time('createdRow' + dataIndex);
+
                         var api = this.api();
                         if (oSettings == null)
                             oSettings = api.settings()[0];
@@ -317,35 +377,52 @@ angular.module("dt", [])
                         if (angular.isFunction(origCreatedRow))
                             origCreatedRow(node, rowData, dataIndex);
 
-                        var propNames = Object.keys(rowData); //TODO: cache the result
-                        angular.forEach(oSettings.aoColumns, col => {
-                            if (col.mData == null || propNames.indexOf(col.mData) >= 0) return;
-                            propNames.push(col.mData);
-                        });
-
-                        angular.forEach(dtSettings.dtFillWatchedPropertiesActions, fn => {
-                            if (!angular.isFunction(fn)) return;
-                            fn(propNames, rowData, options);
-                        });
-
                         //For serverside processing we dont have to invalidate rows (searching/ordering is done by server) 
-                        if (options.serverSide != true) {
-                            angular.forEach(propNames, propName => {
-                                //If row data is changed we have to invalidate dt row
-                                rowScope.$watch(rowDataPath + '.' + propName, () => {
+                        if (options.serverSide != true && dtRowWatcher === "rendered") {
+                            if (!watchedPropertiesFilled)
+                                fillWatchedProperties(rowData);
+                            createRowGroupWatcher(rowData, dataIndex);
+                            
+
+                            //If row data is changed we have to invalidate dt row
+                            /*
+                            //TODO: check which is faster $watchCollection with list of all properties or $watch on each property
+                            var exprWatch = "[" + rowDataPath + ".";
+                            exprWatch += propNames.join(", " + rowDataPath + '.') + "]";
+                            rowScope.$watchCollection(exprWatch, (newValue: any, oldValue: any, collScope: ng.IScope) => {
+                                if (debug) console.time('$watchCollection row ' + dataIndex + ' - ' + exprWatch);
+                                if (newValue !== oldValue)
                                     api.row(node).invalidate();
-                                }, false);
+                                if (debug) console.timeEnd('$watchCollection row ' + dataIndex + ' - ' + exprWatch);
                             });
+                            */
+                            /*
+                            angular.forEach(propNames, propName => {
+                                rowScope.$watch(rowDataPath + '.' + propName, (newValue, oldValue) => {
+                                    if (debug) console.time('$watch row ' + dataIndex + ' - ' + rowDataPath + '.' + propName);
+                                    if (newValue !== oldValue)
+                                        api.row(node).invalidate();
+                                    if (debug) console.timeEnd('$watch row ' + dataIndex + ' - ' + rowDataPath + '.' + propName);
+                                }, false);
+                            });*/
                         }
+
+                        if (debug) console.timeEnd('createdRow' + dataIndex);
                     };
-                
+                    //#endregion
+
                     //Wrap custom drawCallback
                     var origDrawCallback = options.drawCallback;
-                    options.drawCallback = (settings: any) => {
-                        if (settings.bInitialised === true && !scope.$$phase)
-                            scope.$digest();
+                    options.drawCallback = function(settings: any) {
+                        if (debug) console.time('drawCallback');
+                        if (settings.bInitialised === true && !scope.$$phase && dtDrawDigest) {
+                            if (debug) console.time('digestDisplayedPage');
+                            this.api().digestDisplayedPage();
+                            if (debug) console.timeEnd('digestDisplayedPage');
+                        }
                         if (angular.isFunction(origDrawCallback))
                             origDrawCallback(settings);
+                        if (debug) console.timeEnd('drawCallback');
                     }
 
                     angular.forEach(dtSettings.dtTableCreatingActions, fn => {
@@ -354,11 +431,13 @@ angular.module("dt", [])
                     });
 
                     // Initialize datatables
+                    if (debug) console.time('initDataTable');
                     dataTable = $element.DataTable(options);
+                    if (debug) console.timeEnd('initDataTable');
                     oSettings = dataTable.settings()[0];
                     oSettings._rowsInserted = oSettings._rowsInserted || [];
                     oSettings._rowsRemoved = oSettings._rowsRemoved || [];
-                    oSettings.oInit.data = oSettings.oInit.aoData = options.data; //set init data to be the same as binding collection
+                    oSettings.oInit.data = oSettings.oInit.aoData = options.data; //set init data to be the same as binding collection - this will be fixed in 1.10.1
                     //Copy the custom column parameters to the aoColumns
                     angular.forEach(oSettings.aoColumns, (oCol, idx) => {
                         var origIdx = oCol._ColReorder_iOrigCol; //take care of reordered columns
@@ -378,12 +457,23 @@ angular.module("dt", [])
                         fn(dataTable, $element, options, scope, attrs, $compile, $rootScope);
                     });
 
-                    if (!attrs.dtData) return;
+                    if (!attrs.dtData || !collPath) return;
 
-                    var collPath = !!attrs.dtData ? attrs.dtData : (!!inputOptions.data ? attrs.dtOptions + '.data' : null);
-                    if (collPath == null) return;
+                    //For serverside processing we dont have to invalidate rows (searching/ordering is done by server) 
+                    /*
+                    if (angular.isArray(options.data) && options.serverSide != true && dtRowWatcher === "all") {
+                        if (debug) console.time("CreateAllRowWatchers");
+                        //We have to watch all items so we can invalidate the corresponding row when the item is changed
+                        angular.forEach(options.data, (row, rIdx) => {
+                            if (!watchedPropertiesFilled)
+                                fillWatchedProperties(row);
+                            createRowGroupWatcher(row, rIdx);
+                        });
+                        if (debug) console.timeEnd("CreateAllRowWatchers");
+                    }*/
 
                     scope.$watchCollection(collPath, (newValue: any, oldValue: any, collScope: ng.IScope) => {
+                        if (debug) console.time('$watchCollection - ' + collPath);
                         if (!newValue) return;
                         var idx;
                         var rIdx;
@@ -412,6 +502,7 @@ angular.module("dt", [])
                             rowsAdded = true;
                             //Do not add rows that were already been added (by datatables api)
                             idx = 0;
+                            
                             while (idx < added.length) {
                                 rIdx = oSettings._rowsInserted.indexOf(added[idx]);
                                 if (rIdx < 0) {
@@ -453,6 +544,7 @@ angular.module("dt", [])
                                 dataTable.gotoLastPage(); //We only need to change page when a new item is added and will be shown on an new page
                             dataTable.draw(false);
                         }
+                        if (debug) console.timeEnd('$watchCollection - ' + collPath);
                     });
                 }
             }
