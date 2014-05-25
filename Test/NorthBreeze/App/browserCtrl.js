@@ -34,8 +34,18 @@
         $scope.dtTable.row.add(getNewItem());
     };
 
-    $scope.removeItem = function (item) {
-        $scope.data.splice(item.index, 1);
+    $scope.removeItem = function (index) {
+        $scope.data.splice(index, 1);
+    };
+
+    $scope.swapItems = function () {
+        $scope.swapItemsFromTo(0, 1);
+    };
+
+    $scope.swapItemsFromTo = function (x, y) {
+        var b = $scope.data[x];
+        $scope.data[x] = $scope.data[y];
+        $scope.data[y] = b;
     };
 
     var eIdx = 30;
@@ -54,7 +64,7 @@
     };
 
     $scope.canRemoveItem = function () {
-        return $scope.dtTable.selectedRows.count > 0;
+        return $scope.dtTable.selectedRows.length > 0;
     }
 
 

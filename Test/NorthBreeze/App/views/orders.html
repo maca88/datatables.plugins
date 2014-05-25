@@ -1,26 +1,55 @@
 ﻿<div>
-    <h3>Orders</h3>
+    <h2>Description</h2>
+
+    <p>
+        In this exmaple we are showing two plugins, EntityFilter and RemoteState.
+        The EntityFilter is a simple global datatables filter that will filter the rows based on the state that the breeze entity has.
+        For the sake of simplicity, we can change the entity state in the last column named options.
+        The list of possible states is the following:
+    
+    <ul>
+        <li>Added</li>
+        <li>Unchanged</li>
+        <li>Modified</li>
+        <li>Deleted</li>
+        <li>Detached</li>
+    </ul>
+    <p>
+        With the dropdown Entity filter we can select the type of entities that will be shown.
+        Note: this plugin will only work when binding breeze entities to the table.
+
+        The RemoteState is the second plugin in this example, and it serves to save the current table state to the server or load it from the server.
+        The table state represents which columns are displayed and in what order.
+        First of all we need to create a new State by pressing the settings button.
+        One table can have multiple states, so the user can switch bettewn them on the fly (this can be done in the State dropdown).
+        In addition to that we can set one of the saved states as default one, this means that the table will be initilaized in the state that was set as default.
+        In this example the states that are saved will be shown to all users, just for siplicity.
+        We can have a different server logic for retriving the states but this is outside the scope of this plugin.
+    </p>
+
+    <h2>Orders</h2>
+
     <div id="order-opt-tpl" ng-non-bindable style="display: none">
-        <button ng-show="order.entityAspect.entityState.name != 'Detached'" ng-click="setState($rowIndex, 'modified')"><span>SetModified {{$cellIndex}}</span></button><br />
+        <button ng-show="order.entityAspect.entityState.name != 'Detached'" ng-click="setState($rowIndex, 'modified')"><span>SetModified</span></button><br />
         <button ng-show="order.entityAspect.entityState.name != 'Detached'" ng-click="setState($rowIndex, 'deleted')"><span>SetDeleted</span></button><br />
         <button ng-show="order.entityAspect.entityState.name != 'Detached'" ng-click="setState($rowIndex, 'detached')"><span>SetDetached</span></button><br />
         <button ng-show="order.entityAspect.entityState.name != 'Detached'" ng-click="setState($rowIndex, 'unchanged')"><span>SetUnchanged</span></button>
     </div>
     <table class="table-striped table-bordered table-condensed table-small" dt-table="orderTable" dt-width="100%" dt-data="orders" dt-options="orderGridOpts" dt-row-data-path="order">
         <thead>
-            <th dt-data="OrderID">Order ID</th>
-            <th dt-expression="order.Freight | currency">Freight</th>
-            <th dt-expression="order.OrderDate | date:'shortDate'">Order Date</th>
-            <th dt-expression="order.RequiredDate | date:'shortDate'">Required Date</th>
-            <th dt-expression="order.ShippedDate | date:'shortDate'">Shipped Date</th>
-            <th dt-data="ShipName">Name</th>
-            <th dt-data="ShipAddress">Address</th>
-            <th dt-data="ShipCity">City</th>
-            <th dt-data="ShipRegion">Region</th>
-            <th dt-data="ShipPostalCode">PostCode</th>
-            <th dt-data="ShipCountry">Country</th>
-            <th dt-data="entityAspect.entityState.name">Entity state</th>
-            <th dt-template="#order-opt-tpl">Options</th>
+        <th dt-data="OrderID">Order ID</th>
+        <th dt-expression="order.Freight | currency">Freight</th>
+        <th dt-expression="order.OrderDate | date:'shortDate'">Order Date</th>
+        <th dt-expression="order.RequiredDate | date:'shortDate'">Required Date</th>
+        <th dt-expression="order.ShippedDate | date:'shortDate'">Shipped Date</th>
+        <th dt-data="ShipName">Name</th>
+        <th dt-data="ShipAddress">Address</th>
+        <th dt-data="ShipCity">City</th>
+        <th dt-data="ShipRegion">Region</th>
+        <th dt-data="ShipPostalCode">PostCode</th>
+        <th dt-data="ShipCountry">Country</th>
+        <th dt-data="entityAspect.entityState.name">Entity state</th>
+        <th dt-template="#order-opt-tpl">Options</th>
         </thead>
         <!--<tr ng-repeat="o in orders">
             <td>{{o.OrderID}}</td>

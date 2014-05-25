@@ -11,7 +11,7 @@
     <property name="OrderDate" type="Timestamp" />
     <property name="RequiredDate" type="Timestamp" />
     <property name="ShippedDate" type="Timestamp" />
-    <property name="Freight" type="decimal" />
+    <property name="Freight" type="decimal" not-null="true"/>
     <property name="ShipName" type="string" length="40" />
     <property name="ShipAddress" type="string" length="60" />
     <property name="ShipCity" type="string" length="15" />

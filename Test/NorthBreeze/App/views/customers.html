@@ -1,6 +1,15 @@
-﻿<div >
-    <h2>Customers</h2>
+﻿<div>
+    <h2>Description</h2>
+
+    <p>
+        In this exmaple we are using TableTools, BreezeRemote and RowDetails plugins along its integrations with anuglar to show customers and its orders.
+        Ordering, Paging and filtering is done by Breeze that is used inside BreezeRemote plugin.
+        With the help of TableTools and its integration with angular we can bind the current selected row onto the form so we can modify the row data.
+        For displaying the customer orders the RowDetails plugin is used.
+        When the row is expanded we are using the loadNavigationProperty function from Breeze in order to load the orders form the server.
+    </p>
     
+    <h2>Customers</h2>
     <div id="row-details-tpl" ng-non-bindable style="display: none">
         <h4>SubItems {{data.CompanyName}}</h4>
         <div ng-if="ordersLoaded !== true">
@@ -37,19 +46,19 @@
             <form class="form-horizontal">
                 <!-- We do field-level validation based on the validation rules in the metadata,
                 and twitter bootstrap styles to show invalid fields.  See the breezeinput directive in directives.js -->
-                <breezeinput label="Company Name" ng-model="dtTable.selectedRows.first.data.CompanyName"></breezeinput>
-                <breezeinput label="Contact Name" ng-model="dtTable.selectedRows.first.data.ContactName"></breezeinput>
-                <breezeinput label="Contact Title" ng-model="dtTable.selectedRows.first.data.ContactTitle"></breezeinput>
-                <breezeinput label="Address" ng-model="dtTable.selectedRows.first.data.Address"></breezeinput>
-                <breezeinput label="City" ng-model="dtTable.selectedRows.first.data.City"></breezeinput>
-                <breezeinput label="Region" ng-model="dtTable.selectedRows.first.data.Region"></breezeinput>
-                <breezeinput label="Postal Code" ng-model="dtTable.selectedRows.first.data.PostalCode"></breezeinput>
-                <breezeinput label="Country" ng-model="dtTable.selectedRows.first.data.Country"></breezeinput>
-                <breezeinput label="Phone" ng-model="dtTable.selectedRows.first.data.Phone"></breezeinput>
-                <breezeinput label="Fax" ng-model="dtTable.selectedRows.first.data.Fax"></breezeinput>
+                <breezeinput label="Company Name" ng-model="dtTable.selectedRows[0].data.CompanyName"></breezeinput>
+                <breezeinput label="Contact Name" ng-model="dtTable.selectedRows[0].data.ContactName"></breezeinput>
+                <breezeinput label="Contact Title" ng-model="dtTable.selectedRows[0].data.ContactTitle"></breezeinput>
+                <breezeinput label="Address" ng-model="dtTable.selectedRows[0].data.Address"></breezeinput>
+                <breezeinput label="City" ng-model="dtTable.selectedRows[0].data.City"></breezeinput>
+                <breezeinput label="Region" ng-model="dtTable.selectedRows[0].data.Region"></breezeinput>
+                <breezeinput label="Postal Code" ng-model="dtTable.selectedRows[0].data.PostalCode"></breezeinput>
+                <breezeinput label="Country" ng-model="dtTable.selectedRows[0].data.Country"></breezeinput>
+                <breezeinput label="Phone" ng-model="dtTable.selectedRows[0].data.Phone"></breezeinput>
+                <breezeinput label="Fax" ng-model="dtTable.selectedRows[0].data.Fax"></breezeinput>
                 <div style="text-align: center">
-                    <button class="btn" ng-click="reset(dtTable.selectedRows.first.data)">Reset Customer</button>
-                    <button class="btn" ng-click="update(dtTable.selectedRows.first.data)">Save Customer</button>
+                    <button class="btn" ng-click="reset(dtTable.selectedRows[0].data)">Reset Customer</button>
+                    <button class="btn" ng-click="update(dtTable.selectedRows[0].data)">Save Customer</button>
                 </div>
             </form>
         </div>

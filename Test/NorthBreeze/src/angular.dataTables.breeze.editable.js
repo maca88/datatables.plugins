@@ -16,7 +16,7 @@ angular.module("dt").config([
             options.breezeEditable = options.breezeEditable || {};
 
             options.breezeEditable.startCellEditing = function (td, entity, editorFn, prop, x, y, oSettings, settings) {
-                var cellScope = td._DT_Scope;
+                var cellScope = angular.element(td).scope();
                 td._DT_EditMode = true;
                 cellScope.$digest();
                 var lazyContainer = $(".lazy-editor", td);
@@ -33,7 +33,7 @@ angular.module("dt").config([
             };
 
             options.breezeEditable.endCellEditing = function (td, entity, editorCtrl, prop, x, y, oSettings, settings) {
-                var cellScope = td._DT_Scope;
+                var cellScope = angular.element(td).scope();
                 editorCtrl.popover("destroy");
                 td._DT_EditMode = false;
                 cellScope.$digest();

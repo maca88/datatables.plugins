@@ -1,5 +1,17 @@
-﻿<h1>50.000 rows</h1>
-<table class="table table-bordered" dt-draw-digest="false" dt-width="100%" dt-table="dtTable" dt-debug="false" dt-data="options.data" dt-options="options">
+﻿<h2>Description</h2>
+
+<p>
+    In this example we set the dt-no-row-binding option to "true" so the changes whitin the row data will not be translated to the dom and vice versa.
+    If we have a readonly table or we will just adding and removing rows without later modifications, this option can be used in order to gain performance.
+</p>
+
+<h2>Performance with 50.000 rows</h2>
+<button class="btn" ng-click="addItem()"><span>Add Item</span></button>
+<span ng-if="dtTable.selectedRows.length > 0">
+    <button class="btn" ng-click="removeItem(dtTable.selectedRows)"><span>Remove Items</span></button>
+</span>
+
+<table class="table table-bordered" dt-no-row-binding="true" dt-width="100%" dt-table="dtTable" dt-debug="true" dt-data="data" dt-options="options">
     <thead>
         <tr>
             <th>ID</th>

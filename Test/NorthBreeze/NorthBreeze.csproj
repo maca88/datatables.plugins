@@ -43,8 +43,10 @@
   <ItemGroup>
     <Content Include="App\browserCtrl.js" />
     <Content Include="App\employeeEditorCtrl.js" />
+    <Content Include="App\performanceCtrl.js" />
     <Content Include="App\views\browsers.html" />
     <Content Include="App\views\employeeEditor.html" />
+    <Content Include="App\views\performance.html" />
     <Content Include="Content\font-awesome.css" />
     <Content Include="Content\font-awesome.min.css" />
     <Content Include="fonts\fontawesome-webfont.svg" />
@@ -181,7 +183,6 @@
     <Content Include="src\angular.dataTables.breeze.remote.js" />
     <Content Include="src\angular.dataTables.js" />
     <Content Include="src\angular.dataTables.rowDetails.js" />
-    <Content Include="src\angular.dataTables.selectable.js" />
     <Content Include="src\angular.dataTables.tableTools.js" />
     <Content Include="src\dataTables.breeze.entityFilter.js" />
     <Content Include="src\dataTables.remoteState.css" />
@@ -284,7 +285,6 @@
     <TypeScriptCompile Include="src\angular.dataTables.d.ts" />
     <TypeScriptCompile Include="src\angular.dataTables.breeze.editable.ts" />
     <TypeScriptCompile Include="src\angular.dataTables.rowDetails.ts" />
-    <TypeScriptCompile Include="src\angular.dataTables.selectable.ts" />
     <TypeScriptCompile Include="src\angular.dataTables.tableTools.ts" />
     <TypeScriptCompile Include="src\angular.dataTables.ts" />
     <Content Include="src\dataTables.breeze.editable.js" />

@@ -3,8 +3,6 @@
 <head>
     <meta charset="utf-8">
     <title>NorthBreeze AngularJS App</title>
-    <!--<link rel="stylesheet" href="Content/ng-grid.css" />--> 
-    
     <link rel="stylesheet" href="libs/bootstrap/css/bootstrap.css" />
     <link rel="stylesheet" href="Content/toastr.css" />
     <link rel="stylesheet" href="Content/font-awesome.css" />
@@ -21,8 +19,8 @@
 
     <nav class="">
         <div class="container" ng-controller="RouteCtrl">
-            <a class="brand" href="#/">
-                <span class="title">NorthBreeze</span>
+            <a class="brand" href="https://github.com/maca88/datatables.plugins">
+                <span class="title">GitHub</span>
             </a>
             <div class="btn-group">
                 <a ng-repeat="link in links" class="btn btn-info" ng-class="{active: $route.current.templateUrl == link.templateUrl}" href="#{{link.path}}">{{link.name}}</a>
@@ -31,14 +29,6 @@
     </nav>
 
   <div ng-view style="margin: 50px"></div>
-
-    <nav class="navbar-nav navbar-fixed-bottom">
-        <div class="navbar-inner navbar-content-center">
-            <span class="pull-left"><a href="http://www.breezejs.com" target="_blank">Rich data access by Breeze</a></span>
-            <span class="pull-right"></span>
-        </div>
-    </nav>
-
 
     <script src="Scripts/jquery-1.9.1.js"></script>
     <script src="Scripts/q.js"></script>

@@ -23,7 +23,7 @@
         tableTools: {
             "sRowSelect": "os",
             "sSwfPath": "libs/datatables/extensions/TableTools/swf/copy_csv_xls_pdf.swf",
-            "aButtons": ["editable_restore_deleted", "editable_delete", "editable_add", "editable_reject", "copy", "pdf", "select_all", "select_none"]
+            "aButtons": ["editable_restore_deleted", "editable_delete", "editable_add", "editable_reject", "select_all", "select_none"]
         },
         breezeEditable: {
             collectionProperty: "Orders",
@@ -32,14 +32,25 @@
             }
         },
         dom: "<'row'<'col-xs-6'l><'col-xs-6'f>r>" +
+        "C" + //ColVis
         "T" + //TableTools
         "Y" + //Entity Filter
         //"D" + //RowDetails
         "X" + //BreezeEdiatble
-        "C" + //ColVis
+        
         "t" +
 		"<'row'<'col-xs-6'i><'col-xs-6'p>>R"
 
+    };
+
+    $scope.rejectChanges = function () {
+        app.dataservice.rejectChanges();
+    }; 
+
+    $scope.saveChanges = function () {
+        app.dataservice.saveChanges(null, function() {
+            $scope.$digest();
+        });
     };
 
     //#region private functions
@@ -48,7 +59,6 @@
         $scope.$digest();
         $scope.employee.entityAspect.loadNavigationProperty("Orders")
                 .then(function (json) {
-                    console.log($scope.employee.Orders);
                     $scope.ordersLoaded = true;
                     $scope.$digest();
                 })

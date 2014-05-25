@@ -1,9 +1,20 @@
 ﻿<div>
-    <h3>Order</h3>
-    <div style="text-align: center">
-        <button class="btn" ng-click="reset(dtTable.selectedRow.data)">Reset Customer</button>
-        <button class="btn" ng-click="update(dtTable.selectedRow.data)">Save Customer</button>
-    </div>
+    <h2>Description</h2>
+
+    <p>
+        In this example we show the abilities of the BreezeEditable plugin for editing breeze entities, with the help of various offical DataTables plugins (TableTools, KeyTable) and the Boostrap popover control for displaying errors.
+    </p>
+    <p>
+        <b>
+            Note: this plugin has nothing to do with the offical DataTables Editor plugin and is not meant to be a replacement, as this plugin will only work with breeze Entities, that have builtin the logic for valiation/addition/deletion/restoration of the data.
+            If you want editing of  non breeze entities this plugin is not for you.
+        </b>
+    </p>
+    <p>
+        For navigation between cells we use tab(moving forwards) and shift+tab(moving backwards). This will also skip automatically all the cells that are not editable (i.e. Id and Entity state columns are not editable in this table).
+    </p>
+        
+    <h2>Employee</h2>
     <form class="form-horizontal">
         <!-- We do field-level validation based on the validation rules in the metadata,
             and twitter bootstrap styles to show invalid fields.  See the breezeinput directive in directives.js -->
@@ -15,6 +26,7 @@
             <label class="col-sm-4">State</label>
             <label class="col-sm-8" ng-bind="employee.entityAspect.entityState.name"></label>
         </div>
+        <h3>Orders</h3>
         <table class="table table-bordered" dt-table dt-data="employee.Orders" dt-options="options">
             <thead>
                 <tr>
@@ -34,8 +46,11 @@
                 </tr>
             </thead>
         </table>
-
-</form>
+        <div>
+            <button class="btn" ng-click="rejectChanges()">Revert changes</button>
+            <button class="btn" ng-click="saveChanges()">Save</button>
+        </div>
+    </form>
 
 
 </div>
