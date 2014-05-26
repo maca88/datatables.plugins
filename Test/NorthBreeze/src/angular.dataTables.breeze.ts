@@ -3,6 +3,7 @@ angular.module("dt")
     .config([
         "dtSettings", (dtSettings) => {
             //Watch entity properties
+            /*
             dtSettings.dtFillWatchedPropertiesActions.push((propArr, rowData) => {
                 var idx = propArr.indexOf("entityAspect");
                 if (idx < 0) return;
@@ -12,6 +13,6 @@ angular.module("dt")
                     if (propArr.indexOf(key) >= 0) return;
                     propArr.push(key);
                 });
-            }); 
+            }); */
         }
     ]); 

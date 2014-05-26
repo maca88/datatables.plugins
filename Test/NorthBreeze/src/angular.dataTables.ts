@@ -187,11 +187,16 @@
         if (cIdx < 0) return null;
         return this.table().cell(rIdx, cIdx);
     });
-    $.fn.DataTable.Api.register('gotoLastPage()', function() {
+    $.fn.DataTable.Api.register('gotoLastPage()', function () {
+        var oScroller = this.settings()[0].oScroller;
         var info: any = this.page.info();
-        var lastPageIdx = Math.ceil(info.recordsTotal / info.length) - 1;
+        if (oScroller != null) {
+            oScroller.fnScrollToRow(info.recordsTotal - 1);
+        } else {
+            var lastPageIdx = Math.ceil(info.recordsTotal / info.length) - 1;
         if (info.page < lastPageIdx)
             this.page(lastPageIdx);
+        }
     });
     $.fn.DataTable.Api.register('digestDisplayedPage()', function() {
         //Digest only rendered rows
@@ -311,30 +316,6 @@
                                     dataTable.row(node).invalidate();
                                 if (debug) console.timeEnd('$watchCollection row ' + node._DT_RowIndex + ' - ' + exprWatch);
                             });
-
-                            //If row data is changed we have to invalidate dt row
-                            /*
-                            angular.forEach(propNames, propName => {
-                                rowScope.$watch(rowDataPath + '.' + propName, (newValue, oldValue) => {
-                                    if (debug) console.time('$watch row ' + dataIndex + ' - ' + rowDataPath + '.' + propName);
-                                    if (newValue !== oldValue)
-                                        api.row(node).invalidate();
-                                    if (debug) console.timeEnd('$watch row ' + dataIndex + ' - ' + rowDataPath + '.' + propName);
-                                }, false);
-                            });
-
-
-                        var watchPaths = [];
-                        for (var i = 0; i < watchedProperties.length; i++) {
-                            watchPaths.push(collPath + "[" + rIdx + "]." + watchedProperties[i]);
-                        }
-                        scope.$watchCollection("[" + watchPaths.join(", ") + "]", (newValue: any, oldValue: any, collScope: ng.IScope) => {
-                            if (debug) console.time('$watchCollection row ' + rIdx);
-                            if (newValue !== oldValue)
-                                dataTable.row(rIdx).invalidate();
-                            if (debug) console.timeEnd('$watchCollection row ' + rIdx);
-                        });
-                    */
 
                         };
 
@@ -657,89 +638,6 @@
                                 }
                             }
 
-
-                            /* max complexity O(2n^2)
-                            if (oldValue === newValue) {
-                                //No changes
-                            } else if (oldValue == null) {
-                                //Only addition happened
-                                added = newValue.slice();
-                                for (rIdx = 0; rIdx < newValue.length; rIdx++) {
-                                    added.push(newValue[rIdx]);
-                                }
-                            } else if (newValue == null) {
-                                //Wipe the table add to removed array as index descending in order to row().remove() to work correctly
-                                for (rIdx = oldValue.length - 1; rIdx >= 0; rIdx--) {
-                                    removed.push({ index: rIdx, value: oldValue[rIdx] });
-                                }
-                            } else {
-                                //Iterate over the oldArray - if the value is not in the newArray we have to remove it form the table
-                                for (rIdx = oldValue.length - 1; rIdx >= 0; rIdx--) {
-                                    idx = indexOfFor(newValue, oldValue[rIdx]);
-                                    if (-1 === idx)
-                                        removed.push({ index: rIdx, value: oldValue[rIdx] });
-                                }
-                                //Iterate over the newArray - if the value is not in the oldArray we have to add it to the table
-                                for (rIdx = 0; rIdx < newValue.length; rIdx++) {
-                                    idx = indexOfFor(oldValue, newValue[rIdx]);
-                                    if (-1 === idx)
-                                        added.push(newValue[rIdx]);
-                                }
-                            }
-
-                            //First andle removed rows - so that we have the correct indexes
-                            if (removed.length > 0) {
-                                rowsRemoved = true;
-                                var removedCln = removed.slice();
-                                //Do not remove rows that were already been removed (by datatables api)
-                                idx = 0;
-                                while (idx < removed.length) {
-                                    rIdx = oSettings._rowsRemoved.indexOf(removed[idx].value);
-                                    if (rIdx < 0) {
-                                        idx++;
-                                        continue;
-                                    }
-                                    removed.splice(idx, 1);
-                                    oSettings._rowsRemoved.splice(rIdx, 1);
-                                }
-                                //Remove remained rows
-                                angular.forEach(removed, (item) => {
-                                    var row = dataTable.row(item.index);
-                                    if (row.node() != null) { //deferRender
-                                        angular.element(row.node()).scope().$destroy();
-                                    }
-                                    row.remove(true);
-                                });
-
-                                angular.forEach(dtSettings.dtRowsRemovedActions, fn => {
-                                    if (angular.isFunction(fn))
-                                        fn.call(dataTable, removedCln);
-                                });
-                            }
-
-                            //Handle added rows
-                            if (added.length > 0) {
-                                rowsAdded = true;
-                                var addedCln = added.slice();
-                                //Do not add rows that were already been added (by datatables api)
-                                idx = 0;
-                                while (idx < added.length) {
-                                    rIdx = oSettings._rowsInserted.indexOf(added[idx]);
-                                    if (rIdx < 0) {
-                                        idx++;
-                                        continue;
-                                    }
-                                    added.splice(idx, 1);
-                                    oSettings._rowsInserted.splice(rIdx, 1);
-                                }
-                                dataTable.rows.add(added, true);
-
-                                angular.forEach(dtSettings.dtRowsAddedActions, fn => {
-                                    if (angular.isFunction(fn))
-                                        fn.call(dataTable, addedCln);
-                                });
-                            }
-                            */
                             if (rowsRemoved || rowsAdded || rowsReordered) {
                                 if (rowsAdded) //when adding we want the new items to be displayed
                                     dataTable.gotoLastPage(); //We only need to change page when a new item is added and will be shown on an new page
