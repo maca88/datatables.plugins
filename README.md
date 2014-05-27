@@ -38,13 +38,13 @@ When using dt-table directive the following attributes are possible for table ta
 <tt>dt-row-data-path</tt> path of the row data (default is 'data') <br />
 <tt>dt-row-invalidate</tt> row invalidation mode possible values: "none" and "rendered" (default is "none"). When set to "rendered" row that are rendered will be automatically invalidated with [rows().invalidate()](http://datatables.net/reference/api/row().invalidate()) when row data will change. <br />
 <tt>dt-draw-digest</tt> digest the rendered rows on draw. Possible values "true" or "false" (default is "true") <br />
-<tt>dt-no-row-binding</tt> when set to "false" binding for rows will not be created. If we have a readonly table or we will just adding and removing rows without later modifications, this option can be used in order to gain performance. default is "false" <br />
+<tt>dt-no-row-binding</tt> when set to "false" binding for rows will not be created. If we have a read-only table or we will just adding and removing rows without later modifications, this option can be used in order to gain performance. Default is "false" <br />
 
 <b>NOTE:</b> if you want to use dt instance in your controller give the dt-table attribute the path you want to have the instance defined (i.e. dt-table="variableName")
 
 Columns can be defined in code inside dt-options attribute or in html like in the above example.
 
-When defining a cloumn in html the following attributes are possible for th tag:
+When defining a column in html the following attributes are possible for th tag:
 
 <tt>dt-data</tt> http://datatables.net/reference/option/columns.data <br />
 <tt>dt-name</tt> http://datatables.net/reference/option/columns.name <br />
@@ -61,7 +61,7 @@ In addition to standard column options there are two more:
 
 <tt>dt-template</tt> selector for the template that will be used
 
-<b>Sample usage:</b>
+<b>Sample usage :</b>
 ```html
 <div id="options-tpl" ng-non-bindable style="display: none">
   <span>data.engine</span>
@@ -81,7 +81,7 @@ In addition to standard column options there are two more:
   </thead>
 </table>
 ```
-Note that the template has special attribute [ng-non-bindable](https://docs.angularjs.org/api/ng/directive/ngNonBindable) that has to be applied to every template in order to work correctly. Within the template the following special properties  can be used:
+Note that the template has special attribute [ng-non-bindable](https://docs.angularjs.org/api/ng/directive/ngNonBindable) that has to be applied to every template in order to work correctly. Within the template the following special properties can be used:
 <ul>
 	<li><tt>$rowIndex</tt> iterator offset of the row (0..row length-1). </li>
 	<li><tt>$firstRow</tt> true if the row is first in the iterator. </li>
@@ -99,7 +99,7 @@ If you want to define the template in code define template property in the colum
 
 <tt>dt-expression</tt> angular expression to be evaluated
 
-<b>Sample usage:</b>
+<b>Sample usage :</b>
 ```html
 <table dt-table dt-data="orders" dt-options="orderGridOpts" dt-row-data-path="order">
     <thead>
@@ -150,7 +150,7 @@ rowDetailCreated takes 3 parameters. (1. dt row, 2. details node wrapper in jQue
 
 <b>Properties:</b>
 
-<tt>animation</tt> specify what animation will be used when open/close icon will be clicked. Options: 'slide' (uses: slideDown/slideUp)  and 'none' (uses: hide/show)<br />
+<tt>animation</tt> specify what animation will be used when open/close icon will be clicked. Options: 'slide' (uses: slideDown/slideUp) and 'none' (uses: hide/show) <br />
 
 <tt>icon.class</tt> the class used to create a jQuery delegate for click event<br />
 <tt>icon.closeHtml</tt> the template for the close icon (dont forget to use icon.class in order the click delegate to work)<br />
@@ -161,7 +161,7 @@ rowDetailCreated takes 3 parameters. (1. dt row, 2. details node wrapper in jQue
 <tt>trClass</tt> class to apply to the tr tag or row details<br />
 <tt>tdClass</tt> class to apply to the td tag of row details<br />
 
-If you want to programatically open or close details you can do this with the functions that this plugin exposes:
+If you want to programmatically open or close details you can do this with the functions that this plugin exposes:
 
 <tt>row().closeDetails()</tt> for closing row details<br />
 <tt>row().openDetails()</tt> for open row details<br />
@@ -171,11 +171,11 @@ If you want to programatically open or close details you can do this with the fu
 
 ### angular.dataTables.rowDetails
 
-<b>Dependencies:</b> angular.dataTables, dataTables.rowDetails
+<b>Dependencies :</b> angular.dataTables, dataTables.rowDetails
 
 This plugin integrates dataTables.rowDetails with angularjs.
 
-<b>Sample:</b>
+<b>Sample :</b>
 ```html
 <div id="row-details-tpl" ng-non-bindable style="display: none">
   <h4>SubItems</h4>
@@ -198,13 +198,13 @@ This plugin integrates dataTables.rowDetails with angularjs.
   </thead>
 </table>
 ```
-In the above sample you can see the special dt-row-detail-tpl attribute on the table tag that defines the row details template and dt-row-detail-icon on the th tag specifing the icon column. 
+In the above sample you can see the special dt-row-detail-tpl attribute on the table tag that defines the row details template and dt-row-detail-icon on the th tag specifying the icon column. 
 
 ### angular.dataTables.tableTools
 
-<b>Dependencies:</b> angular.dataTables, datatables.tableTools
+<b>Dependencies :</b> angular.dataTables, datatables.tableTools
 
-This plugin integrates the offical TableTools extension with angular. It add a special property rowsSelected to the DataTable instance that can be binded in the view template. Property rowsSelected returns an array of objects that have the following propeties:
+This plugin integrates the official TableTools extension with angular. It add a special property rowsSelected to the DataTable instance that can be binded in the view template. Property rowsSelected returns an array of objects that have the following properties:
 
 <tt>index</tt> row index<br />
 <tt>data</tt> data of the row<br />
@@ -215,9 +215,9 @@ This plugin integrates the offical TableTools extension with angular. It add a s
 
 ### dataTables.breeze.entityFilter
 
-This plugin provide a select box to filter breeze entities. This will only work when you bind breeze entites to datatables. In order to enable this plugin you have to add char 'Y' to the dom (i.e. lfrYtip)
+This plugin provide a select box to filter breeze entities. This will only work when you bind breeze entities to datatables. In order to enable this plugin you have to add char 'Y' to the dom (i.e. lfrYtip)
 
-<b>Default configurations:</b>
+<b>Default configurations :</b>
 ```js
 entityFilter: {
         selectedState: 'default',
@@ -252,7 +252,7 @@ This filter will check the property entityAspect.entityState.name value and chec
 
 ### angular.dataTables.breeze.remote
 
-This plugin enables paging/searching/ordering on the serverside using breeze query engine. In order to enable this plugin you have to define breezeRemote property in DataTables configuration.
+This plugin enables paging/searching/ordering on the server side using breeze query engine. In order to enable this plugin you have to define breezeRemote property in DataTables configuration.
 
 <b>Sample:</b>
 ```js
@@ -275,9 +275,9 @@ breezeRemote: {
 
 <b>Dependencies:</b> datatables.tableTools, datatables.KeyTable, bootstrap (popover plugin)
 
-This plugin enables to editing breeze entities with the helps of offical DataTables plugins TableTools and KeyTable. For validation messages Bootstrap popover plugin is used.
+This plugin enables to editing breeze entities with the help of official DataTables plugins TableTools and KeyTable. For validation messages Bootstrap popover plugin is used.
 
-<b>Note: this plugin has nothing to do with the offical DataTables Editor plugin and is not meant to be a replacement, as this plugin will only work with breeze Entities, that have builtin the logic for valiation/addition/deletion/restoration of the data. If you want editing of  non breeze entities this plugin is not for you. </b>
+<b>Note: this plugin has nothing to do with the official DataTables Editor plugin and is not meant to be a replacement, as this plugin will only work with breeze Entities, that have built-in the logic for validation/addition/deletion/restoration of the data. If you want editing of  non-breeze entities this plugin is not for you. </b>
 
 Settings:
 ```js
@@ -316,7 +316,7 @@ breezeEditable: {
 <tt>typesTemplate</tt> an object that contains edit templates for all types supported by breeze<br />
 <tt>editorControlSelector</tt>jQuery selector for the editor control.<br />
 <tt>startCellEditing</tt>callback before the editor template get focused<br />
-<tt>endCellEditing</tt>callback when the editor get out of focus (blured)<br />
+<tt>endCellEditing</tt>callback when the editor get out of focus (blurred)<br />
 <tt>tableFocused</tt>callback when the table get focused<br />
 <tt>entityAddded</tt>callback when an entity is added<br />
 <tt>entitiesRejected</tt>callback when an entity is rejected<br />
@@ -326,14 +326,14 @@ breezeEditable: {
 
 ### angular.dataTables.breeze.editable
 
-<b>Dependencies:</b> dataTables.breeze.editable, angular.dataTables, angular.datatables.tableTools
+<b>Dependencies :</b> dataTables.breeze.editable, angular.dataTables, angular.datatables.tableTools
 
 This plugin integrates the dataTables.breeze.editable with angular.
 
 
 ### dataTables.remoteState
 
-This plugin enables to store the table state on a remote location. One table can have multiple states in which one can be set as the default. The states will be shown on in a select box, when switching the table will load the selected state on the fly. This also works with ColReorder and ColVis plugin. The default classes are designed to work with Bootstrap but can be overriden to a custom ones.
+This plugin enables to store the table state on a remote location. One table can have multiple states in which one can be set as the default. The states will be shown on in a select box, when switching the table will load the selected state on the fly. This also works with ColReorder and ColVis plugin. The default classes are designed to work with Bootstrap but can be overridden to a custom ones.
 
 Default settings:
 ```js
