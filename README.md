@@ -1,14 +1,14 @@
-datatables.plugins
+Datatables.plugins
 ==================
 
-This repository contains various plugins for [DataTables](https://github.com/DataTables/DataTables). Most of them are for the integration with [angular](https://github.com/angular/angular.js) and [Breezejs](https://github.com/Breeze/breeze.js).
+This repository contains various plugins for [DataTables](https://github.com/DataTables/DataTables). Most of them are integrations with [angular](https://github.com/angular/angular.js) and [Breezejs](https://github.com/Breeze/breeze.js).
 
 <b>NOTE: These plugins works only with datatables 1.10!<b>
 
 <b>Browser support: IE9+, Chrome, Firefox, Opera<b>
 
 ## Demonstration:
-The demo is based on [NorthBreeze](https://github.com/Breeze/breeze.js.samples) which is using [ng-grid](https://github.com/angular-ui/ng-grid) for tables. We modified it so that [DataTables](https://github.com/DataTables/DataTables) is used instead of [ng-grid](https://github.com/angular-ui/ng-grid).   
+The demo is based on [NorthBreeze](https://github.com/Breeze/breeze.js.samples), which is using [ng-grid](https://github.com/angular-ui/ng-grid) for tables. We modified it, so that [DataTables](https://github.com/DataTables/DataTables) is used instead of [ng-grid](https://github.com/angular-ui/ng-grid).   
 
 The demo can be seen [HERE](http://hartis.si/datatables/).
 
@@ -16,7 +16,7 @@ The demo can be seen [HERE](http://hartis.si/datatables/).
 
 ### angular.dataTables
 
-This is the main plugin for integrating datatables with angular. Instead of recreating or empty/fill the whole table on collection changes as other similar plugins does this plugin handles model changes in a smart way so that only the collection items that are removed/added/swapped will be removed/added/swapped in DataTables. It populate items with the special property $$dtHash that is used for faster item searching (similar approach that [ngRepeat](https://docs.angularjs.org/api/ng/directive/ngRepeat)).
+This is the main plugin for integrating datatables with angular. Instead of recreating or empty/fill the whole table on collection changes as other similar plugins, this one handles model changes in a smart way, so that only the collection items that are removed/added/swapped will be removed/added/swapped in DataTables. It populates items with the special property $$dtHash that is used for faster item searching (similar approach that [ngRepeat](https://docs.angularjs.org/api/ng/directive/ngRepeat)).
 
 <b>Simple usage:</b>
 ```html
