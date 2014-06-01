@@ -1,10 +1,10 @@
-﻿app.dataservice = (function (breeze, logger) {
+﻿app.dataservice = function (manager) {
 
-    breeze.config.initializeAdapterInstance("modelLibrary", "backingStore", true); // backingStore is the modelLibrary for Angular
+    //breeze.config.initializeAdapterInstance("modelLibrary", "backingStore", true); // backingStore is the modelLibrary for Angular
 
-    var serviceName = 'breeze/NorthBreeze'; // route to the (same origin) Web Api controller
+    //var serviceName = 'breeze/NorthBreeze'; // route to the (same origin) Web Api controller
 
-    var manager = new breeze.EntityManager(serviceName);  // gets metadata from /breeze/NorthBreeze/Metadata
+    //var manager = new breeze.EntityManager(serviceName);  // gets metadata from /breeze/NorthBreeze/Metadata
 
     var _isSaving = false;
 
@@ -42,6 +42,7 @@
     function getCustomersQuery() {
         var query = breeze.EntityQuery
                 .from("Customers")
+                .toType("Customer")
                 .using(manager);
         return query;
     }
@@ -154,4 +155,4 @@
     //#endregion
 
 
-})(breeze, app.logger);
+};

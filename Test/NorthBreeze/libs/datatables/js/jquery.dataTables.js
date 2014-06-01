@@ -1991,8 +1991,6 @@
 		if ( sort ) {
 			_fnSort( settings );
 		}
-		console.time("Test");
-		
 		if ( filter ) {
 			_fnFilterComplete( settings, settings.oPreviousSearch );
 		}
@@ -2000,7 +1998,6 @@
 			// No filtering, so we want to just use the display master
 			settings.aiDisplay = settings.aiDisplayMaster.slice();
 		}
-		console.timeEnd("Test");
 		if ( holdPosition !== true ) {
 			settings._iDisplayStart = 0;
 		}
@@ -4931,17 +4928,17 @@
 	function _fnBindAction( n, oData, fn )
 	{
 		$(n)
-			.bind( 'click.DT', oData, function (e) {
+			.bind('click.DT', oData, function (e) {
 					n.blur(); // Remove focus outline for mouse users
 					fn(e);
 				} )
-			.bind( 'keypress.DT', oData, function (e){
+			.bind('keypress.DT', oData, function (e) {
 					if ( e.which === 13 ) {
 						e.preventDefault();
 						fn(e);
 					}
 				} )
-			.bind( 'selectstart.DT', function () {
+			.bind('selectstart.DT', function () {
 					/* Take the brutal approach to cancelling text selection */
 					return false;
 				} );

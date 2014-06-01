@@ -345,6 +345,7 @@
                                     case "type":
                                     case "filter":
                                     case "sort":
+                                        if (innerData != null) return innerData; //we want to have the row data if we have it
                                         var colOpts = columns[idx];
                                         if (!!colOpts.expressionFn) { //support expression for searching and filtering
                                             var arg = {};
@@ -489,7 +490,7 @@
                             origIdx = origIdx == null ? idx : origIdx;
                             var col = columns[origIdx];
                             angular.forEach(col, (val, key) => {
-                                if (!!oCol[key] || val === undefined) return;
+                                if (oCol[key] !== undefined || val === undefined) return;
                                 oCol[key] = val;
                             });
                         });

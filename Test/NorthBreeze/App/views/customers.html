@@ -2,13 +2,14 @@
     <h2>Description</h2>
 
     <p>
-        In this exmaple we are using TableTools, BreezeRemote and RowDetails plugins along its integrations with anuglar to show customers and its orders.
-        Ordering, Paging and filtering is done by Breeze that is used inside BreezeRemote plugin.
+        In this exmaple we are using TableTools, BreezeRemote, AdvancedFilter and RowDetails plugins along its integrations with anuglar to show customers and its orders.
+        Ordering, paging and filtering is done by Breeze that is used inside BreezeRemote plugin.
+        When using AdvancedFilter and BreezeRemote plugin together, AdvancedFilter will automatically apply its filters to the breeze.EntityQuery.
         With the help of TableTools and its integration with angular we can bind the current selected row onto the form so we can modify the row data.
         For displaying the customer orders the RowDetails plugin is used.
         When the row is expanded we are using the loadNavigationProperty function from Breeze in order to load the orders form the server.
     </p>
-    
+
     <h2>Customers</h2>
     <div id="row-details-tpl" ng-non-bindable style="display: none">
         <h4>SubItems {{data.CompanyName}}</h4>

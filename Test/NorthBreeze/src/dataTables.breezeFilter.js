@@ -78,8 +78,8 @@
                 dtInstance.data('entityFilter', settings.states[select.val()].filter);
             }
         },
-        "cFeature": "Y",
-        "sFeature": "entityFilter"
+        "cFeature": "G",
+        "sFeature": "breezeFilter"
     });
 
     $.fn.DataTable.ext.search.push(

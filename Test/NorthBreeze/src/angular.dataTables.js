@@ -351,6 +351,8 @@
                                     case "type":
                                     case "filter":
                                     case "sort":
+                                        if (innerData != null)
+                                            return innerData;
                                         var colOpts = columns[idx];
                                         if (!!colOpts.expressionFn) {
                                             var arg = {};
@@ -504,7 +506,7 @@
                         origIdx = origIdx == null ? idx : origIdx;
                         var col = columns[origIdx];
                         angular.forEach(col, function (val, key) {
-                            if (!!oCol[key] || val === undefined)
+                            if (oCol[key] !== undefined || val === undefined)
                                 return;
                             oCol[key] = val;
                         });

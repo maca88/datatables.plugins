@@ -7,33 +7,33 @@ app.controller('RouteCtrl', function ($scope, $route) {
 });
 
 // HomeCtrl - expose the changed entities in the EntityManager
-app.controller('HomeCtrl', ['$scope', function ($scope) {
+app.controller('HomeCtrl', ['$scope', 'dataservice', function ($scope, dataservice) {
 
     $scope.reset = function () {
-        app.dataservice.rejectChanges();
+        dataservice.rejectChanges();
     }
 
     $scope.update = function () {
-        app.dataservice.saveChanges();
+        dataservice.saveChanges();
     }
 
     // expose all the changed entities from the entityManager
-    $scope.changedEntities = app.dataservice.getChanges();
-    app.dataservice.subscribeChanges(function (changeargs) {
-        $scope.changedEntities = app.dataservice.getChanges();
+    $scope.changedEntities = dataservice.getChanges();
+    dataservice.subscribeChanges(function (changeargs) {
+        $scope.changedEntities = dataservice.getChanges();
     });
 
 }]);
 
 // CustomerCtrl - load the customers and configure the grid to display them
-app.controller('CustomerCtrl', ['$scope', function ($scope) {
+app.controller('CustomerCtrl', ['$scope', 'dataservice', function ($scope, dataservice) {
 
     $scope.reset = function (customer) {
         customer.entityAspect.rejectChanges();
     }
 
     $scope.update = function (customer) {
-        app.dataservice.saveChanges([customer], function() {
+        dataservice.saveChanges([customer], function() {
             $scope.$apply();
         });
     }
@@ -69,8 +69,9 @@ app.controller('CustomerCtrl', ['$scope', function ($scope) {
                     throw error;
                 });
         },
+        serverSide: true,
         breezeRemote: {
-            query: app.dataservice.getCustomersQuery(),
+            query: dataservice.getCustomersQuery(),
             entityName: "Customer",
             projectOnlyTableColumns: false //If true then server results will be plain objects (not breeze.Entity)
         },
@@ -83,16 +84,18 @@ app.controller('CustomerCtrl', ['$scope', function ($scope) {
         "T" + //TableTools
         "D" + //RowDetails
         "C" + //ColVis
+        "<'pull-right'A>" + //AdvancedFilter
+        "F" + //BreezeRemote
         "t" +
 		"<'row'<'col-xs-6'i><'col-xs-6'p>>R"
 
     };
 }]);
 
-app.controller('OrderCtrl', function ($scope) {
+app.controller('OrderCtrl', function ($scope, dataservice) {
     $scope.orders = $scope.orders || [];
     
-    app.dataservice.getOrders()
+    dataservice.getOrders()
         .then(querySucceeded)
         .fail(queryFailed);
 
@@ -122,9 +125,10 @@ app.controller('OrderCtrl', function ($scope) {
             }
         },
         dom: "<'row'<'col-xs-6'l><'col-xs-6'f>r>" +
-        "Y" + //Entity Filter
+        "G" + //BreezeFilter
         "C" + //ColVis
-        "B" + //RemoteState
+        "<'pull-left'B>" + //RemoteState
+        "<'pull-right'A>" + //AdvancedFilter
         "t" +
 		"<'row'<'col-xs-6'i><'col-xs-6'p>>R"
 

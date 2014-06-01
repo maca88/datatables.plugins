@@ -238,8 +238,9 @@
     };
 
 
-    $.fn.DataTable.Api.prototype.breezeEditable = function (oSettings) {
-        var settings = $.extend(true, {}, defaultSettings, oSettings.oInit.breezeEditable);
+    $.fn.DataTable.Api.prototype.breezeEditable = function (settings) {
+        var oSettings = this.settings()[0];
+        settings = $.extend(true, {}, defaultSettings, settings);
         var api = oSettings.oInstance.api();
         oSettings.breezeEditable = settings; //save the merged settings in order to use them in the button events
         var tableNode = api.table().node();
@@ -353,9 +354,9 @@
 
     $.fn.dataTable.ext.feature.push({
         "fnInit": function (oSettings) {
-            return oSettings.oInstance.api().breezeEditable(oSettings);
+            return oSettings.oInstance.api().breezeEditable(oSettings.oInit.breezeEditable);
         },
-        "cFeature": "X",
+        "cFeature": "E",
         "sFeature": "BreezeEditable"
     });
 

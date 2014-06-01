@@ -178,13 +178,13 @@
     <Content Include="Scripts\q.js" />
     <Content Include="Scripts\q.min.js" />
     <Content Include="Scripts\toastr.js" />
-    <Content Include="src\angular.dataTables.breeze.editable.js" />
-    <Content Include="src\angular.dataTables.breeze.js" />
-    <Content Include="src\angular.dataTables.breeze.remote.js" />
+    <Content Include="src\angular.dataTables.breezeEditable.js" />
     <Content Include="src\angular.dataTables.js" />
     <Content Include="src\angular.dataTables.rowDetails.js" />
     <Content Include="src\angular.dataTables.tableTools.js" />
-    <Content Include="src\dataTables.breeze.entityFilter.js" />
+    <Content Include="src\dataTables.advancedFilter.js" />
+    <Content Include="src\dataTables.breezeFilter.js" />
+    <Content Include="src\dataTables.breezeRemote.js" />
     <Content Include="src\dataTables.remoteState.css" />
     <Content Include="src\dataTables.remoteState.js" />
     <Content Include="src\dataTables.rowDetails.js" />
@@ -202,6 +202,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.config" />
+    <Content Include="src\dataTables.advancedFilter.css" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -280,14 +281,12 @@
     <Folder Include="libs\datatables\media\" />
   </ItemGroup>
   <ItemGroup>
-    <TypeScriptCompile Include="src\angular.dataTables.breeze.remote.ts" />
-    <TypeScriptCompile Include="src\angular.dataTables.breeze.ts" />
     <TypeScriptCompile Include="src\angular.dataTables.d.ts" />
-    <TypeScriptCompile Include="src\angular.dataTables.breeze.editable.ts" />
+    <TypeScriptCompile Include="src\angular.dataTables.breezeEditable.ts" />
     <TypeScriptCompile Include="src\angular.dataTables.rowDetails.ts" />
     <TypeScriptCompile Include="src\angular.dataTables.tableTools.ts" />
     <TypeScriptCompile Include="src\angular.dataTables.ts" />
-    <Content Include="src\dataTables.breeze.editable.js" />
+    <Content Include="src\dataTables.breezeEditable.js" />
     <TypeScriptCompile Include="typings\angularjs\angular-animate.d.ts" />
     <TypeScriptCompile Include="typings\angularjs\angular-cookies.d.ts" />
     <TypeScriptCompile Include="typings\angularjs\angular-mocks.d.ts" />

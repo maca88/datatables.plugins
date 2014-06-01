@@ -773,7 +773,8 @@ ColReorder.prototype = {
 	"_fnMouseListener": function ( i, nTh )
 	{
 		var that = this;
-		$(nTh).on( 'mousedown.ColReorder', function (e) {
+		$(nTh).on('mousedown.ColReorder', function (e) {
+		    if (e.target !== nTh) return;
 			e.preventDefault();
 			that._fnMouseDown.call( that, e, nTh );
 		} );

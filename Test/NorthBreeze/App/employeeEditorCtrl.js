@@ -1,6 +1,6 @@
-﻿app.controller('EmployeeEditorCtrl', function ($scope, $window, $location) {
+﻿app.controller('EmployeeEditorCtrl', function ($scope, dataservice) {
 
-    app.dataservice.getAllEmployees()
+    dataservice.getAllEmployees()
         .then(querySucceeded)
         .fail(queryFailed);
 
@@ -34,21 +34,20 @@
         dom: "<'row'<'col-xs-6'l><'col-xs-6'f>r>" +
         "C" + //ColVis
         "T" + //TableTools
-        "Y" + //Entity Filter
+        "G" + //BreezeFilter
         //"D" + //RowDetails
-        "X" + //BreezeEdiatble
-        
+        "E" + //BreezeEdiatble
         "t" +
 		"<'row'<'col-xs-6'i><'col-xs-6'p>>R"
 
     };
 
     $scope.rejectChanges = function () {
-        app.dataservice.rejectChanges();
+        dataservice.rejectChanges();
     }; 
 
     $scope.saveChanges = function () {
-        app.dataservice.saveChanges(null, function() {
+        dataservice.saveChanges(null, function() {
             $scope.$digest();
         });
     };

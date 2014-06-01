@@ -11,11 +11,14 @@ table .table-small {
     font-size: smaller;
 }
 
-tr.dt-selected-row {
+tr.dt-selected-row, .dt-global-filter-active {
     color: red;
 }
-td.dt-selected-cell {
+td.dt-selected-cell, .dt-column-filter-active {
     color: green;
+}
+div.dt-global-filter-div {
+    margin-right: 15px;
 }
 
 div.dt-feature-row {

@@ -218,6 +218,8 @@
 
                 /* Column reordering */
                 data.colReorder.push(iOrigColumn);
+
+                
             }
         }
 
@@ -227,10 +229,11 @@
     var saveState = function (oSettings, storeId, name, requestSettings, doneAction, failAction) {
         /* Store the interesting variables */
         var $table = $(oSettings.nTable);
-
+        var settings = oSettings.remoteState;
         var data = generateStateData(oSettings, oSettings.oInstance);
 
-        $table.trigger(event + 'remoteStateSaveParams.dt', oSettings, data);
+        $table.trigger('remoteStateSaveParams.dt', [oSettings, data]);
+
 
         var requestData = {
             'storeId': storeId,
@@ -267,7 +270,7 @@
         var columns = oSettings.aoColumns;
         var api = oSettings.oInstance.api();
         var $table = $(oSettings.nTable);
-        $table.trigger(event + 'remoteStateLoadParams.dt', oSettings, data, dtInitialized);
+        $table.trigger('remoteStateLoadParams.dt', [oSettings, data, dtInitialized]);
 
         // Number of columns have changed - reset filters
         if (columns.length !== data.searchCols.length) {
@@ -475,7 +478,9 @@
     $.fn.DataTable.Api.prototype.remoteState = function (settings) {
         var api = this;
         var dtSettings = this.context[0];
+        var $table = $(dtSettings.nTable);
         settings = $.extend(true, {}, defaultSettings, settings);
+        dtSettings.remoteState = settings;
         var loc = settings.language;
 
         if (settings.getStatesFromServer == true) { //We have to get them from the remote source
@@ -490,8 +495,15 @@
         //If current state is not set and default value is set then we need to load the default state
         if (settings.currentState == null && !!settings.defaultState && settings.defaultTableState != settings.defaultState) {
             var stateData = getState(settings, settings.defaultState);
-            loadState(dtSettings, stateData, false);
-            settings.currentState = settings.defaultState;
+            $table.css('visibility', 'hidden');
+            api.on('init.dt', function() {
+                loadState(dtSettings, stateData, true);
+                settings.currentState = settings.defaultState;
+                dom.stateSelect.val(settings.currentState);
+                $table.css('visibility', 'visible');
+            });
+            //loadState(dtSettings, stateData, false);
+            //settings.currentState = settings.defaultState;
         }
 
         //Change and set default
@@ -640,6 +652,7 @@
                         $('option:selected', select).prop('selected', false);
                         select.append($("<option />", { 'value': name, 'text': name, selected: true }));
                     });
+                    dom.setDefaultButton.prop('disabled', false);
                     dom.saveButton.prop('disabled', false);
                 },
                 function (jqXhr, textStatus, errorThrown) {
