@@ -70,6 +70,8 @@ app.controller('CustomerCtrl', ['$scope', 'dataservice', function ($scope, datas
                 });
         },
         serverSide: true,
+        scrollX: true,
+        scrollCollapse: true,
         breezeRemote: {
             query: dataservice.getCustomersQuery(),
             entityName: "Customer",
@@ -86,6 +88,7 @@ app.controller('CustomerCtrl', ['$scope', 'dataservice', function ($scope, datas
         "C" + //ColVis
         "<'pull-right'A>" + //AdvancedFilter
         "F" + //BreezeRemote
+        "J" + //ColResize
         "t" +
 		"<'row'<'col-xs-6'i><'col-xs-6'p>>R"
 

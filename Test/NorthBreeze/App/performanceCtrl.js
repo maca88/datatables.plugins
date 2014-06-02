@@ -10,9 +10,10 @@
 
     $scope.options = {
         deferRender: true,
-        dom: "TfrtiS",
+        dom: "TfrtiSJ",
         scrollY: 200,
         scrollCollapse: true,
+        //scrollX: true,
         tableTools: {
             "sRowSelect": "os",
             "sSwfPath": "libs/datatables/extensions/TableTools/swf/copy_csv_xls_pdf.swf",

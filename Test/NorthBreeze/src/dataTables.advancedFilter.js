@@ -242,14 +242,14 @@
                     filterSettingsButton
                     .attr('title', lang.filterSettings)
                     .addClass(settings.dom.settingButton.buttonClass)
+                    .on('click', function (e) {
+                        closeAllColumnFilters();
+                        populateGlobalFilter();
+                        modalDiv.modal('show');
+                    })
                     .append(
                         $('<span />')
                         .addClass(settings.dom.settingButton.spanClass)
-                        .on('click', function (e) {
-                            closeAllColumnFilters();
-                            populateGlobalFilter();
-                            modalDiv.modal('show');
-                        })
                     )
                 )
                 .append(modalDiv);
