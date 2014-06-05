@@ -11,15 +11,18 @@
     <link rel="stylesheet" type="text/css" href="libs/datatables/extensions/Bootstrap/css/dataTables.bootstrap.css">
     <link rel="stylesheet" type="text/css" href="libs/datatables/extensions/TableTools/css/dataTables.tableTools.css">
     <link rel="stylesheet" type="text/css" href="libs/datatables/extensions/Scroller/css/dataTables.scroller.css">
+    <link rel="stylesheet" type="text/css" href="libs/datatables/extensions/FixedColumns/css/dataTables.fixedColumns.css">
+    <link rel="stylesheet" type="text/css" href="libs/datatables/extensions/FixedHeader/css/dataTables.fixedHeader.css">
     <link rel="stylesheet" type="text/css" href="src/dataTables.remoteState.css">
     <link rel="stylesheet" type="text/css" href="src/dataTables.advancedFilter.css">
+    <link rel="stylesheet" type="text/css" href="src/dataTables.colPin.css">
     <link rel="stylesheet" href="App/style.css" />
 
 </head>
 <body>
 
     <nav class="">
-        <div class="container" ng-controller="RouteCtrl">
+        <div class="container text-center" ng-controller="RouteCtrl">
             <a class="brand" href="https://github.com/maca88/datatables.plugins">
                 <span class="title">GitHub</span>
             </a>
@@ -29,7 +32,7 @@
         </div>
     </nav>
 
-  <div ng-view style="margin: 50px"></div>
+    <div ng-view style="margin: 50px"></div>
 
     <script src="Scripts/jquery-1.9.1.js"></script>
     <script src="Scripts/q.js"></script>
@@ -39,12 +42,13 @@
     <script src="libs/bootstrap/js/bootstrap.js"></script>
     <script type="text/javascript" language="javascript" src="libs/datatables/js/jquery.dataTables.js"></script>
     <script type="text/javascript" language="javascript" src="libs/datatables/extensions/ColReorder/js/dataTables.colReorder.js"></script>
-    <!--<script type="text/javascript" language="javascript" src="libs/datatables/extensions/ColReorderWithResize/ColReorderWithResize.js"></script>-->
     <script type="text/javascript" language="javascript" src="libs/datatables/extensions/ColVis/js/dataTables.colVis.js"></script>
     <script type="text/javascript" language="javascript" src="libs/datatables/extensions/Bootstrap/js/dataTables.bootstrap.js"></script>
     <script type="text/javascript" language="javascript" src="libs/datatables/extensions/TableTools/js/dataTables.tableTools.js"></script>
     <script type="text/javascript" language="javascript" src="libs/datatables/extensions/KeyTable/js/dataTables.keyTable.js"></script>
     <script type="text/javascript" language="javascript" src="libs/datatables/extensions/Scroller/js/dataTables.scroller.js"></script>
+    <script type="text/javascript" language="javascript" src="libs/datatables/extensions/FixedColumns/js/dataTables.fixedColumns.js"></script>
+    <script type="text/javascript" language="javascript" src="libs/datatables/extensions/FixedHeader/js/dataTables.fixedHeader.js"></script>
     <script type="text/javascript" language="javascript" src="src/dataTables.remoteState.js"></script>
     <script type="text/javascript" language="javascript" src="src/dataTables.rowDetails.js"></script>
     <script type="text/javascript" language="javascript" src="src/dataTables.breezeEditable.js"></script>
@@ -52,6 +56,7 @@
     <script type="text/javascript" language="javascript" src="src/dataTables.advancedFilter.js"></script>
     <script type="text/javascript" language="javascript" src="src/dataTables.breezeRemote.js"></script>
     <script type="text/javascript" language="javascript" src="src/dataTables.colResize.js"></script>
+    <script type="text/javascript" language="javascript" src="src/dataTables.colPin.js"></script>
     <script type="text/javascript" language="javascript" src="src/angular.dataTables.js"></script>
     <script type="text/javascript" language="javascript" src="src/angular.dataTables.rowDetails.js"></script>
     <script type="text/javascript" language="javascript" src="src/angular.dataTables.tableTools.js"></script>

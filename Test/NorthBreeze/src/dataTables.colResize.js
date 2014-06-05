@@ -3,6 +3,7 @@
     var ColResize = (function () {
         function ColResize(api, settings) {
             this.tableSize = -1;
+            this.initialized = false;
             this.dt = {};
             this.dom = {
                 mouse: {
@@ -11,20 +12,28 @@
                     startWidth: null,
                     resizeElem: null
                 },
-                resize: false
+                resize: false,
+                scrollHead: null,
+                scrollHeadTable: null,
+                scrollBody: null,
+                scrollBodyTable: null,
+                scrollX: false
             };
             this.settings = $.extend(true, {}, settings);
             this.dt.settings = api.settings()[0];
             this.dt.api = api;
+            this.registerCallbacks();
         }
         ColResize.prototype.initialize = function () {
             var _this = this;
             $.each(this.dt.settings.aoColumns, function (i, col) {
                 var $th = $(col.nTh);
+                if (col.resizable === false)
+                    return;
 
                 // listen to mousemove event for resize
                 $th.bind('mousemove.ColResize', function (e) {
-                    if (_this.dom.resize)
+                    if (_this.dom.resize || col.resizable === false)
                         return;
 
                     /* Store information about the mouse position */
@@ -39,6 +48,8 @@
                         $thTarget.css({ 'cursor': 'pointer' });
                 });
 
+                //Save the original width
+                //col._sWidth_Orig = col.sWidth;
                 var colReorderMouseDownEvent = _this.getColumnEvent(col, 'mousedown', 'ColReorder');
 
                 //Remove the ColReorder handler so that reordering will not occur on resizing
@@ -50,6 +61,21 @@
                     return _this.onMouseDown(e, $th, col, colReorderMouseDownEvent);
                 });
             });
+
+            //Save scroll head and body if found
+            this.dom.scrollHead = $('div.' + this.dt.settings.oClasses.sScrollHead, this.dt.settings.nTableWrapper);
+            this.dom.scrollHeadTable = $('div.' + this.dt.settings.oClasses.sScrollHeadInner + ' > table', this.dom.scrollHead);
+
+            this.dom.scrollBody = $('div.' + this.dt.settings.oClasses.sScrollBody, this.dt.settings.nTableWrapper);
+            this.dom.scrollBodyTable = $('> table', this.dom.scrollBody);
+
+            this.dom.scrollX = this.dt.settings.oInit.sScrollX === undefined ? false : true;
+
+            //SaveTableWidth
+            this.dt.settings.sTableWidthOrig = $(this.dt.settings.nTable).width();
+
+            this.initialized = true;
+            this.dt.settings.oApi._fnCallbackFire(this.dt.settings, 'colResizeInitCompleted', 'colResizeInitCompleted', [this]);
         };
 
         ColResize.prototype.getColumnIndex = function (col) {
@@ -74,9 +100,100 @@
             return event;
         };
 
+        ColResize.prototype.loadState = function (data) {
+            var _this = this;
+            var i, col;
+
+            var onInit = function () {
+                if (!data.colResize) {
+                    if (_this.dt.settings.oFeatures.bAutoWidthOrig)
+                        _this.dt.settings.oFeatures.bAutoWidth = true;
+                    else if (_this.dt.settings.sTableWidthOrig)
+                        $(_this.dt.settings.nTable).width(_this.dt.settings.sTableWidthOrig);
+
+                    for (i = 0; i < _this.dt.settings.aoColumns.length; i++) {
+                        col = _this.dt.settings.aoColumns[i];
+                        if (col._ColResize_WidthOrig !== undefined) {
+                            col.sWidthOrig = col._ColResize_WidthOrig;
+                        }
+                    }
+                } else {
+                    var columns = data.colResize.columns || [];
+                    var wMap = {};
+
+                    if (_this.dt.settings.oFeatures.bAutoWidth) {
+                        _this.dt.settings.oFeatures.bAutoWidth = false;
+                        _this.dt.settings.oFeatures.bAutoWidthOrig = true;
+                    }
+
+                    if (_this.dom.scrollX && data.colResize.tableSize > 0) {
+                        _this.dom.scrollHeadTable.width(data.colResize.tableSize);
+                        _this.dom.scrollBodyTable.width(data.colResize.tableSize);
+                    }
+
+                    for (i = 0; i < columns.length; i++) {
+                        wMap[i] = columns[i];
+                    }
+
+                    for (i = 0; i < _this.dt.settings.aoColumns.length; i++) {
+                        col = _this.dt.settings.aoColumns[i];
+                        var idx = col._ColReorder_iOrigCol || i;
+
+                        col._ColResize_WidthOrig = col.sWidthOrig;
+                        col.sWidth = wMap[idx];
+                        col.sWidthOrig = wMap[idx];
+                    }
+                }
+                _this.dt.api.columns.adjust();
+            };
+
+            if (this.initialized) {
+                onInit();
+                return;
+            }
+            this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'colResizeInitCompleted', function () {
+                onInit();
+            }, "ColResize_Init");
+        };
+
+        ColResize.prototype.saveState = function (data) {
+            data.colResize = {
+                columns: [],
+                tableSize: this.tableSize
+            };
+
+            data.colResize.columns.length = this.dt.settings.aoColumns.length;
+            for (var i = 0; i < this.dt.settings.aoColumns.length; i++) {
+                var col = this.dt.settings.aoColumns[i];
+                var idx = col._ColReorder_iOrigCol || i;
+                data.colResize.columns[idx] = col.sWidth;
+            }
+        };
+
+        ColResize.prototype.registerCallbacks = function () {
+            var _this = this;
+            /* State saving */
+            this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'aoStateSaveParams', function (oS, oData) {
+                _this.saveState(oData);
+            }, "ColResize_State");
+
+            /* State loading */
+            this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'aoStateLoadParams', function (oS, oData) {
+                _this.loadState(oData);
+            }, "ColResize_State");
+
+            //Integrate with remote state
+            this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'remoteStateLoadParams', function (s, data) {
+                _this.loadState(data);
+            }, "ColResize_StateLoad");
+            this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'remoteStateSaveParams', function (s, data) {
+                _this.saveState(data);
+            }, "ColResize_StateSave");
+        };
+
         ColResize.prototype.onMouseDown = function (e, $th, col, colReorderMouseDownEvent) {
             var _this = this;
-            if ($th.css('cursor') != 'col-resize') {
+            if ($th.css('cursor') != 'col-resize' || col.resizable === false) {
                 if (colReorderMouseDownEvent != null && $.isFunction(colReorderMouseDownEvent.handler))
                     return colReorderMouseDownEvent.handler(e);
                 return false;
@@ -86,6 +203,8 @@
             this.dom.mouse.resizeElem = $th;
             this.dom.mouse.nextStartWidth = $th.next().width();
             this.dom.resize = true;
+            if (this.dt.settings.oFeatures.bAutoWidth)
+                this.dt.settings.oFeatures.bAutoWidthOrig = true;
             this.dt.settings.oFeatures.bAutoWidth = false;
 
             /* Add event handlers to the document */
@@ -106,6 +225,10 @@
             $(document).on('mouseup.ColResize', function (event) {
                 _this.onMouseUp(event, col);
             });
+
+            /* Save the state */
+            this.dt.settings.oInstance.oApi._fnSaveState(this.dt.settings);
+
             return false;
         };
 
@@ -119,14 +242,12 @@
             var currentColumn;
             var nextVisibleColumnIndex;
             var previousVisibleColumnIndex;
-            var scrollXEnabled = this.dt.settings.oInit.sScrollX === undefined ? false : true;
-            var scrollHead = $('div.dataTables_scrollHead', this.dt.settings.nTableWrapper);
 
-            //Save the new resized column's width
-            col.sWidth = $(this.dom.mouse.resizeElem).innerWidth() + "px";
+            //Save the new resized column's width - add only the diff to the orig width in order ColPin to work
+            col.sWidth = Number(col.sWidth.replace('px', '')) + (e.pageX - this.dom.mouse.startX) + 'px'; //  $(this.dom.mouse.resizeElem).innerWidth() + "px";
 
             //If other columns might have changed their size, save their size too
-            if (!scrollXEnabled) {
+            if (!this.dom.scrollX) {
                 for (nextVisibleColumnIndex = colIdx + 1; nextVisibleColumnIndex < this.dt.settings.aoColumns.length; nextVisibleColumnIndex++) {
                     if (this.dt.settings.aoColumns[nextVisibleColumnIndex].bVisible)
                         break;
@@ -151,8 +272,8 @@
             }
 
             //Update the internal storage of the table's width (in case we changed it because the user resized some column and scrollX was enabled
-            if (scrollXEnabled && scrollHead.length) {
-                this.tableSize = $('table', scrollHead).width();
+            if (this.dom.scrollX && this.dom.scrollHead.length) {
+                this.tableSize = this.dom.scrollHeadTable.width();
             }
 
             //Save the state
@@ -162,25 +283,21 @@
         };
 
         ColResize.prototype.onMouseMove = function (e, col) {
-            var scrollXEnabled = this.dt.settings.oInit.sScrollX === undefined ? false : true;
-            var scrollHead = $('div.dataTables_scrollHead', this.dt.settings.nTableWrapper);
-            var scrollBody = $('div.dataTables_scrollBody', this.dt.settings.nTableWrapper);
             var moveLength = e.pageX - this.dom.mouse.startX;
             var $th = $(this.dom.mouse.resizeElem);
             var $thNext = $th.next();
 
-            if (scrollXEnabled && scrollHead.length) {
-                var scrollHeadTable = $('table', scrollHead);
+            if (this.dom.scrollX && this.dom.scrollHead.length) {
                 if (this.tableSize < 0)
-                    this.tableSize = scrollHeadTable.width();
-                scrollHeadTable.width(this.tableSize + moveLength);
+                    this.tableSize = this.dom.scrollHeadTable.width();
+                this.dom.scrollHeadTable.width(this.tableSize + moveLength);
             }
 
-            if (moveLength != 0 && !scrollXEnabled)
+            if (moveLength != 0 && !this.dom.scrollX)
                 $thNext.width(this.dom.mouse.nextStartWidth - moveLength);
             $th.width(this.dom.mouse.startWidth + moveLength);
 
-            if (scrollBody.length) {
+            if (this.dom.scrollBody.length) {
                 var visibleColumnIndex;
                 var colIdx = this.getColumnIndex(col);
                 var currentColumnIndex;
@@ -191,17 +308,17 @@
                 }
 
                 //Get the table
-                var resizingHeaderColumn = $('table thead tr th:nth(' + visibleColumnIndex + ')', scrollBody);
+                var resizingHeaderColumn = $('thead tr th:nth(' + visibleColumnIndex + ')', this.dom.scrollBodyTable);
 
                 //This will happen only when Scroller plugin is used without scrollX
-                if (!scrollXEnabled && moveLength != 0) {
+                if (!this.dom.scrollX && moveLength != 0) {
                     resizingHeaderColumn.width(this.dom.mouse.startWidth + moveLength);
                     resizingHeaderColumn.next().width(this.dom.mouse.nextStartWidth - moveLength);
                 }
 
                 //Resize the table and the column
-                if (scrollXEnabled) {
-                    $('table', scrollBody).width(this.tableSize + moveLength);
+                if (this.dom.scrollX) {
+                    this.dom.scrollBodyTable.width(this.tableSize + moveLength);
                     resizingHeaderColumn.width(this.dom.mouse.startWidth + moveLength);
                 }
             }
@@ -215,6 +332,10 @@
 })(dt || (dt = {}));
 
 (function (window, document, undefined) {
+    //Register events
+    $.fn.DataTable.models.oSettings.colResizeInitCompleted = [];
+
+    //Register api function
     $.fn.DataTable.Api.prototype.colResize = function (settings) {
         var colResize = new dt.ColResize(this, settings);
         if (this.settings()[0].bInitialized)
@@ -227,6 +348,7 @@
         return null;
     };
 
+    //Add as feature
     $.fn.dataTable.ext.feature.push({
         "fnInit": function (oSettings) {
             return oSettings.oInstance.api().colResize(oSettings.oInit.colResize);

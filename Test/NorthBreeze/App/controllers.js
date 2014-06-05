@@ -70,8 +70,8 @@ app.controller('CustomerCtrl', ['$scope', 'dataservice', function ($scope, datas
                 });
         },
         serverSide: true,
-        scrollX: true,
-        scrollCollapse: true,
+        //scrollX: true,
+        //scrollCollapse: true,
         breezeRemote: {
             query: dataservice.getCustomersQuery(),
             entityName: "Customer",
@@ -105,9 +105,12 @@ app.controller('OrderCtrl', function ($scope, dataservice) {
     $scope.orderGridOpts = {
         paging: true,
         lengthChange: true,
+        lengthMenu: [[3, 25, 50, -1], [3, 25, 50, "All"]],
         searching: true,
         info: true,
-        autoWidth: true,
+        //autoWidth: true,
+        scrollX: true,
+        scrollCollapse: true,
         deferRender: true,
         remoteState: {
             storeId: 'OrderGrid',
@@ -133,6 +136,9 @@ app.controller('OrderCtrl', function ($scope, dataservice) {
         "<'pull-left'B>" + //RemoteState
         "<'pull-right'A>" + //AdvancedFilter
         "t" +
+        
+        "J" + //ColResize
+        "I" + //ColPin
 		"<'row'<'col-xs-6'i><'col-xs-6'p>>R"
 
     };

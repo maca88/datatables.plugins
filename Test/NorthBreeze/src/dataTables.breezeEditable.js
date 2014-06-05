@@ -253,7 +253,7 @@
         oSettings.KeyTable = keys;
         var hiddenInputDiv = $tableNode.next(); //form option create this node
 
-        $tableNode.on('init.dt', function() {
+        $tableNode.one('init.dt', function() {
             $tableNode.parent('div.dataTables_wrapper').prepend(hiddenInputDiv); //when tab press in an input right before the table the first cell in the table will be selected
         });
 

@@ -186,7 +186,9 @@
     <Content Include="src\dataTables.advancedFilter.js" />
     <Content Include="src\dataTables.breezeFilter.js" />
     <Content Include="src\dataTables.breezeRemote.js" />
+    <TypeScriptCompile Include="src\dataTables.colPin.ts" />
     <TypeScriptCompile Include="src\dataTables.colResize.ts" />
+    <Content Include="src\dataTables.colPin.css" />
     <Content Include="src\dataTables.colResize.js" />
     <Content Include="src\dataTables.remoteState.css" />
     <Content Include="src\dataTables.remoteState.js" />

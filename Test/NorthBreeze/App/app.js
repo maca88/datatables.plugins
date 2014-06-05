@@ -6,10 +6,10 @@ var app = angular.module('NorthBreeze', ['ngRoute', 'dt']);
 // Define route objects, which are used by the routeProvider (for loading ng-view) and by the RouteCtrl (for displaying navigation bar)
 app.routes = [
     { path: '/', name: 'Home', templateUrl: 'App/views/home.html', controller: 'HomeCtrl' },
-    { path: '/customers', name: 'Customers[RowDetails, TableTools, BreezeRemote, AdvancedFilter]', templateUrl: 'App/views/customers.html', controller: 'CustomerCtrl' },
-    { path: '/browsers', name: 'Browsers[RowDetails, TableTools]', templateUrl: 'App/views/browsers.html', controller: 'BrowserCtrl' },
-    { path: '/orders', name: 'Orders[BreezeFilter, RemoteState, AdvancedFilter]', templateUrl: 'App/views/orders.html', controller: 'OrderCtrl' },
-    { path: '/employee-editor', name: 'Employee[BreezeEditable]', templateUrl: 'App/views/employeeEditor.html', controller: 'EmployeeEditorCtrl' },
+    { path: '/customers', name: 'Customers', templateUrl: 'App/views/customers.html', controller: 'CustomerCtrl' },
+    { path: '/browsers', name: 'Browsers', templateUrl: 'App/views/browsers.html', controller: 'BrowserCtrl' },
+    { path: '/orders', name: 'Orders', templateUrl: 'App/views/orders.html', controller: 'OrderCtrl' },
+    { path: '/employee-editor', name: 'Employee', templateUrl: 'App/views/employeeEditor.html', controller: 'EmployeeEditorCtrl' },
     { path: '/performance', name: 'PerformanceTest', templateUrl: 'App/views/performance.html', controller: 'PerformanceCtrl' }
 ];
 

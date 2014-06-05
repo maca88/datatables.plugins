@@ -34,13 +34,16 @@ div.dt-entity-filter label {
     margin-right: 10px;
 }
 
-table.dataTable tr td.checkbox {
+table.dataTable tr td.checkbox, table.dataTable tr th.checkbox {
     text-align: center;
+    border: 0;
 }
  
 table.dataTable tr td.checkbox:before {
     content: "\f096"; /* fa-square-o */
     font-family: FontAwesome;
+    margin: 8px;
+    font-size: 18px;
 }
  
 table.dataTable tr.selected td.checkbox:before {

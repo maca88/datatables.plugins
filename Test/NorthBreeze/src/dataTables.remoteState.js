@@ -1,5 +1,9 @@
 ﻿(function( window, document, undefined ) {
 
+    //Register events
+    $.fn.DataTable.models.oSettings.remoteStateSaveParams = [];
+    $.fn.DataTable.models.oSettings.remoteStateLoadParams = [];
+
     $.fn.dataTable.ext.feature.push({
         "fnInit": function (oSettings) {
             return oSettings.oInstance.api().remoteState(oSettings.oInit.remoteState);
@@ -16,7 +20,7 @@
         defaultTableState: 'Default',
         states: null,
         getStatesFromServer: false,
-        sendCurrentStateToServer: 'currentState',
+        sendCurrentStateToServer: null,
         dom: {
             inputWidth: '200px',
             stateSelectClass: 'form-control',
@@ -232,8 +236,7 @@
         var settings = oSettings.remoteState;
         var data = generateStateData(oSettings, oSettings.oInstance);
 
-        $table.trigger('remoteStateSaveParams.dt', [oSettings, data]);
-
+        oSettings.oApi._fnCallbackFire(oSettings, 'remoteStateSaveParams', 'remoteStateSaveParams', [oSettings, data]);
 
         var requestData = {
             'storeId': storeId,
@@ -270,8 +273,9 @@
         var columns = oSettings.aoColumns;
         var api = oSettings.oInstance.api();
         var $table = $(oSettings.nTable);
-        $table.trigger('remoteStateLoadParams.dt', [oSettings, data, dtInitialized]);
+        oSettings.oApi._fnCallbackFire(oSettings, 'remoteStateLoadParams', 'remoteStateLoadParams', [oSettings, data, dtInitialized]);
 
+        
         // Number of columns have changed - reset filters
         if (columns.length !== data.searchCols.length) {
             data.searchCols = [];
@@ -478,7 +482,7 @@
     $.fn.DataTable.Api.prototype.remoteState = function (settings) {
         var api = this;
         var dtSettings = this.context[0];
-        var $table = $(dtSettings.nTable);
+        
         settings = $.extend(true, {}, defaultSettings, settings);
         dtSettings.remoteState = settings;
         var loc = settings.language;
@@ -494,13 +498,14 @@
 
         //If current state is not set and default value is set then we need to load the default state
         if (settings.currentState == null && !!settings.defaultState && settings.defaultTableState != settings.defaultState) {
+            var $tableWrapper = $(dtSettings.nTableWrapper);
             var stateData = getState(settings, settings.defaultState);
-            $table.css('visibility', 'hidden');
-            api.on('init.dt', function() {
+            $tableWrapper.css('visibility', 'hidden');
+            api.one('init.dt', function() {
                 loadState(dtSettings, stateData, true);
                 settings.currentState = settings.defaultState;
                 dom.stateSelect.val(settings.currentState);
-                $table.css('visibility', 'visible');
+                $tableWrapper.css('visibility', 'visible');
             });
             //loadState(dtSettings, stateData, false);
             //settings.currentState = settings.defaultState;
@@ -701,7 +706,7 @@
 
         //#endregion
 
-        if (!!settings.sendCurrentStateToServer) {
+        if (settings.sendCurrentStateToServer) {
             api.on('serverParams.dt', function(e, data) {
                 data[settings.sendCurrentStateToServer] = settings.currentState;
             });

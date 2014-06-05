@@ -93,7 +93,6 @@
         });
     }
 
-
     function getEntityPropertiesMap(entityType) {
         var propMap = {};
         var properties = entityType.getProperties();

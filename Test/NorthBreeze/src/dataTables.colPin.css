@@ -1,0 +1,21 @@
+﻿.unpinned {
+    -webkit-transform: rotate(+45deg);
+    -moz-transform: rotate(+45deg);
+    -o-transform: rotate(+45deg);
+    -ms-transform: rotate(+45deg);
+    transform: rotate(+45deg);
+}
+
+.pinned {
+	color: red;
+    -webkit-transform:rotate(-45deg);
+    -moz-transform:rotate(-45deg);
+    -o-transform:rotate(-45deg);
+    -ms-transform: rotate(-45deg);
+    transform: rotate(-45deg);
+}
+
+table.dataTable { /*We have to override the margins from dt bootstrap csss*/
+	margin-top: 0 !important; 
+	margin-bottom: 0 !important;
+}

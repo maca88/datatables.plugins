@@ -1,8 +1,11 @@
 ﻿<div>
     <h2>Description</h2>
 
+    <h4>
+        Used plugins: BreezeFilter, RemoteState, AdvancedFilter, ColResize, ColVis, ColReorder, ColPin
+    </h4>
+
     <p>
-        In this exmaple we are showing three plugins, BreezeFilter, AdvancedFilter and RemoteState.
         The BreezeFilter is a simple global DataTables filter that will filter the rows based on the state that the breeze entity has.
         For the sake of simplicity, we can change the entity state in the last column named options.
         The list of possible states is the following:
@@ -20,7 +23,7 @@
     </p>
     <p>
         The RemoteState is the second plugin in this example, and it serves to save the current table state to the server or load it from the server.
-        RemoteState will also save/load the states of the following plugins: ColVis, ColReorder and AdvancedFilter
+        RemoteState will also save/load the states of the following plugins: ColVis, ColReorder, AdvancedFilter, ColResize and ColPin.
         First of all we need to create a new State by pressing the settings button.
         One table can have multiple states, so the user can switch bettewn them on the fly (this can be done in the State dropdown).
         In addition to that we can set one of the saved states as default one, this means that the table will be initilaized in the state that was set as default.
@@ -30,11 +33,26 @@
     <p>
         The AdvancedFilter plugin is used to create complex filters that can be applied to our data (client side or server side). In this exmaple filtering is done on the client side.
         The big difference between DataTables builtin search engine and AdvancedFilter is that AdvancedFilter support nested predicates on a column level, with a friendly UI.
-        There is two way to add a filter with the AdvancedFilter plugin.
+        There are two ways to add a filter with the AdvancedFilter plugin.
         One is by clicking on the filter icon whitin the column header or by clicking the filter icon above the table.
         When clicking on the icon above the table a modal window will be shown with all the filters that are currently applied.
     </p>
+    <p>
+        ColResize plugins is used for column resizing. It works for tables with scrollX enabled or disabled and even with the official DataTables plugin called Scroller.
+    </p>
+    <p>
+        ColPin plugin is used for pin columns to be always visible when scrolling the horizontal scroller.
+        Under the hood ColPin uses the official DataTables plugin called FixedColumns. 
+        By clicking on the pin the column will be pinned on the left of the table and by holding shift + click the column will be pinned on the right side.
+        For unpin the column just click again on the icon and the column will not be pinned anymore.
+    </p>
 
+    <style type="text/css">
+        div.dataTables_wrapper {
+            width: 100%;
+            margin: 0 auto;
+        }
+    </style>
 
     <h2>Orders</h2>
 
@@ -46,19 +64,19 @@
     </div>
     <table class="table-striped table-bordered table-condensed table-small" dt-table="orderTable" dt-width="100%" dt-data="orders" dt-options="orderGridOpts" dt-row-data-path="order">
         <thead>
-        <th dt-data="OrderID">Order ID</th>
-        <th dt-data="Freight" dt-expression="order.Freight | currency">Freight</th>
-        <th dt-data="OrderDate" dt-expression="order.OrderDate | date:'shortDate'">Order Date</th>
-        <th dt-expression="order.RequiredDate | date:'shortDate'">Required Date</th>
-        <th dt-expression="order.ShippedDate | date:'shortDate'">Shipped Date</th>
-        <th dt-data="ShipName">Name</th>
-        <th dt-data="ShipAddress">Address</th>
-        <th dt-data="ShipCity">City</th>
-        <th dt-data="ShipRegion">Region</th>
-        <th dt-data="ShipPostalCode">PostCode</th>
-        <th dt-data="ShipCountry">Country</th>
-        <th dt-data="entityAspect.entityState.name">Entity state</th>
-        <th dt-template="#order-opt-tpl">Options</th>
+        <th dt-data="OrderID" dt-width="100px">Order ID</th>
+        <th dt-data="Freight" dt-expression="order.Freight | currency" dt-width="100px">Freight</th>
+        <th dt-data="OrderDate" dt-expression="order.OrderDate | date:'shortDate'" dt-width="150px">Order Date</th>
+        <th dt-expression="order.RequiredDate | date:'shortDate'" dt-width="150px">Required Date</th>
+        <th dt-expression="order.ShippedDate | date:'shortDate'" dt-width="150px">Shipped Date</th>
+        <th dt-data="ShipName" dt-width="100px">Name</th>
+        <th dt-data="ShipAddress" dt-width="100px">Address</th>
+        <th dt-data="ShipCity" dt-width="150px">City</th>
+        <th dt-data="ShipRegion" dt-width="150px">Region</th>
+        <th dt-data="ShipPostalCode" dt-width="150px">PostCode</th>
+        <th dt-data="ShipCountry" dt-width="150px">Country</th>
+        <th dt-data="entityAspect.entityState.name" dt-width="150px">Entity state</th>
+        <th dt-template="#order-opt-tpl" dt-width="150px">Options</th>
         </thead>
     </table>
 </div>
