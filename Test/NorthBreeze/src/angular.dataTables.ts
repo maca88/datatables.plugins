@@ -171,22 +171,6 @@
         return this.row(rows[0]);
     });
     //Getting cell by node or by index
-    $.fn.DataTable.Api.register('row().cell()', function(column) {
-        var rIdx = this.index();
-        var cIdx;
-        var ctx = this.settings()[0];
-        var cells = ctx.aoData[rIdx].anCells;
-        if ($.isNumeric(column)) {
-            cIdx = parseInt(column);
-            if (cIdx >= ctx.aoColumns.length) return null;
-            return this.table().cell(rIdx, cIdx);
-        }
-
-        if (cells == null) return null;
-        cIdx = cells.indexOf(column); //treat column as Element
-        if (cIdx < 0) return null;
-        return this.table().cell(rIdx, cIdx);
-    });
     $.fn.DataTable.Api.register('gotoLastPage()', function () {
         var oScroller = this.settings()[0].oScroller;
         var info: any = this.page.info();
@@ -340,7 +324,7 @@
                             if (col.render == null) {
                                 col.render = (innerData, sSpecific, rData) => {
                                     switch (sSpecific) {
-                                    case "display":
+                                    case "display": //TODO: we have to evaluate even on display mode because of fixedcolumns
                                         return innerData; //we will handle what will be displayed in rowCreatedCallback
                                     case "type":
                                     case "filter":

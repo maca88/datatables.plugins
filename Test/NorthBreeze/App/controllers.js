@@ -52,7 +52,7 @@ app.controller('CustomerCtrl', ['$scope', 'dataservice', function ($scope, datas
             icon: {
                 openHtml: '<span class="glyphicon glyphicon-plus row-detail-icon"></span>',
                 closeHtml: '<span class="glyphicon glyphicon-minus row-detail-icon"></span>',
-                'class': 'row-detail-icon',
+                className: 'row-detail-icon',
             }
         },
         rowDetailOpened: function (row) {
@@ -73,6 +73,11 @@ app.controller('CustomerCtrl', ['$scope', 'dataservice', function ($scope, datas
         //scrollX: true,
         //scrollCollapse: true,
         breezeRemote: {
+            prefetchPages: 3,
+            //method: 'POST',
+            sendExtraData: function(data) {
+                return data['formFilter'];
+            },
             query: dataservice.getCustomersQuery(),
             entityName: "Customer",
             projectOnlyTableColumns: false //If true then server results will be plain objects (not breeze.Entity)
@@ -82,6 +87,9 @@ app.controller('CustomerCtrl', ['$scope', 'dataservice', function ($scope, datas
             "sRowSelect": "single",
             "sSwfPath": "libs/datatables/extensions/TableTools/swf/copy_csv_xls_pdf.swf",
         },
+        formFilter: {
+            formSelectors: ['#cust-dt-filter']
+        },
         dom: "<'row'<'col-xs-6'l><'col-xs-6'f>r>" +
         "T" + //TableTools
         "D" + //RowDetails
@@ -89,6 +97,7 @@ app.controller('CustomerCtrl', ['$scope', 'dataservice', function ($scope, datas
         "<'pull-right'A>" + //AdvancedFilter
         "F" + //BreezeRemote
         "J" + //ColResize
+        "K" + //FormFilter
         "t" +
 		"<'row'<'col-xs-6'i><'col-xs-6'p>>R"
 
@@ -130,13 +139,35 @@ app.controller('OrderCtrl', function ($scope, dataservice) {
                 }
             }
         },
+        formFilter: {
+            formSelectors: ['#order-dt-filter'],
+            clientFilter: function(currentFormsData, data, dataIndex, rowData) {
+                if (!currentFormsData) return true;
+                var result = true;
+                for (var i = 0; i < currentFormsData.length; i++) {
+                    var name = currentFormsData[i].name;
+                    switch(name) {
+                        case 'city':
+                            result &= currentFormsData[i].value == '' || rowData.ShipCity == currentFormsData[i].value;
+                            break;
+                        case 'region':
+                            result &= currentFormsData[i].value == '' || rowData.ShipRegion == currentFormsData[i].value;
+                            break;
+                        case 'name':
+                            result &= currentFormsData[i].value == '' || rowData.ShipName == currentFormsData[i].value;
+                            break;
+                    }
+                }
+                return result;
+            }
+        },
         dom: "<'row'<'col-xs-6'l><'col-xs-6'f>r>" +
         "G" + //BreezeFilter
         "C" + //ColVis
         "<'pull-left'B>" + //RemoteState
         "<'pull-right'A>" + //AdvancedFilter
         "t" +
-        
+        "K" + //FormFilter
         "J" + //ColResize
         "I" + //ColPin
 		"<'row'<'col-xs-6'i><'col-xs-6'p>>R"

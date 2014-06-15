@@ -170,25 +170,6 @@
     });
 
     //Getting cell by node or by index
-    $.fn.DataTable.Api.register('row().cell()', function (column) {
-        var rIdx = this.index();
-        var cIdx;
-        var ctx = this.settings()[0];
-        var cells = ctx.aoData[rIdx].anCells;
-        if ($.isNumeric(column)) {
-            cIdx = parseInt(column);
-            if (cIdx >= ctx.aoColumns.length)
-                return null;
-            return this.table().cell(rIdx, cIdx);
-        }
-
-        if (cells == null)
-            return null;
-        cIdx = cells.indexOf(column); //treat column as Element
-        if (cIdx < 0)
-            return null;
-        return this.table().cell(rIdx, cIdx);
-    });
     $.fn.DataTable.Api.register('gotoLastPage()', function () {
         var oScroller = this.settings()[0].oScroller;
         var info = this.page.info();

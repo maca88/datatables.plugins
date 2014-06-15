@@ -1,6 +1,9 @@
-﻿using Breeze.ContextProvider;
+﻿using System.IO;
+using System.Web;
+using Breeze.ContextProvider;
 using Breeze.ContextProvider.NH;
 using Models.NorthwindIB.NH;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -18,7 +21,14 @@ namespace NorthBreeze.Controllers
         //Dictionary<storeId, Tuple<detaultState, Dictionary<stateName, data>>>
         private static readonly Dictionary<string, Tuple<string, Dictionary<string, object>>> DtStates = new Dictionary<string, Tuple<string, Dictionary<string, object>>>();
 
-        static NorthBreezeController() { }
+        static NorthBreezeController()
+        {
+            var statesPath = GetStateFilePath();
+            if (!File.Exists(statesPath)) return;
+            DtStates =
+                JsonConvert.DeserializeObject<Dictionary<string, Tuple<string, Dictionary<string, object>>>>(
+                    File.ReadAllText(statesPath));
+        }
 
         protected override void Initialize(System.Web.Http.Controllers.HttpControllerContext controllerContext)
         {
@@ -57,7 +67,14 @@ namespace NorthBreeze.Controllers
                     DtStates[storeId].Item2[stateName] = data;
                     break;
             }
+            File.WriteAllText(GetStateFilePath(), JsonConvert.SerializeObject(DtStates));
+
             return null;
+        }
+
+        private static string GetStateFilePath()
+        {
+            return Path.Combine(HttpContext.Current.Request.PhysicalApplicationPath, "states.json");
         }
 
         [HttpGet]
@@ -73,9 +90,17 @@ namespace NorthBreeze.Controllers
         }
 
         [HttpGet]
-        public IQueryable<Customer> Customers()
+        [HttpPost]
+        public IQueryable<Customer> Customers(string company = null, string country = null, string contract = null)
         {
-            var custs = northwind.Customers;
+            IQueryable<Customer> custs = northwind.Customers;
+            if (!string.IsNullOrEmpty(company))
+                custs = custs.Where(o => o.CompanyName.Contains(company));
+            if (!string.IsNullOrEmpty(country))
+                custs = custs.Where(o => o.Country.Contains(country));
+            if (!string.IsNullOrEmpty(contract))
+                custs = custs.Where(o => o.ContactName.Contains(contract));
+
             return custs;
         }
 

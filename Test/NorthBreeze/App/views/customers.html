@@ -1,10 +1,9 @@
 ﻿<div>
     <h2>Description</h2>
     <h4>
-        Used plugins: RowDetails, TableTools, BreezeRemote, AdvancedFilter, ColResize, ColVis, ColReorder
+        Used plugins: RowDetails, TableTools, BreezeRemote, AdvancedFilter, ColResize, ColVis, ColReorder, FormFilter
     </h4>
     <p>
-        In this exmaple we are using TableTools, BreezeRemote, AdvancedFilter and RowDetails plugins along its integrations with anuglar to show customers and its orders.
         Ordering, paging and filtering is done by Breeze that is used inside BreezeRemote plugin.
         When using AdvancedFilter and BreezeRemote plugin together, AdvancedFilter will automatically apply its filters to the breeze.EntityQuery.
         With the help of TableTools and its integration with angular we can bind the current selected row onto the form so we can modify the row data.
@@ -13,6 +12,36 @@
     </p>
 
     <h2>Customers</h2>
+    
+    
+    <h3>Form filter</h3>
+    <form role="form" id="cust-dt-filter">
+        <div class="row">
+            <div class="col-xs-4">
+                <div class="form-group">
+                    <label for="company">Company</label>
+                    <input type="text" name="company" class="form-control" id="company">
+                </div>
+            </div>
+            <div class="col-xs-4">
+                <div class="form-group">
+                    <label for="country">Country</label>
+                    <input type="text" name="country" class="form-control" id="country">
+                </div>
+            </div>
+            <div class="col-xs-4">
+                <div class="form-group">
+                    <label for="contract">Contact Name</label>
+                    <input type="text" name="contract" class="form-control" id="contract">
+                </div>
+            </div>
+        </div>
+        <div class="form-group pull-right">
+            <button class="btn btn-primary">Filter</button>
+        </div>
+        <div class="clearfix"></div>
+    </form>
+
     <div id="row-details-tpl" ng-non-bindable style="display: none">
         <h4>SubItems {{data.CompanyName}}</h4>
         <div ng-if="ordersLoaded !== true">
