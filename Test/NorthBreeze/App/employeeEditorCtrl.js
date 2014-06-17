@@ -26,10 +26,8 @@
             "aButtons": ["editable_restore_deleted", "editable_delete", "editable_add", "editable_reject", "select_all", "select_none"]
         },
         breezeEditable: {
-            collectionProperty: "Orders",
-            parentEntity: function() {
-                return $scope.employee;
-            }
+            entityType: 'Order',
+            createEntity: dataservice.createEntity
         },
         dom: "<'row'<'col-xs-6'l><'col-xs-6'f>r>" +
         "C" + //ColVis

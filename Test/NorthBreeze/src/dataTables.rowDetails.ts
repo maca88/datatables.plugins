@@ -75,10 +75,10 @@
                 if (column.iconColumn !== true) return;
                 var iconColumn =  this.dt.settings.aoColumns[idx];
 
-                iconColumn.mRender = column.render = (innerData, sSpecific, oData) => {
+                iconColumn.mRender = column.render = (innerData, type, rowData, meta) => {
                     var hasIcon = true;
                     if ($.isFunction(this.settings.icon.hasIcon))
-                        hasIcon = this.settings.icon.hasIcon.call(this.dt.api, oData);
+                        hasIcon = this.settings.icon.hasIcon.call(this.dt.api, rowData);
                     if (!hasIcon)
                         return this.settings.icon.defaultHtml || '';
 
@@ -96,8 +96,8 @@
                     cell.append(openIcon, closeIcon);
                     return cell.html();
                 };
-                iconColumn.fnGetData = (oData, sSpecific) => {
-                    return iconColumn.mRender(null, sSpecific, oData);
+                iconColumn.fnGetData = (rowData, type, meta) => {
+                    return iconColumn.mRender(null, type, rowData, meta);
                 };
             });
 
@@ -250,7 +250,6 @@
     $.fn.DataTable.Api.register('row().toggleDetails()', function (settings) {
         this.isOpen() ? this.closeDetails(settings) : this.openDetails(settings);
     });
-
 
     $.fn.DataTable.Api.prototype.rowDetails = function (settings) {
         var rowDetails = new dt.RowDetails(this, settings);

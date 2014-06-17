@@ -18,8 +18,9 @@
         subscribeChanges: subscribeChanges,
         saveChanges: saveChanges,
         rejectChanges: rejectChanges,
-        getCustomersQuery: getCustomersQuery
-    };
+        getCustomersQuery: getCustomersQuery,
+        createEntity: $.proxy(manager.createEntity, manager)
+};
 
     /*** implementation details ***/
 

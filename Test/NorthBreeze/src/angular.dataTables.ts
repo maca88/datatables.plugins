@@ -322,7 +322,7 @@
                                 col.expressionFn = $parse(col.expression);
                             }
                             if (col.render == null) {
-                                col.render = (innerData, sSpecific, rData) => {
+                                col.render = (innerData, sSpecific, rData, meta) => {
                                     switch (sSpecific) {
                                     case "display": //TODO: we have to evaluate even on display mode because of fixedcolumns
                                         return innerData; //we will handle what will be displayed in rowCreatedCallback
@@ -505,9 +505,9 @@
                             }
                         }
 
-
                         scope.$watchCollection(collPath, (newValue: any) => {
                             if (debug) console.time('$watchCollection - ' + collPath);
+                            oSettings.oInit.data = oSettings.oInit.aoData = newValue; //update init data
                             if (!newValue) return;
                             var 
                                 key,
@@ -556,7 +556,6 @@
                                     delete oSettings._rowsRemoved[hash];
                                     rowsRemoved = true;
                                 }
-                                   
                             }
                             lastBlockMap = nextBlockMap;
 

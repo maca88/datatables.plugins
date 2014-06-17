@@ -526,6 +526,7 @@
                     scope.$watchCollection(collPath, function (newValue) {
                         if (debug)
                             console.time('$watchCollection - ' + collPath);
+                        oSettings.oInit.data = oSettings.oInit.aoData = newValue; //update init data
                         if (!newValue)
                             return;
                         var key, value, nextBlockMap = {}, rowOrder = {}, rowsAdded = false, rowsRemoved = false, rowsReordered = false, added = [], removed = [];
