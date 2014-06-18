@@ -30,7 +30,7 @@ angular.module("dt").config([
 
             var settings = options.tableTools;
             var origPostSelected = settings.fnRowSelected;
-            settings.fnRowSelected = function (nodes, src) {
+            settings.fnRowSelected = function (nodes) {
                 resetCache.call(this.s.dt.oInstance.api());
 
                 //We have to digest the parent table scope in order to refresh bindings that are related to datatable instance
@@ -39,11 +39,11 @@ angular.module("dt").config([
 
                 //Call the original fn
                 if (angular.isFunction(origPostSelected))
-                    origPostSelected(nodes, src);
+                    origPostSelected(nodes);
             };
 
             var origPostDeselected = settings.fnRowDeselected;
-            settings.fnRowDeselected = function (nodes, src) {
+            settings.fnRowDeselected = function (nodes) {
                 resetCache.call(this.s.dt.oInstance.api());
 
                 //We have to digest the parent table scope in order to refresh bindings that are related to datatable instance
@@ -52,7 +52,7 @@ angular.module("dt").config([
 
                 //Call the original fn
                 if (angular.isFunction(origPostDeselected))
-                    origPostDeselected(nodes, src);
+                    origPostDeselected(nodes);
             };
         });
 

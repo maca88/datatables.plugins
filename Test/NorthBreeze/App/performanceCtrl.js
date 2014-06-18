@@ -17,7 +17,7 @@
         tableTools: {
             "sRowSelect": "os",
             "sSwfPath": "libs/datatables/extensions/TableTools/swf/copy_csv_xls_pdf.swf",
-            "aButtons": ["copy", "pdf", "select_all", "select_none"]
+            "aButtons": []
         },
     };
 

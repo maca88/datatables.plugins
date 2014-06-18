@@ -56,7 +56,6 @@
     <Content Include="libs\bootstrap\fonts\glyphicons-halflings-regular.eot" />
     <Content Include="libs\bootstrap\fonts\glyphicons-halflings-regular.ttf" />
     <Content Include="libs\bootstrap\fonts\glyphicons-halflings-regular.woff" />
-    <Content Include="libs\datatables\extensions\ColReorderWithResize\ColReorderWithResize.js" />
     <Content Include="libs\datatables\extensions\TableTools\images\psd\collection.psd" />
     <Content Include="libs\datatables\extensions\TableTools\images\psd\copy document.psd" />
     <Content Include="libs\datatables\extensions\TableTools\images\psd\file_types.psd" />

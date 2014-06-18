@@ -1,4 +1,4 @@
-/*! TableTools 2.2.1
+/*! TableTools 2.2.2-dev
  * 2009-2014 SpryMedia Ltd - datatables.net/license
  *
  * ZeroClipboard 1.0.4
@@ -8,7 +8,7 @@
 /**
  * @summary     TableTools
  * @description Tools and buttons for DataTables
- * @version     2.2.1
+ * @version     2.2.2-dev
  * @file        dataTables.tableTools.js
  * @author      SpryMedia Ltd (www.sprymedia.co.uk)
  * @contact     www.sprymedia.co.uk/contact
@@ -734,6 +734,8 @@ var TableTools;
                     oOpts = {};
                 }
 
+
+                TableTools._aInstances.push(this);
                 this._fnConstruct(oOpts);
 
                 return this;
@@ -1552,7 +1554,7 @@ var TableTools;
 
                     // Post-selection function
                     if (this.s.select.postSelected !== null) {
-                        this.s.select.postSelected.call(this, anSelected, src, e);
+                        this.s.select.postSelected.call(this, anSelected);
                     }
 
                     TableTools._fnEventDispatch(this, 'select', anSelected, true);
@@ -1594,7 +1596,7 @@ var TableTools;
 
                     // Post-deselection function
                     if (this.s.select.postDeselected !== null) {
-                        this.s.select.postDeselected.call(this, anDeselectedTrs, src, e);
+                        this.s.select.postDeselected.call(this, anDeselectedTrs);
                     }
 
                     TableTools._fnEventDispatch(this, 'select', anDeselectedTrs, false);
@@ -2774,7 +2776,7 @@ var TableTools;
              *  @type	  String
              *  @default   See code
              */
-            TableTools.version = "2.2.1";
+            TableTools.version = "2.2.2-dev";
 
 
 
@@ -2816,10 +2818,7 @@ var TableTools;
                             init.tableTools || init.oTableTools || {} :
 				{};
 
-                        var oTT = new TableTools(oDTSettings.oInstance, opts);
-                        TableTools._aInstances.push(oTT);
-
-                        return oTT.dom.container;
+                        return new TableTools(oDTSettings.oInstance, opts).dom.container;
                     },
                     "cFeature": "T",
                     "sFeature": "TableTools"
@@ -2877,4 +2876,3 @@ var TableTools;
 
 
 })(window, document);
-

@@ -325,7 +325,7 @@
                             col.expressionFn = $parse(col.expression);
                         }
                         if (col.render == null) {
-                            col.render = function (innerData, sSpecific, rData) {
+                            col.render = function (innerData, sSpecific, rData, meta) {
                                 switch (sSpecific) {
                                     case "display":
                                         return innerData;

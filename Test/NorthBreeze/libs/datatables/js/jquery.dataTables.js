@@ -1429,13 +1429,13 @@
 		}
 		else {
 			// Reading from data object, update the DOM
-			var cells = row.anCells;
-	
-			if ( cells ) {
-				for ( i=0, ien=cells.length ; i<ien ; i++ ) {
-					cells[i].innerHTML = _fnGetCellData( settings, rowIdx, i, 'display' );
-				}
-			}
+			//var cells = row.anCells;
+	        
+			//if ( cells ) {
+			//	for ( i=0, ien=cells.length ; i<ien ; i++ ) {
+			//		cells[i].innerHTML = _fnGetCellData( settings, rowIdx, i, 'display' );
+			//	}
+			//}
 		}
 	
 		row._aSortData = null;
@@ -2712,6 +2712,7 @@
 	 */
 	function _fnFilterComplete ( oSettings, oInput, iForce )
 	{
+	    _fnCallbackFire(oSettings, null, 'preSearch', [oSettings]); //NEW
 		var oPrevSearch = oSettings.oPreviousSearch;
 		var aoPrevSearch = oSettings.aoPreSearchCols;
 		var fnSaveFilter = function ( oFilter ) {
@@ -5942,7 +5943,11 @@
 				sId = "DataTables_Table_"+(DataTable.ext._unique++);
 				this.id = sId;
 			}
-			
+		    //deep clone
+			var tmpData = oInit.data;
+			var tmpaaData = oInit.aaData;
+			delete oInit["data"];
+			delete oInit["aaData"];
 			/* Create the settings object for this table and set some of the default parameters */
 			var oSettings = $.extend( true, {}, DataTable.models.oSettings, {
 				"nTable":        this,
@@ -5951,7 +5956,17 @@
 				"sDestroyWidth": $(this)[0].style.width,
 				"sInstance":     sId,
 				"sTableId":      sId
-			} );
+			});
+
+			if (tmpData) {
+			    oSettings.oInit.data = tmpData;
+			    oInit.data = tmpData;
+			}
+			if (tmpaaData) {
+			    oSettings.oInit.aaData = tmpaaData;
+			    oInit.aaData = tmpaaData;
+			}
+
 			allSettings.push( oSettings );
 			
 			// Need to add the instance after the instance after the settings object has been added

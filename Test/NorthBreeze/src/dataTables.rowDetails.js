@@ -60,10 +60,10 @@
                     return;
                 var iconColumn = _this.dt.settings.aoColumns[idx];
 
-                iconColumn.mRender = column.render = function (innerData, sSpecific, oData) {
+                iconColumn.mRender = column.render = function (innerData, type, rowData, meta) {
                     var hasIcon = true;
                     if ($.isFunction(_this.settings.icon.hasIcon))
-                        hasIcon = _this.settings.icon.hasIcon.call(_this.dt.api, oData);
+                        hasIcon = _this.settings.icon.hasIcon.call(_this.dt.api, rowData);
                     if (!hasIcon)
                         return _this.settings.icon.defaultHtml || '';
 
@@ -81,8 +81,8 @@
                     cell.append(openIcon, closeIcon);
                     return cell.html();
                 };
-                iconColumn.fnGetData = function (oData, sSpecific) {
-                    return iconColumn.mRender(null, sSpecific, oData);
+                iconColumn.fnGetData = function (rowData, type, meta) {
+                    return iconColumn.mRender(null, type, rowData, meta);
                 };
             });
 

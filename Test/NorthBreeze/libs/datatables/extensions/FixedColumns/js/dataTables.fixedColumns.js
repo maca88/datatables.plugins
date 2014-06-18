@@ -1,11 +1,11 @@
-/*! FixedColumns 3.0.1
- * ÂŠ2010-2014 SpryMedia Ltd - datatables.net/license
+/*! FixedColumns 3.0.2-dev
+ * ©2010-2014 SpryMedia Ltd - datatables.net/license
  */
 
 /**
  * @summary     FixedColumns
  * @description Freeze columns in place on a scrolling DataTable
- * @version     3.0.1
+ * @version     3.0.2-dev
  * @file        dataTables.fixedColumns.js
  * @author      SpryMedia Ltd (www.sprymedia.co.uk)
  * @contact     www.sprymedia.co.uk/contact
@@ -468,6 +468,10 @@
                         }
                     });
 
+                var wheelType = 'onwheel' in document.createElement('div') ?
+                    'wheel.DTFC' :
+                    'mousewheel.DTFC';
+
                 if (that.s.iLeftColumns > 0) {
                     // When scrolling the left column, scroll the body and right column
                     $(that.dom.grid.left.liner)
@@ -482,9 +486,11 @@
                                 }
                             }
                         })
-                        .on("wheel.DTFC", function (e) {
+                        .on(wheelType, function (e) { // xxx update the destroy as well
                             // Pass horizontal scrolling through
-                            var xDelta = -e.originalEvent.deltaX;
+                            var xDelta = e.type === 'wheel' ?
+                                -e.originalEvent.deltaX :
+                                e.originalEvent.wheelDeltaX;
                             that.dom.scroller.scrollLeft -= xDelta;
                         });
                 }
@@ -503,9 +509,11 @@
                                 }
                             }
                         })
-                        .on("wheel.DTFC", function (e) {
+                        .on(wheelType, function (e) {
                             // Pass horizontal scrolling through
-                            var xDelta = -e.originalEvent.deltaX;
+                            var xDelta = e.type === 'wheel' ?
+                                -e.originalEvent.deltaX :
+                                e.originalEvent.wheelDeltaX;
                             that.dom.scroller.scrollLeft -= xDelta;
                         });
                 }
@@ -537,10 +545,10 @@
                         $(that.dom.scroller).off('scroll.DTFC mouseover.DTFC');
                         $(window).off('resize.DTFC');
 
-                        $(that.dom.grid.left.liner).off('scroll.DTFC wheel.DTFC mouseover.DTFC');
+                        $(that.dom.grid.left.liner).off('scroll.DTFC mouseover.DTFC ' + wheelType);
                         $(that.dom.grid.left.wrapper).remove();
 
-                        $(that.dom.grid.right.liner).off('scroll.DTFC wheel.DTFC mouseover.DTFC');
+                        $(that.dom.grid.right.liner).off('scroll.DTFC mouseover.DTFC ' + wheelType);
                         $(that.dom.grid.right.wrapper).remove();
                     });
 
@@ -567,6 +575,7 @@
 
                 $.each(this.s.dt.aoColumns, function (i, col) {
                     var th = $(col.nTh);
+                    var border;
 
                     if (!th.filter(':visible').length) {
                         that.s.aiInnerWidths.push(0);
@@ -581,7 +590,13 @@
                         // table's border to the outerWidth, since we need to take
                         // account of it, but it isn't in any cell
                         if (that.s.aiOuterWidths.length === 0) {
-                            var border = $(that.s.dt.nTable).css('border-left-width');
+                            border = $(that.s.dt.nTable).css('border-left-width');
+                            iWidth += typeof border === 'string' ? 1 : parseInt(border, 10);
+                        }
+
+                        // Likewise with the final column on the right
+                        if (that.s.aiOuterWidths.length === that.s.dt.aoColumns.length - 1) {
+                            border = $(that.s.dt.nTable).css('border-right-width');
                             iWidth += typeof border === 'string' ? 1 : parseInt(border, 10);
                         }
 
@@ -698,8 +713,8 @@
             "_fnGridLayout": function () {
                 var oGrid = this.dom.grid;
                 var iWidth = $(oGrid.wrapper).width();
-                var iBodyHeight = $(this.s.dt.nTable.parentNode).height();
-                var iFullHeight = $(this.s.dt.nTable.parentNode.parentNode).height();
+                var iBodyHeight = $(this.s.dt.nTable.parentNode).outerHeight();
+                var iFullHeight = $(this.s.dt.nTable.parentNode.parentNode).outerHeight();
                 var oOverflow = this._fnDTOverflow();
                 var
                     iLeftWidth = this.s.iLeftWidth,
@@ -1261,7 +1276,7 @@
          *  @default   See code
          *  @static
          */
-        FixedColumns.version = "3.0.1";
+        FixedColumns.version = "3.0.2-dev";
 
 
 

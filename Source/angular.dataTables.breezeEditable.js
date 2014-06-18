@@ -1,8 +1,6 @@
 ﻿//Editable plugin
 angular.module("dt").config([
     "dtSettings", function (dtSettings) {
-        var editableSettings = dt.BreezeEditable.defaultSettings;
-
         dtSettings.dtColumnParsingActions.push(function (elem, column) {
             if (elem.attr('dt-editable') == null)
                 return;
@@ -41,14 +39,14 @@ angular.module("dt").config([
             };
 
             options.breezeEditable.entityAddded = function (entity) {
-                var $table = angular.element(this.s.dt.nTable);
+                var $table = angular.element(this.dt.settings.nTable);
                 var tblScope = $table.scope();
                 if (!tblScope.$$phase)
                     tblScope.$digest();
-                var keys = this.s.dt.KeyTable;
+                var keys = this.keys;
                 if (keys == null)
                     return;
-                var rIdx = this.s.dt.aoData.length - 1;
+                var rIdx = this.dt.settings.aoData.length - 1;
 
                 // var row = this.s.dt.aoData[];
                 //we have to delay in order to work correctly
@@ -58,27 +56,25 @@ angular.module("dt").config([
             };
 
             options.breezeEditable.entitiesRejected = function (entities) {
-                var $table = angular.element(this.s.dt.nTable);
+                var $table = angular.element(this.dt.settings.nTable);
                 var tblScope = $table.scope();
                 if (!tblScope.$$phase)
                     tblScope.$digest();
             };
 
             options.breezeEditable.entitiesDeleted = function (entities) {
-                var $table = angular.element(this.s.dt.nTable);
+                var $table = angular.element(this.dt.settings.nTable);
                 var tblScope = $table.scope();
                 if (!tblScope.$$phase)
                     tblScope.$digest();
             };
 
             options.breezeEditable.entitiesRestored = function (entities) {
-                var $table = angular.element(this.s.dt.nTable);
+                var $table = angular.element(this.dt.settings.nTable);
                 var tblScope = $table.scope();
                 if (!tblScope.$$phase)
                     tblScope.$digest();
             };
-
-            editableSettings = $.extend(true, {}, dt.BreezeRemote.defaultSettings, options.breezeEditable || {});
         });
 
         dtSettings.dtCellCompilingActions.push(function ($td, colOpts, cellScope, rowData, rowDataPath, options, $element, scope) {

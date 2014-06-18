@@ -7,16 +7,9 @@
                 api: null,
                 settings: null
             };
-            var entityType = settings.entityType;
-            var entityManager = settings.entityManager;
-            var parentEntity = settings.parentEntity;
-            delete settings['entityType'];
-            delete settings['entityManager'];
-            delete settings['parentEntity'];
+            this.deletedEntities = [];
+            this.lastEditedCellPos = null;
             this.settings = $.extend(true, {}, BreezeEditable.defaultSettings, settings);
-            this.settings.entityType = entityType;
-            this.settings.entityManager = entityManager;
-            this.settings.parentEntity = parentEntity;
 
             this.dt.settings = api.settings()[0];
             this.dt.api = api;
@@ -59,7 +52,7 @@
 
             if (entity.entityType == null || entity.entityAspect == null)
                 throw 'Editing for non breeze entities is not supported!';
-            if ($.isNumeric(oColumn.mData) || oColumn.editable == false) {
+            if ($.type(oColumn.mData) === "number" || oColumn.editable == false) {
                 return;
             }
             var prop = entity.entityType.getProperty(oColumn.mData);
@@ -89,6 +82,7 @@
                     tr._DT_CellWithError = null;
 
                 var editorCtrl = $(this.settings.editorControlSelector, $td);
+                this.lastEditedCellPos = new Position(x, y);
                 if ($.isFunction(this.settings.endCellEditing) && !this.settings.endCellEditing.call(this, td, entity, editorCtrl, prop, x, y))
                     return;
 
@@ -104,6 +98,7 @@
             if (td._DT_EditMode === true) {
                 $(this.settings.editorControlSelector, td).select();
             }
+
             var $td = $(td);
             var tr = $td.parent('tr').get(0);
             if (tr._DT_CellWithError != null && tr._DT_CellWithError !== td) {
@@ -115,7 +110,7 @@
             var entity = row.data();
             if (entity.entityType == null)
                 throw 'Editing for non breeze entities is not supported!';
-            if ($.isNumeric(oColumn.mData) || oColumn.editable == false) {
+            if ($.type(oColumn.mData) === "number" || oColumn.editable == false) {
                 if (event != null && event.type == "click")
                     return;
                 var prev = event != null && ((event.keyCode == 9 && event.shiftKey) || event.keyCode == 37);
@@ -162,9 +157,7 @@
         };
         BreezeEditable.defaultSettings = {
             entityType: null,
-            parentEntity: null,
-            collectionProperty: null,
-            entityManager: null,
+            createEntity: null,
             typesTemplate: {
                 String: BreezeEditable.inputFnFactory("text"),
                 Int64: BreezeEditable.inputFnFactory("number"),
@@ -198,6 +191,26 @@
         return BreezeEditable;
     })();
     dt.BreezeEditable = BreezeEditable;
+
+    var Position = (function () {
+        function Position(x, y) {
+            this.x = x;
+            this.y = y;
+        }
+        Position.prototype.compare = function (pos) {
+            if (pos.y > this.y)
+                return 1;
+            if (pos.y < this.y)
+                return -1;
+            if (pos.y == this.y && pos.x == this.x)
+                return 0;
+            if (pos.x > this.x)
+                return 1;
+            else
+                return 0;
+        };
+        return Position;
+    })();
 })(dt || (dt = {}));
 
 (function (window, document, undefined) {
@@ -280,7 +293,8 @@
         "fnClick": function (nButton, oConfig) {
             if (!this.s.dt.breezeEditable)
                 throw 'BreezeEditable plugin must be initialized';
-            var settings = this.s.dt.breezeEditable.settings;
+            var breezeEditable = this.s.dt.breezeEditable;
+            var settings = breezeEditable.settings;
             var entities = this.fnGetSelectedData();
             $.each(entities, function (i, entity) {
                 if (entity.entityAspect == null)
@@ -288,7 +302,7 @@
                 entity.entityAspect.rejectChanges();
             });
             if ($.isFunction(settings.entitiesRejected))
-                settings.entitiesRejected.call(this, entities);
+                settings.entitiesRejected.call(breezeEditable, entities);
         },
         "fnSelect": function (nButton, oConfig) {
             if (this.fnGetSelected().length !== 0) {
@@ -307,18 +321,19 @@
         "fnClick": function (nButton, oConfig) {
             if (!this.s.dt.breezeEditable)
                 throw 'BreezeEditable plugin must be initialized';
-            var settings = this.s.dt.breezeEditable.settings;
-            settings.deletedEntities = settings.deletedEntities || [];
-            if (!$.isArray(settings.deletedEntities))
+            var breezeEditable = this.s.dt.breezeEditable;
+            var settings = breezeEditable.settings;
+
+            if (!$.isArray(breezeEditable.deletedEntities))
                 return;
-            $.each(settings.deletedEntities, function (i, entity) {
+            $.each(breezeEditable.deletedEntities, function (i, entity) {
                 if (entity.entityAspect == null)
                     throw 'Table items must be breeze entities';
                 entity.entityAspect.rejectChanges();
             });
             if ($.isFunction(settings.entitiesRestored))
-                settings.entitiesRestored.call(this, settings.deletedEntities);
-            settings.deletedEntities = []; //reset the list
+                settings.entitiesRestored.call(breezeEditable, breezeEditable.deletedEntities);
+            breezeEditable.deletedEntities = []; //reset the list
             $(nButton).addClass(this.classes.buttons.disabled);
         },
         "fnInit": function (nButton, oConfig) {
@@ -331,8 +346,8 @@
         "fnClick": function (nButton, oConfig) {
             if (!this.s.dt.breezeEditable)
                 throw 'BreezeEditable plugin must be initialized';
-            var settings = this.s.dt.breezeEditable.settings;
-            settings.deletedEntities = settings.deletedEntities || [];
+            var breezeEditable = this.s.dt.breezeEditable;
+            var settings = breezeEditable.settings;
             var entities = this.fnGetSelectedData();
             $.each(entities, function (i, entity) {
                 if (entity.entityAspect == null)
@@ -340,12 +355,12 @@
                 entity.entityAspect.setDeleted();
                 if (entity.entityAspect.entityState === breeze.EntityState.Detached)
                     return;
-                settings.deletedEntities.push(entity);
+                breezeEditable.deletedEntities.push(entity);
             });
             if ($.isFunction(settings.entitiesDeleted))
-                settings.entitiesDeleted.call(this, entities);
+                settings.entitiesDeleted.call(breezeEditable, entities);
 
-            if (settings.deletedEntities.length == 0)
+            if (breezeEditable.deletedEntities.length == 0)
                 return;
 
             //If the restore deleted button is present enable it
@@ -371,36 +386,18 @@
         "fnClick": function (nButton, oConfig) {
             if (!this.s.dt.breezeEditable)
                 throw 'BreezeEditable plugin must be initialized';
-            var settings = this.s.dt.breezeEditable.settings;
-            var manager, item;
-            var entity = settings.parentEntity;
-            if (entity) {
-                if ($.isFunction(entity))
-                    entity = entity();
-                if (settings.collectionProperty == null)
-                    throw 'Collection property must be set!';
-                if (entity.entityAspect == null)
-                    throw 'Parent entity must be a breeze entity';
-                var colPropertyType = entity.entityType.getProperty(settings.collectionProperty);
-                if (colPropertyType == null)
-                    throw 'Collection property ' + settings.collectionProperty + ' does not exist!';
-                manager = entity.entityAspect.entityManager || settings.entityManager;
-                if (manager == null)
-                    throw 'Parent entity is not attached to an entity manager!';
-                item = manager.createEntity(colPropertyType.entityType.shortName);
-                entity[settings.collectionProperty].push(item);
-            } else if (settings.entityType) {
-                manager = settings.entityManager;
-                if (manager == null)
-                    throw 'Entity manager must be set!';
-                item = manager.createEntity(settings.entityType);
-                this.s.dt.oInstance.api().row.add(item);
-            } else {
-                throw 'entityType or parentEntity must be set';
-            }
+            var breezeEditable = this.s.dt.breezeEditable;
+            var settings = breezeEditable.settings;
+            if (!$.isFunction(settings.createEntity))
+                throw 'createEntity must be defined and has to be a function';
+            if (!settings.entityType)
+                throw 'entityType must be defined';
+
+            var item = settings.createEntity(settings.entityType);
+            this.s.dt.oInstance.api().row.add(item);
 
             if ($.isFunction(settings.entityAddded))
-                settings.entityAddded.call(this, item);
+                settings.entityAddded.call(breezeEditable, item);
         },
         "fnInit": function (nButton, oConfig) {
             //$(nButton).addClass(this.classes.buttons.disabled);
