@@ -15,7 +15,6 @@ The demo is based on [NorthBreeze](https://github.com/Breeze/breeze.js.samples),
 
 The demo can be seen [HERE](http://hartis.si/datatables/).
 
-## Plugins:
 
 ## Table of Contents
 * <b>Plugins</b>
@@ -35,7 +34,7 @@ The demo can be seen [HERE](http://hartis.si/datatables/).
   * [angular.dataTables.breezeEditable](#angulardatatablesbreezeeditable)
   * [angular.dataTables.colPin](#angulardatatablescolpin)
 
-
+## Plugins:
 
 ### dataTables.rowDetails
 
@@ -525,6 +524,7 @@ The FormFilter is used for the integration of html forms with the DataTables fil
 
 <b>Note: at the moment a custom DataTables library has to be used in order to work</b>
 
+## AngularJs integrations:
 
 ### angular.dataTables
 
