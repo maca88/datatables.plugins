@@ -45,6 +45,7 @@
     <Content Include="App\employeeEditorCtrl.js" />
     <Content Include="App\performanceCtrl.js" />
     <Content Include="App\views\browsers.html" />
+    <Content Include="App\views\browsersDetails.html" />
     <Content Include="App\views\employeeEditor.html" />
     <Content Include="App\views\performance.html" />
     <Content Include="Content\font-awesome.css" />

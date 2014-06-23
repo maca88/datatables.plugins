@@ -36,19 +36,8 @@
         <button><span class="row-detail-icon">Icon</span></button>
     </div>
 
-    <div id="row-details-tpl" ng-non-bindable style="display: none">
-        <h4>SubItems</h4>
-        <table class="table table-striped table-bordered" dt-table="dtTable" dt-data="data.subItems" dt-options="subItemOptions">
-            <thead>
-                <tr>
-                    <th dt-data="prop1">Prop1</th>
-                </tr>
-            </thead>
-        </table>
-    </div>
 
-
-    <table class="table table-bordered" dt-table="dtTable" dt-debug="true" dt-data="data" dt-options="options" dt-row-invalidate="rendered" dt-row-detail-tpl="#row-details-tpl"></table>
+    <table class="table table-bordered" dt-table="dtTable" dt-debug="true" dt-data="data" dt-options="options" dt-row-invalidate="rendered"></table>
 
     <h3>selectedRows</h3>
     <table class="table table-striped table-bordered">

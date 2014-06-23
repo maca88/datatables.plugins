@@ -42,7 +42,7 @@
         <div class="clearfix"></div>
     </form>
 
-    <div id="row-details-tpl" ng-non-bindable style="display: none">
+    <script type="text/template" id="row-details-tpl">
         <h4>SubItems {{data.CompanyName}}</h4>
         <div ng-if="ordersLoaded !== true">
             <div><span>Loading...</span></div>
@@ -58,11 +58,11 @@
                 </thead>
             </table>
         </div>
-    </div>
+    </script>
 
     <div class="row">
         <div class="col-md-8">
-            <table class="table table-bordered" dt-table="dtTable" dt-options="customerGridOpts" dt-row-detail-tpl="#row-details-tpl" dt-selectable>
+            <table class="table table-bordered" dt-table="dtTable" dt-options="customerGridOpts" dt-selectable>
                 <thead>
                     <tr>
                         <th dt-row-detail-icon></th>

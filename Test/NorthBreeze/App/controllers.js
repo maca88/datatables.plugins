@@ -53,6 +53,21 @@ app.controller('CustomerCtrl', ['$scope', 'dataservice', function ($scope, datas
                 openHtml: '<span class="glyphicon glyphicon-plus row-detail-icon"></span>',
                 closeHtml: '<span class="glyphicon glyphicon-minus row-detail-icon"></span>',
                 className: 'row-detail-icon',
+            },
+            template: '#row-details-tpl',
+            opened: function (row) {
+                var scope = angular.element(row.node()).scope();
+                if (scope.ordersLoaded === true) return;
+                var customer = row.data();
+                customer.entityAspect.loadNavigationProperty("Orders")
+                    .then(function (json) {
+                        console.log(customer.Orders);
+                        scope.ordersLoaded = true;
+                        scope.$apply();
+                    })
+                    .catch(function (error) {
+                        throw error;
+                    });
             }
         },
         rowDetailOpened: function (row) {

@@ -120,6 +120,9 @@
                 openHtml: '<span class="glyphicon glyphicon-plus row-detail-icon"></span>',
                 closeHtml: '<span class="glyphicon glyphicon-minus row-detail-icon"></span>',
                 'class': 'row-detail-icon',
+            },
+            template: {
+                url: 'App/views/browsersDetails.html'
             }
         },
         tableTools: {
