@@ -3,12 +3,11 @@ DataTables.plugins
 
 This repository contains various plugins for [DataTables](https://github.com/DataTables/DataTables). Most of them are integrations with [AngularJS](https://github.com/angular/angular.js) and [Breezejs](https://github.com/Breeze/breeze.js).
 
-<b>NOTE: These plugins works only with DataTables 1.10 and above!<b>
+<b>NOTE: These plugins works only with DataTables 1.10 and above!</b>
 
-<b>Browser support: IE9+, Chrome, Firefox, Opera<b>
+<b>Browser support: IE9+, Chrome, Firefox, Opera</b>
 
-
-<b>Motivation<b>
+## Motivation:
 As I started using AngularJS a few months ago, I was looking for a grid system that would work well with the technology, and the only free system at that time was ng-grid. Since I had a lot of experience with DataTables from creating various plugins, I was wondering what it would take for me to integrate it completely with AngularJS. All current projects that tried integrating AngularJS with DataTables were either done poorly (recreating/refilling the table on each change), or incomplete, that is when I decided to create my own repository.
 
 ## Demonstration:
@@ -16,27 +15,26 @@ The demo is based on [NorthBreeze](https://github.com/Breeze/breeze.js.samples),
 
 The demo can be seen [HERE](http://hartis.si/datatables/).
 
-## Plugins:
 
 ## Table of Contents
 * <b>Plugins</b>
-  * [dataTables.rowDetails](#dataTables.rowDetails)
-  * [dataTables.breezeFilter](#dataTables.breezeFilter)
-  * [dataTables.breezeRemote](#dataTables.breezeRemote)
-  * [dataTables.breezeEditable](#dataTables.breezeEditable)
-  * [dataTables.remoteState](#dataTables.remoteState)
-  * [dataTables.advancedFilter](#dataTables.advancedFilter)
-  * [dataTables.colPin](#dataTables.colPin)
-  * [dataTables.colResize](#dataTables.colResize)
-  * [dataTables.formFilter](#dataTables.formFilter)
+  * [dataTables.rowDetails](#datatablesrowdetails)
+  * [dataTables.breezeFilter](#datatablesbreezefilter)
+  * [dataTables.breezeRemote](#datatablesbreezeremote)
+  * [dataTables.breezeEditable](#datatablesbreezeeditable)
+  * [dataTables.remoteState](#datatablesremotestate)
+  * [dataTables.advancedFilter](#datatablesadvancedfilter)
+  * [dataTables.colPin](#datatablescolpin)
+  * [dataTables.colResize](#datatablescolresize)
+  * [dataTables.formFilter](#datatablesformfilter)
 * <b>AngularJs integrations</b>
-  * [angular.dataTables](#angular.dataTables)
-  * [angular.dataTables.rowDetails](#angular.dataTables.rowDetails)
-  * [angular.dataTables.tableTools](#angular.dataTables.tableTools)
-  * [angular.dataTables.breezeEditable](#angular.dataTables.breezeEditable)
-  * [angular.dataTables.colPin](#angular.dataTables.colPin)
+  * [angular.dataTables](#angulardatatables)
+  * [angular.dataTables.rowDetails](#angulardatatablesrowdetails)
+  * [angular.dataTables.tableTools](#angulardatatablestabletools)
+  * [angular.dataTables.breezeEditable](#angulardatatablesbreezeeditable)
+  * [angular.dataTables.colPin](#angulardatatablescolpin)
 
-
+## Plugins:
 
 ### dataTables.rowDetails
 
@@ -526,6 +524,7 @@ The FormFilter is used for the integration of html forms with the DataTables fil
 
 <b>Note: at the moment a custom DataTables library has to be used in order to work</b>
 
+## AngularJs integrations:
 
 ### angular.dataTables
 
