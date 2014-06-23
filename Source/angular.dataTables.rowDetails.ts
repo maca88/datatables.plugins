@@ -8,6 +8,8 @@ angular.module("dt")
                 }
             });
             dtSettings.dtTableCreatingActions.push(($element, options, scope, attrs, $compile) => {
+                if (!options.rowDetails) return;
+                var rdSettings = options.rowDetails;
                 //#region RowDetails
 
                 var columns = options.columns || options.columnDefs;
@@ -19,39 +21,28 @@ angular.module("dt")
                     col.type = "html";
                 });
 
-                var origRowDetailCreated = options.rowDetailCreated;
-                options.rowDetailCreated = (row, innerDetails, detailSettings) => {
-                    var tplSelector = $element.attr('dt-row-detail-tpl');
-                    if (!tplSelector) return;
+                var origCreated = rdSettings.created;
+                rdSettings.created = function(row, innerDetails) {
                     var rowScope = angular.element(row.node()).scope();
-                    var tpl = $(tplSelector).clone().removeAttr('ng-non-bindable').show();
-                    innerDetails.html(tpl);
                     $compile(row.child())(rowScope);
                     rowScope.$digest();
-                    if (angular.isFunction(origRowDetailCreated))
-                        origRowDetailCreated(row, innerDetails, detailSettings);
+                    if (angular.isFunction(origCreated))
+                        origCreated.call(this, row, innerDetails);
                 };
-                var origRowDetailClosed = options.rowDetailClosed;
-                options.rowDetailClosed = (row) => {
+                var origClosed = rdSettings.closed;
+                options.rowDetailClosed = function(row, icon) {
                     var rowScope = angular.element(row.node()).scope();
                     rowScope.$digest();
-                    if (angular.isFunction(origRowDetailClosed))
-                        origRowDetailClosed(row);
+                    if (angular.isFunction(origClosed))
+                        origClosed.call(this, row, icon);
                 };
 
-                var origRowDetailOpened = options.rowDetailOpened;
-                options.rowDetailOpened = (row) => {
+                var origOpened = rdSettings.opened;
+                options.rowDetailOpened = function (row, icon) {
                     var rowScope = angular.element(row.node()).scope();
                     rowScope.$digest();
-                    if (angular.isFunction(origRowDetailOpened))
-                        origRowDetailOpened(row);
-                };
-
-                var origRowDetailDestroying = options.rowDetailDestroying;
-                options.rowDetailDestroying = (row) => {
-                    //TODO: check if needed to destroy nested dtTables scopes
-                    if (angular.isFunction(origRowDetailDestroying))
-                        origRowDetailCreated(row);
+                    if (angular.isFunction(origOpened))
+                        origOpened(this, row, icon);
                 };
 
                 //#endregion

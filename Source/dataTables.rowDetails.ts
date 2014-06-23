@@ -13,8 +13,21 @@
             },
             destroyOnClose: false,
             trClass: 'sub',
-            tdClass: ''
+            tdClass: '',
+            created: null,
+            opened: null,
+            destroying: null,
+            closed: null,
+            template: null,
+            /*
+            template: {
+                url: null,
+                requesting: null,
+                cache: null,
+                ajax: null
+            }*/
         };
+        public static templates = {};
         public settings: any;
         public dt:any = {
             settings: null,
@@ -25,7 +38,6 @@
             btnGroup: null,
             btnCollapseAll: null,
             btnExpandAll: null,
-
         };
 
         constructor(api, settings) {
@@ -62,6 +74,7 @@
         private createDomElements() {
             var $tableNode = $(this.dt.api.table().node());
             $tableNode.on('click', '.' + this.settings.icon.className, (e) => {
+                if ($(e.target).closest('table').get(0) !== $tableNode.get(0)) return;
                 e.preventDefault();
                 var row = this.dt.api.row($(e.target).closest('tr'));
                 if (row.length == 0) return; //happens when user click on header row
@@ -152,12 +165,16 @@
         return child != null && child.closest('html').length > 0 && child.is(':visible');
     });
     $.fn.DataTable.Api.register('row().fillDetails()', function (completeAction, settings) {
-        if ($(this.node()).closest('html').length == 0) {
+        if ($(this.node()).closest('html').length == 0) { //skip detached rows
             if ($.isFunction(completeAction))
                 completeAction(false);
             return;
         } //we will not fill rows that are detached
-        settings = $.extend({}, dt.RowDetails.defaultSettings, settings);
+
+        var rowDetails = this.settings()[0].rowDetails;
+        if (!rowDetails)
+            throw 'RowDetails plugin is not initialized';
+        settings = $.extend(true, {}, rowDetails.settings, settings);
         var row = this;
         var isOpen = row.isOpen();
 
@@ -172,27 +189,80 @@
         row.child().addClass(settings.trClass).css('display', 'none'); //add attributes
         row.child.show(); //add to dom
 
-        var init = this.settings()[0].oInit;
-        if (init != null && $.isFunction(init.rowDetailCreated))
-            init.rowDetailCreated(row, innerDetails, settings);
+        var createdAction = (content?) => {
+            if (content)
+                innerDetails.html(content);
+            if ($.isFunction(settings.created))
+                settings.created.call(rowDetails, row, innerDetails);
 
-        $(row.node()).data('detailsFilled', true); //set 
-        row.child().trigger('detailsFilled.dt');
-        if (isOpen) { //if row was open reopen it
-            row.openDetails({ animation: 'none' });
+            $(row.node()).data('detailsFilled', true); //set 
+            row.child().trigger('detailsFilled.dt');
+            if (isOpen) { //if row was open reopen it
+                row.openDetails({ animation: 'none' });
+            }
+            if ($.isFunction(completeAction))
+                completeAction(true);
+        };
+
+        if (!settings.template) {
+            createdAction();
+            return;
         }
-        if ($.isFunction(completeAction))
-            completeAction(true);
+
+        //remote template
+        if ($.isPlainObject(settings.template)) {
+            var tplSetttings = settings.template;
+
+            var tplUrl = tplSetttings.url;
+            if ($.isFunction(tplSetttings.url))
+                tplUrl = tplSetttings.url.call(rowDetails, row);
+
+            if (tplSetttings !== false && dt.RowDetails.templates.hasOwnProperty(tplUrl)) {
+                //retirive template from cache
+                createdAction(dt.RowDetails.templates[tplUrl]);
+                return;
+            }
+
+            //get from the server
+            var defaultAjaxSettings = {
+                url: tplUrl,
+                type: 'GET',
+                dataType: 'html'
+            };
+            var ajaxSettings = $.extend({}, defaultAjaxSettings, tplSetttings.ajax);
+
+            if ($.isFunction(tplSetttings.requesting))
+                tplSetttings.requesting.call(rowDetails, row, innerDetails);
+
+            $.ajax(ajaxSettings)
+                .done((msg) => {
+                    dt.RowDetails.templates[tplUrl] = msg;
+                    createdAction(msg);
+                });
+        } else if ($.isFunction(settings.template)) {
+            createdAction(settings.template.call(rowDetails, row));
+        } else if ($.type(settings.template) === 'string') { //selector or template html
+            var tpl = settings.template;
+            if (tpl.charAt(0) === "<" && tpl.charAt(tpl.length - 1) === ">" && tpl.length >= 3) { //is template html
+                createdAction(tpl);
+            } else { //selector
+                createdAction($(tpl).html());
+            }
+        } 
     });
     $.fn.DataTable.Api.register('row().openDetails()', function (settings) {
-        settings = $.extend({}, dt.RowDetails.defaultSettings, settings);
+        var rowDetails = this.settings()[0].rowDetails;
+        if (!rowDetails)
+            throw 'RowDetails plugin is not initialized';
+        settings = $.extend(true, {}, rowDetails.settings, settings);
+        var row = this;
 
-        var filledAction = function () {
-            if (this.child.isShown() && this.child().is(':visible')) return;
+        var filledAction = () => {
+            if (row.child.isShown() && row.child().is(':visible')) return;
 
-            var td = $(this.node()).find('.' + settings.icon.className).closest('td'); //Icon td
-            var detailsRows = this.child().css('display', '');
-            $.each(detailsRows, function (idx, item) {
+            var td = $(row.node()).find('.' + settings.icon.className).closest('td'); //Icon td
+            var detailsRows = row.child().css('display', '');
+            $.each(detailsRows, (idx, item) => {
                 dt.RowDetails.animateElement($(item), settings.animation, 'open');
                 $(item).slideDown();
             });
@@ -202,10 +272,9 @@
             $('.dt-open-icon', td).hide();
             $('.dt-close-icon', td).show();
 
-            var init = this.settings()[0].oInit;
-            if (init != null && $.isFunction(init.rowDetailOpened))
-                init.rowDetailOpened(this, td, settings);
-        }.bind(this);
+            if ($.isFunction(settings.opened))
+                settings.opened.call(rowDetails, row, td);
+        };
 
         if ($(this.node()).data('detailsFilled') !== true) {
             this.fillDetails(filledAction, settings);
@@ -214,7 +283,10 @@
         }
     });
     $.fn.DataTable.Api.register('row().closeDetails()', function (settings) {
-        settings = $.extend({}, dt.RowDetails.defaultSettings, settings);
+        var rowDetails = this.settings()[0].rowDetails;
+        if (!rowDetails)
+            throw 'RowDetails plugin is not initialized';
+        settings = $.extend(true, {}, rowDetails.settings, settings);
         if (!this.child.isShown() || !this.child().is(':visible')) return;
 
         var td = $(this.node()).find('.' + settings.icon.className).closest('td'); //Icon td
@@ -223,18 +295,16 @@
         var destroyOnClose = settings.destroyOnClose == true;
         var detailsRows = row.child();
         var details = $('div.innerDetails', detailsRows);
-        var init = this.settings()[0].oInit || {};
 
-
-        var afterHideAction = function () {
+        var afterHideAction = () => {
             if (destroyOnClose == true) { //When destroyOnClose is set to false the details tr element is never removed (remains hidden)
-                if ($.isFunction(init.rowDetailDestroying))
-                    init.rowDetailDestroying(row, td, settings);
+                if ($.isFunction(settings.destroying))
+                    settings.destroying.call(rowDetails, row, td);
                 row.child.hide(); //this actually remove the children
                 $(row.node()).data('detailsFilled', false);
             } else {
                 details.hide();
-                $.each(detailsRows, function (idx, item) {
+                $.each(detailsRows, (idx, item) => {
                     $(item).hide(); //this will hide the children
                 });
             }
@@ -244,8 +314,8 @@
         $('.dt-close-icon', td).hide();
         $('.dt-open-icon', td).show();
 
-        if ($.isFunction(init.rowDetailClosed))
-            init.rowDetailClosed(this, td, settings);
+        if ($.isFunction(settings.closed))
+            settings.closed(rowDetails, row, td);
     });
     $.fn.DataTable.Api.register('row().toggleDetails()', function (settings) {
         this.isOpen() ? this.closeDetails(settings) : this.openDetails(settings);
