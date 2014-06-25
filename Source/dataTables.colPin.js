@@ -137,9 +137,7 @@
 
         ColPin.prototype.createFixedColumns = function (settings) {
             var _this = this;
-            this.dt.fixedColumns = new $.fn.DataTable.FixedColumns(this.dt.api, settings);
-
-            var cfGrid = this.dt.fixedColumns.dom.grid;
+            settings = settings || {};
 
             var pinnIcons = function (elem) {
                 if (elem == null)
@@ -150,14 +148,16 @@
                     pin.addClass(_this.settings.dom.pinIcon.pinnedClass);
                 });
             };
-            pinnIcons(cfGrid.left.head);
-            pinnIcons(cfGrid.right.head);
-
-            $(this.dt.fixedColumns).on('draw.dtfc', function (e, data) {
+            settings.drawCallback = function (leftClone, rightClone) {
+                var data = {
+                    "leftClone": leftClone,
+                    "rightClone": rightClone
+                };
                 _this.dt.settings.oApi._fnCallbackFire(_this.dt.settings, null, 'colPinFcDraw', [_this, data]);
-                pinnIcons(data.leftClone.header);
-                pinnIcons(data.rightClone.header);
-            });
+                pinnIcons(leftClone.header);
+                pinnIcons(rightClone.header);
+            };
+            this.dt.fixedColumns = new $.fn.DataTable.FixedColumns(this.dt.api, settings);
         };
 
         ColPin.prototype.saveState = function (data) {
@@ -267,7 +267,7 @@
     //Register api function
     $.fn.DataTable.Api.prototype.colPin = function (settings) {
         var colPin = new dt.ColPin(this, settings);
-        if (this.settings()[0].bInitialized)
+        if (this.settings()[0]._bInitComplete)
             colPin.initialize();
         else
             this.one('init.dt', function () {

@@ -142,7 +142,7 @@
     //Register api function
     $.fn.DataTable.Api.prototype.formFilter = function (settings) {
         var formFilter = new dt.FormFilter(this, settings);
-        if (this.settings()[0].bInitialized)
+        if (this.settings()[0]._bInitComplete)
             formFilter.initialize();
         else
             this.one('init.dt', function () {

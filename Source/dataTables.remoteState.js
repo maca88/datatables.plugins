@@ -650,7 +650,7 @@
 
     $.fn.DataTable.Api.prototype.remoteState = function (settings) {
         var remoteState = new dt.RemoteState(this, settings);
-        if (this.settings()[0].bInitialized)
+        if (this.settings()[0]._bInitComplete)
             remoteState.initialize();
         else
             this.one('init.dt', function () {

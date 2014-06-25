@@ -244,7 +244,7 @@
                         $element.css('width', attrs.dtWidth);
 
                     var explicitColumns = [];
-                    angular.forEach(element.find('th'), function (node) {
+                    angular.forEach(angular.element('thead>tr>th', element), function (node) {
                         var elem = angular.element(node);
                         var column = {
                             data: elem.attr('dt-data'),

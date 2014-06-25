@@ -15,6 +15,8 @@
                 resize: false,
                 scrollHead: null,
                 scrollHeadTable: null,
+                scrollFoot: null,
+                scrollFootTable: null,
                 scrollBody: null,
                 scrollBodyTable: null,
                 scrollX: false
@@ -67,8 +69,26 @@
             this.dom.scrollHead = $('div.' + this.dt.settings.oClasses.sScrollHead, this.dt.settings.nTableWrapper);
             this.dom.scrollHeadTable = $('div.' + this.dt.settings.oClasses.sScrollHeadInner + ' > table', this.dom.scrollHead);
 
+            this.dom.scrollFoot = $('div.' + this.dt.settings.oClasses.sScrollFoot, this.dt.settings.nTableWrapper);
+            this.dom.scrollFootTable = $('div.' + this.dt.settings.oClasses.sScrollFootInner + ' > table', this.dom.scrollFoot);
+
             this.dom.scrollBody = $('div.' + this.dt.settings.oClasses.sScrollBody, this.dt.settings.nTableWrapper);
             this.dom.scrollBodyTable = $('> table', this.dom.scrollBody);
+            if (this.dom.scrollFootTable) {
+                this.dt.api.on('draw.dt', this.onDraw.bind(this));
+                if (this.dt.settings._bInitComplete)
+                    this.onDraw();
+                this.dt.api.on('colPinFcDraw.dt', function (e, colPin, data) {
+                    if (data.leftClone.header)
+                        $('tfoot', data.leftClone.header).remove();
+                    if (data.leftClone.footer)
+                        $('thead', data.leftClone.footer).remove();
+                    if (data.rightClone.header)
+                        $('tfoot', data.rightClone.header).remove();
+                    if (data.rightClone.footer)
+                        $('thead', data.rightClone.footer).remove();
+                });
+            }
 
             this.dom.scrollX = this.dt.settings.oInit.sScrollX === undefined ? false : true;
 
@@ -130,6 +150,7 @@
                     if (_this.dom.scrollX && data.colResize.tableSize > 0) {
                         _this.dom.scrollHeadTable.width(data.colResize.tableSize);
                         _this.dom.scrollBodyTable.width(data.colResize.tableSize);
+                        _this.dom.scrollFootTable.width(data.colResize.tableSize);
                     }
 
                     for (i = 0; i < columns.length; i++) {
@@ -192,6 +213,28 @@
                     _this.saveState(data);
                 }, "ColResize_StateSave");
             }
+        };
+
+        ColResize.prototype.onDraw = function (e) {
+            if (e != null && e.target !== this.dt.settings.nTable)
+                return;
+
+            $('thead', this.dom.scrollFootTable).remove();
+            this.dom.scrollFootTable.prepend($('thead', this.dom.scrollBodyTable).clone());
+
+            $('tfoot', this.dom.scrollHeadTable).remove();
+            this.dom.scrollHeadTable.append($('tfoot', this.dom.scrollBodyTable).clone());
+
+            var removeHeaderWidth = function (table) {
+                $('tfoot>tr>th', table).each(function (i, th) {
+                    $(th).css('width', '');
+                });
+            };
+
+            //Remove all tfoot headers widths
+            removeHeaderWidth(this.dom.scrollFootTable);
+            removeHeaderWidth(this.dom.scrollBodyTable);
+            removeHeaderWidth(this.dom.scrollHeadTable);
         };
 
         ColResize.prototype.onMouseDown = function (e, $th, col, colReorderMouseDownEvent) {
@@ -287,19 +330,26 @@
 
         ColResize.prototype.onMouseMove = function (e, col) {
             var moveLength = e.pageX - this.dom.mouse.startX;
+            if (moveLength == 0)
+                return;
             var $th = $(this.dom.mouse.resizeElem);
             var $thNext = $th.next();
 
-            if (this.dom.scrollX && this.dom.scrollHead.length) {
+            var thWidth = this.dom.mouse.startWidth + moveLength;
+            var thNextWidth = this.dom.mouse.nextStartWidth - moveLength;
+
+            if (this.dom.scrollX) {
                 if (this.tableSize < 0)
                     this.tableSize = this.dom.scrollHeadTable.width();
                 this.dom.scrollHeadTable.width(this.tableSize + moveLength);
+                this.dom.scrollBodyTable.width(this.tableSize + moveLength);
+                this.dom.scrollFootTable.width(this.tableSize + moveLength);
+            } else {
+                $thNext.width(thNextWidth).width();
             }
+            $th.width(thWidth).width();
 
-            if (moveLength != 0 && !this.dom.scrollX)
-                $thNext.width(this.dom.mouse.nextStartWidth - moveLength);
-            $th.width(this.dom.mouse.startWidth + moveLength);
-
+            //scrollX or scrollY enabled
             if (this.dom.scrollBody.length) {
                 var visibleColumnIndex;
                 var colIdx = this.getColumnIndex(col);
@@ -311,18 +361,22 @@
                 }
 
                 //Get the table
-                var resizingHeaderColumn = $('thead tr th:nth(' + visibleColumnIndex + ')', this.dom.scrollBodyTable);
+                var resizingBodyHeadColumn = $('thead>tr>th:nth(' + visibleColumnIndex + ')', this.dom.scrollBodyTable);
+                var resizingFootHeadColumn = $('thead>tr>th:nth(' + visibleColumnIndex + ')', this.dom.scrollFootTable);
 
                 //This will happen only when Scroller plugin is used without scrollX
-                if (!this.dom.scrollX && moveLength != 0) {
-                    resizingHeaderColumn.width(this.dom.mouse.startWidth + moveLength);
-                    resizingHeaderColumn.next().width(this.dom.mouse.nextStartWidth - moveLength);
+                if (!this.dom.scrollX) {
+                    resizingBodyHeadColumn.next().width(thNextWidth);
+                    resizingBodyHeadColumn.width(thWidth);
+
+                    resizingFootHeadColumn.next().width(thNextWidth);
+                    resizingFootHeadColumn.width(thWidth);
                 }
 
                 //Resize the table and the column
                 if (this.dom.scrollX) {
-                    this.dom.scrollBodyTable.width(this.tableSize + moveLength);
-                    resizingHeaderColumn.width(this.dom.mouse.startWidth + moveLength);
+                    resizingBodyHeadColumn.width(thWidth);
+                    resizingFootHeadColumn.width(thWidth);
                 }
             }
         };
@@ -341,7 +395,7 @@
     //Register api function
     $.fn.DataTable.Api.prototype.colResize = function (settings) {
         var colResize = new dt.ColResize(this, settings);
-        if (this.settings()[0].bInitialized)
+        if (this.settings()[0]._bInitComplete)
             colResize.initialize();
         else
             this.one('init.dt', function () {

@@ -275,7 +275,7 @@
     //Register api function
     $.fn.DataTable.Api.prototype.breezeRemote = function (settings) {
         var breezeRemote = new dt.BreezeRemote(this, settings);
-        if (this.settings()[0].bInitialized)
+        if (this.settings()[0]._bInitComplete)
             breezeRemote.initialize();
         else
             this.one('init.dt', () => { breezeRemote.initialize(); });
