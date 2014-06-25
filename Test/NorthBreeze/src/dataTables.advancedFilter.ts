@@ -1447,7 +1447,7 @@
     //Register api function
     $.fn.DataTable.Api.prototype.advancedFilter = function (settings) {
         var advancedFilter = new dt.AdvancedFilter(this, settings);
-        if (this.settings()[0].bInitialized)
+        if (this.settings()[0]._bInitComplete)
             advancedFilter.initialize();
         else
             this.one('init.dt', () => { advancedFilter.initialize(); });

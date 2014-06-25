@@ -1,6 +1,6 @@
 ﻿<div>
     <h2>Description</h2>
-    <div>
+    <div style="display: none">
         <h4>
             Used plugins: BreezeFilter, RemoteState, AdvancedFilter, ColResize, ColVis, ColReorder, ColPin, FormFilter
         </h4>
@@ -98,7 +98,7 @@
         <button ng-show="order.entityAspect.entityState.name != 'Detached'" ng-click="setState($rowIndex, 'detached')"><span>SetDetached</span></button><br />
         <button ng-show="order.entityAspect.entityState.name != 'Detached'" ng-click="setState($rowIndex, 'unchanged')"><span>SetUnchanged</span></button>
     </div>
-    <table class="table-striped table-bordered table-condensed table-small" dt-table="orderTable" dt-width="100%" dt-data="orders" dt-options="orderGridOpts" dt-row-data-path="order">
+    <table class="table-striped table-bordered table-condensed table-small" dt-table="orderTable" dt-data="orders" dt-options="orderGridOpts" dt-row-data-path="order">
         <thead>
             <th dt-data="OrderID" dt-width="100px">Order ID</th>
             <th dt-data="Freight" dt-expression="order.Freight | currency" dt-width="100px">Freight</th>
@@ -114,5 +114,20 @@
             <th dt-data="entityAspect.entityState.name" dt-width="150px">Entity state</th>
             <th dt-template="#order-opt-tpl" dt-width="150px">Options</th>
         </thead>
+        <tfoot>
+            <th>Order ID</th>
+            <th>Freight</th>
+            <th>Order Date</th>
+            <th>Required Date</th>
+            <th>Shipped Date</th>
+            <th>Name</th>
+            <th>Address</th>
+            <th>City</th>
+            <th>Region</th>
+            <th>PostCode</th>
+            <th>Country</th>
+            <th>Entity state</th>
+            <th>Options</th>
+        </tfoot>
     </table>
 </div>

@@ -407,7 +407,7 @@
     //#endregion
     $.fn.DataTable.Api.prototype.breezeEditable = function (settings) {
         var breezeEditable = new dt.BreezeEditable(this, settings);
-        if (this.settings()[0].bInitialized)
+        if (this.settings()[0]._bInitComplete)
             breezeEditable.initialize();
         else
             this.one('init.dt', function () {

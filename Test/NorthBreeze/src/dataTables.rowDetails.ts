@@ -323,7 +323,7 @@
 
     $.fn.DataTable.Api.prototype.rowDetails = function (settings) {
         var rowDetails = new dt.RowDetails(this, settings);
-        if (this.settings()[0].bInitialized)
+        if (this.settings()[0]._bInitComplete)
             rowDetails.initialize();
         else
             this.one('init.dt', () => { rowDetails.initialize(); });

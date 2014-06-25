@@ -180,7 +180,7 @@ app.controller('OrderCtrl', function ($scope, dataservice) {
         "G" + //BreezeFilter
         "C" + //ColVis
         "<'pull-left'B>" + //RemoteState
-        "<'pull-right'A>" + //AdvancedFilter
+        "<'pull-right'A><'clearfix'>" + //AdvancedFilter
         "t" +
         "K" + //FormFilter
         "J" + //ColResize

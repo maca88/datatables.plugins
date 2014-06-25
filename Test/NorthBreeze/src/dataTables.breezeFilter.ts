@@ -101,7 +101,7 @@
     //Register api function
     $.fn.DataTable.Api.prototype.breezeFilter = function (settings) {
         var breezeFilter = new dt.BreezeFilter(this, settings);
-        if (this.settings()[0].bInitialized)
+        if (this.settings()[0]._bInitComplete)
             breezeFilter.initialize();
         else
             this.one('init.dt', () => { breezeFilter.initialize(); });
