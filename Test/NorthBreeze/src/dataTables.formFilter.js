@@ -18,11 +18,6 @@
             var _this = this;
             if (this.dt.settings.oInit.bServerSide || this.dt.settings.oInit.serverSide)
                 this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'aoServerParams', this.setServerParams.bind(this), "FormFilter_ServerParam");
-            this.dt.api.on('preSearch.dt', function (e) {
-                if (e.target !== _this.dt.settings.nTable)
-                    return;
-                _this.currentFormsData = _this.getFormsData();
-            });
 
             /* State saving */
             this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'aoStateSaveParams', function (oS, oData) {
@@ -162,9 +157,14 @@
     });
 
     //Filter
-    $.fn.DataTable.ext.search.push(function (oSettings, data, dataIndex, rowData) {
+    $.fn.DataTable.ext.search.push(function (oSettings, data, dataIndex, rowData, counter) {
         if (oSettings.formFilter === undefined || !oSettings.oFeatures.bFilter)
             return true;
+
+        if (counter === 0) {
+            oSettings.formFilter.currentFormsData = oSettings.formFilter.getFormsData();
+        }
+
         var fn = oSettings.formFilter.settings.clientFilter;
         if (!fn || !$.isFunction(fn))
             return true;

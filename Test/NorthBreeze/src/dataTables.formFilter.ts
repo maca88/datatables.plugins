@@ -29,10 +29,6 @@
         private registerCallbacks() {
             if (this.dt.settings.oInit.bServerSide || this.dt.settings.oInit.serverSide) 
                 this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'aoServerParams', this.setServerParams.bind(this), "FormFilter_ServerParam");
-            this.dt.api.on('preSearch.dt', (e) => {
-                if (e.target !== this.dt.settings.nTable) return;
-                this.currentFormsData = this.getFormsData();
-            });
             /* State saving */
             this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'aoStateSaveParams', (oS, oData) => {
                 this.saveState(oData);
@@ -143,8 +139,13 @@
 
     //Filter
     $.fn.DataTable.ext.search.push(
-        (oSettings, data, dataIndex, rowData) => {
+        (oSettings, data, dataIndex, rowData, counter) => {
             if (oSettings.formFilter === undefined || !oSettings.oFeatures.bFilter) return true;
+
+            if (counter === 0) {
+                oSettings.formFilter.currentFormsData = oSettings.formFilter.getFormsData();
+            }
+
             var fn = oSettings.formFilter.settings.clientFilter;
             if (!fn || !$.isFunction(fn)) return true;
             return fn.call(oSettings.formFilter, oSettings.formFilter.currentFormsData, data, dataIndex, rowData);
