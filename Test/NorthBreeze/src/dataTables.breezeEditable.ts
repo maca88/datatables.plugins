@@ -341,7 +341,7 @@
             $(nButton).addClass(this.classes.buttons.disabled);
         }
     });
-
+    /*
     TableTools.buttons.editable_delete = $.extend({}, TableTools.buttonBase, {
         "sButtonText": "Delete",
         "fnClick": function(nButton, oConfig) {
@@ -399,7 +399,7 @@
         "fnInit": function(nButton, oConfig) {
             //$(nButton).addClass(this.classes.buttons.disabled);
         }
-    });
+    });*/
 
     //#endregion
 
@@ -417,7 +417,7 @@
         "fnInit": (oSettings) => {
             return oSettings.oInstance.api().breezeEditable(oSettings.oInit.breezeEditable);
         },
-        "cFeature": "E",
+        "cFeature": "L",
         "sFeature": "BreezeEditable"
     });
 

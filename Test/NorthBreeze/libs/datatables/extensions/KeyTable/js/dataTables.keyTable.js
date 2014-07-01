@@ -897,14 +897,14 @@ KeyTable = function ( oInit )
 		{
 			return [
 				$('td', n.parentNode).index(n),
-				$('tr', n.parentNode.parentNode).index(n.parentNode) + _oDatatable._iDisplayStart
+                n.parentNode._DT_RowIndex
 			];
 		}
 		else
 		{
 			return [
 				$('td', n.parentNode).index(n),
-				$('tr', n.parentNode.parentNode).index(n.parentNode)
+				n.parentNode._DT_RowIndex
 			];
 		}
 	}

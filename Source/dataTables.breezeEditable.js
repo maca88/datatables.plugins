@@ -341,69 +341,65 @@
         }
     });
 
+    /*
     TableTools.buttons.editable_delete = $.extend({}, TableTools.buttonBase, {
-        "sButtonText": "Delete",
-        "fnClick": function (nButton, oConfig) {
-            if (!this.s.dt.breezeEditable)
-                throw 'BreezeEditable plugin must be initialized';
-            var breezeEditable = this.s.dt.breezeEditable;
-            var settings = breezeEditable.settings;
-            var entities = this.fnGetSelectedData();
-            $.each(entities, function (i, entity) {
-                if (entity.entityAspect == null)
-                    throw 'Table items must be breeze entities';
-                entity.entityAspect.setDeleted();
-                if (entity.entityAspect.entityState === breeze.EntityState.Detached)
-                    return;
-                breezeEditable.deletedEntities.push(entity);
-            });
-            if ($.isFunction(settings.entitiesDeleted))
-                settings.entitiesDeleted.call(breezeEditable, entities);
-
-            if (breezeEditable.deletedEntities.length == 0)
-                return;
-
-            //If the restore deleted button is present enable it
-            var idx = this.s.buttonSet.indexOf("editable_restore_deleted");
-            if (idx < 0)
-                return;
-            $(this.s.tags.button, this.dom.container).eq(idx).removeClass(this.classes.buttons.disabled);
-        },
-        "fnSelect": function (nButton, oConfig) {
-            if (this.fnGetSelected().length !== 0) {
-                $(nButton).removeClass(this.classes.buttons.disabled);
-            } else {
-                $(nButton).addClass(this.classes.buttons.disabled);
-            }
-        },
-        "fnInit": function (nButton, oConfig) {
-            $(nButton).addClass(this.classes.buttons.disabled);
-        }
+    "sButtonText": "Delete",
+    "fnClick": function(nButton, oConfig) {
+    if (!this.s.dt.breezeEditable)
+    throw 'BreezeEditable plugin must be initialized';
+    var breezeEditable = this.s.dt.breezeEditable;
+    var settings = breezeEditable.settings;
+    var entities = this.fnGetSelectedData();
+    $.each(entities, (i, entity) => {
+    if (entity.entityAspect == null)
+    throw 'Table items must be breeze entities';
+    entity.entityAspect.setDeleted();
+    if (entity.entityAspect.entityState === breeze.EntityState.Detached) return;
+    breezeEditable.deletedEntities.push(entity);
     });
-
+    if ($.isFunction(settings.entitiesDeleted))
+    settings.entitiesDeleted.call(breezeEditable, entities);
+    
+    if (breezeEditable.deletedEntities.length == 0) return;
+    //If the restore deleted button is present enable it
+    var idx = this.s.buttonSet.indexOf("editable_restore_deleted");
+    if (idx < 0) return;
+    $(this.s.tags.button, this.dom.container).eq(idx).removeClass(this.classes.buttons.disabled);
+    },
+    "fnSelect": function(nButton, oConfig) {
+    if (this.fnGetSelected().length !== 0) {
+    $(nButton).removeClass(this.classes.buttons.disabled);
+    } else {
+    $(nButton).addClass(this.classes.buttons.disabled);
+    }
+    },
+    "fnInit": function(nButton, oConfig) {
+    $(nButton).addClass(this.classes.buttons.disabled);
+    }
+    });
+    
     TableTools.buttons.editable_add = $.extend({}, TableTools.buttonBase, {
-        "sButtonText": "Add",
-        "fnClick": function (nButton, oConfig) {
-            if (!this.s.dt.breezeEditable)
-                throw 'BreezeEditable plugin must be initialized';
-            var breezeEditable = this.s.dt.breezeEditable;
-            var settings = breezeEditable.settings;
-            if (!$.isFunction(settings.createEntity))
-                throw 'createEntity must be defined and has to be a function';
-            if (!settings.entityType)
-                throw 'entityType must be defined';
-
-            var item = settings.createEntity(settings.entityType);
-            this.s.dt.oInstance.api().row.add(item);
-
-            if ($.isFunction(settings.entityAddded))
-                settings.entityAddded.call(breezeEditable, item);
-        },
-        "fnInit": function (nButton, oConfig) {
-            //$(nButton).addClass(this.classes.buttons.disabled);
-        }
-    });
-
+    "sButtonText": "Add",
+    "fnClick": function (nButton, oConfig) {
+    if (!this.s.dt.breezeEditable)
+    throw 'BreezeEditable plugin must be initialized';
+    var breezeEditable = this.s.dt.breezeEditable;
+    var settings = breezeEditable.settings;
+    if (!$.isFunction(settings.createEntity))
+    throw 'createEntity must be defined and has to be a function';
+    if (!settings.entityType)
+    throw 'entityType must be defined';
+    
+    var item = settings.createEntity(settings.entityType);
+    this.s.dt.oInstance.api().row.add(item);
+    
+    if ($.isFunction(settings.entityAddded))
+    settings.entityAddded.call(breezeEditable, item);
+    },
+    "fnInit": function(nButton, oConfig) {
+    //$(nButton).addClass(this.classes.buttons.disabled);
+    }
+    });*/
     //#endregion
     $.fn.DataTable.Api.prototype.breezeEditable = function (settings) {
         var breezeEditable = new dt.BreezeEditable(this, settings);
@@ -421,7 +417,7 @@
         "fnInit": function (oSettings) {
             return oSettings.oInstance.api().breezeEditable(oSettings.oInit.breezeEditable);
         },
-        "cFeature": "E",
+        "cFeature": "L",
         "sFeature": "BreezeEditable"
     });
 }(window, document, undefined));

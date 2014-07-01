@@ -34,7 +34,7 @@
         "T" + //TableTools
         "G" + //BreezeFilter
         //"D" + //RowDetails
-        "E" + //BreezeEdiatble
+        "L" + //BreezeEdiatble
         "t" +
 		"<'row'<'col-xs-6'i><'col-xs-6'p>>R"
 

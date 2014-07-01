@@ -8,7 +8,7 @@ angular.module("dt").config([
         });
 
         dtSettings.dtTableCreatingActions.push(function ($element, options, scope, attrs, $compile, $rootScope) {
-            if (!options.dom || options.dom.indexOf("E") < 0)
+            if (!options.dom || options.dom.indexOf("L") < 0)
                 return;
 
             options.breezeEditable = options.breezeEditable || {};
@@ -77,8 +77,8 @@ angular.module("dt").config([
             };
         });
 
-        dtSettings.dtCellCompilingActions.push(function ($td, colOpts, cellScope, rowData, rowDataPath, options, $element, scope) {
-            if (!options.dom || options.dom.indexOf("E") < 0)
+        dtSettings.dtCellCompilingActions.push(function ($td, colOpts, cellScope, rowData, rowDataPath, oSettings) {
+            if (!oSettings.breezeEditable)
                 return;
 
             //Only columns that have data specified and that do not have editable set to false will be editable

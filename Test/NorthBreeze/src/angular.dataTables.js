@@ -423,7 +423,7 @@
                                 angular.forEach(dtSettings.dtCellCompilingActions, function (fn) {
                                     if (!angular.isFunction(fn))
                                         return;
-                                    fn($td, colOpts, cellScope, rowData, rowDataPath, options, $element, scope);
+                                    fn($td, colOpts, cellScope, rowData, rowDataPath, options, oSettings);
                                 });
 
                                 $compile($td)(cellScope); //We have to bind each td because of detached cells.
@@ -477,6 +477,9 @@
                     if (debug)
                         console.timeEnd('initDataTable');
                     oSettings = dataTable.settings()[0];
+                    oSettings.angular = {
+                        $compile: $compile
+                    };
                     oSettings._rowsInserted = oSettings._rowsInserted || {};
                     oSettings._rowsRemoved = oSettings._rowsRemoved || {};
                     oSettings.oInit.data = oSettings.oInit.aoData = options.data; //set init data to be the same as binding collection - this will be fixed in 1.10.1

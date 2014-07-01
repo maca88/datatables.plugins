@@ -19,7 +19,8 @@
             "engine": "Trident" + idx,
             "browser": "Internet Explorer 4.0" + idx,
             "platform": "Win 95+" + idx,
-            "version": "4" + idx,
+            "version": 4 + idx,
+            "date": new Date(),
             "grade": "X" + idx
         };
         idx++;
@@ -82,8 +83,9 @@
             "engine": "Trident" + i,
             "browser": "Internet Explorer 4.0" + i,
             "platform": "Win 95+" + i,
-            "version": "4" + i,
+            "version": 4 + i,
             "grade": "X" + i,
+            "date": new Date(),
             "subItems": subItems
         });
 
@@ -108,13 +110,30 @@
         ],
         columns: [
             { iconColumn: true },
-            { data: "engine", title: "Engine", className: "text-right" },
-            { data: "browser", title: "Browser" },
-            { data: "platform", title: "Platform" },
-            { data: "version", title: "Version" },
-            { data: "grade", title: "Grade" },
+            { data: "engine", title: "Engine", className: "text-right", type: "string", editable: { validators: { required: true } } },
+            { data: "browser", title: "Browser", type: "string", editable: true },
+            { data: "platform", title: "Platform", type: "string", editable: true },
+            { data: "version", title: "Version", type: "number", editable: true },
+            { data: "grade", title: "Grade", type: "string", editable: true },
+            { data: "date", title: "Date", type: "date", editable: true, expression: "data.date | date:'shortDate'" },
             { template: "#options-tpl" }
         ],
+        editable: {
+            createItem: getNewItem,
+            validate: function(val, validator, row) {
+                switch(validator.name) {
+                    case 'required':
+                        return !validator.options || (val != null && val != '');
+                    default:
+                        throw 'Unknown validator ' + validator.name;
+                }  
+            },
+            language: {
+                validators: {
+                    'required': 'The value is required'
+                }
+            }
+        },
         rowDetails: {
             icon: {
                 openHtml: '<span class="glyphicon glyphicon-plus row-detail-icon"></span>',
@@ -128,12 +147,13 @@
         tableTools: {
             "sRowSelect": "os",
             "sSwfPath": "libs/datatables/extensions/TableTools/swf/copy_csv_xls_pdf.swf",
-            "aButtons": ["copy", "pdf", "select_all", "select_none"]
+            "aButtons": ["copy", "pdf", "select_all", "select_none", "editable_delete", "editable_add"],
         },
         dom: "<'row'<'col-xs-6'l><'col-xs-6'f>r>" +
         "T" + //TableTools
         "D" + //RowDetails
         "C" + //ColVis
+        "E" + //ColVis
         "t" +
 		"<'row'<'col-xs-6'i><'col-xs-6'p>>R"
 

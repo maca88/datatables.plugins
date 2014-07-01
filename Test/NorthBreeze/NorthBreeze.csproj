@@ -182,10 +182,12 @@
     <Content Include="Scripts\toastr.js" />
     <Content Include="src\angular.dataTables.breezeEditable.js" />
     <Content Include="src\angular.dataTables.colPin.js" />
+    <Content Include="src\angular.dataTables.editable.js" />
     <Content Include="src\angular.dataTables.js" />
     <Content Include="src\angular.dataTables.rowDetails.js" />
     <Content Include="src\angular.dataTables.tableTools.js" />
     <TypeScriptCompile Include="src\angular.dataTables.colPin.ts" />
+    <TypeScriptCompile Include="src\angular.dataTables.editable.ts" />
     <TypeScriptCompile Include="src\dataTables.advancedFilter.ts" />
     <Content Include="src\dataTables.advancedFilter.js" />
     <TypeScriptCompile Include="src\dataTables.breezeFilter.ts" />
@@ -198,9 +200,11 @@
     <Content Include="src\dataTables.colPin.css" />
     <Content Include="src\dataTables.colPin.js" />
     <Content Include="src\dataTables.colResize.js" />
+    <Content Include="src\dataTables.editable.js" />
     <Content Include="src\dataTables.formFilter.js" />
     <Content Include="src\dataTables.remoteState.css" />
     <TypeScriptCompile Include="src\dataTables.formFilter.ts" />
+    <TypeScriptCompile Include="src\dataTables.editable.ts" />
     <TypeScriptCompile Include="src\dataTables.remoteState.ts" />
     <TypeScriptCompile Include="src\dataTables.rowDetails.ts" />
     <Content Include="src\dataTables.remoteState.js" />
