@@ -13,6 +13,7 @@
         dom: "TfrtiSJ",
         scrollY: 200,
         scrollCollapse: true,
+        stateSave: true,
         //scrollX: true,
         tableTools: {
             "sRowSelect": "os",

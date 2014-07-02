@@ -19,7 +19,8 @@
                 scrollFootTable: null,
                 scrollBody: null,
                 scrollBodyTable: null,
-                scrollX: false
+                scrollX: false,
+                scrollY: false
             };
             this.settings = $.extend(true, {}, settings);
             this.dt.settings = api.settings()[0];
@@ -91,6 +92,7 @@
             }
 
             this.dom.scrollX = this.dt.settings.oInit.sScrollX === undefined ? false : true;
+            this.dom.scrollY = this.dt.settings.oInit.sScrollY === undefined ? false : true;
 
             //SaveTableWidth
             this.dt.settings.sTableWidthOrig = $(this.dt.settings.nTable).width();
@@ -176,6 +178,8 @@
                 }
 
                 _this.dt.api.columns.adjust();
+                if (_this.dom.scrollX || _this.dom.scrollY)
+                    _this.dt.api.draw(false);
             };
 
             if (this.initialized) {

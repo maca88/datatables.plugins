@@ -9,7 +9,8 @@
                     pinnedClass: 'pinned',
                     unpinnedClass: 'unpinned'
                 }
-            }
+            },
+            fixedColumns: null
         };
 
         private settings: any;
@@ -133,7 +134,7 @@
         }
 
         private destroyFixedColumns(): void {
-
+            if (!this.dt.fixedColumns) return;
             this.dt.settings.oApi._fnCallbackFire(this.dt.settings, null, 'colPinFcDestroying', [this]);
 
             var cf = this.dt.fixedColumns;
@@ -157,7 +158,8 @@
 
         private createFixedColumns(settings): void {
             settings = settings || {};
-
+            if (this.settings.fixedColumns)
+                settings = $.extend(true, {}, this.settings.fixedColumns, settings);
             var pinnIcons = (elem) => {
                 if (elem == null) return;
                 $('thead>tr>th', elem).each((i, th) => {
@@ -264,6 +266,14 @@
                 var $th = $(col.nTh);
                 $th.append(this.createPinIcon(false, col));
             });
+
+            var fixCol = this.settings.fixedColumns;
+            if (fixCol && (fixCol.leftColumns || fixCol.rightColumns)) {
+                this.destroyFixedColumns();
+                this.dom.leftPinned = fixCol.leftColumns;
+                this.dom.rightPinned = fixCol.rightColumns;
+                this.createFixedColumns(fixCol);
+            }
 
             if (this.dt.settings.oInit.bStateSave && this.dt.settings.oLoadedState) {
                 this.loadState(this.dt.settings.oLoadedState);

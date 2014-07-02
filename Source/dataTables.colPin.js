@@ -113,6 +113,8 @@
         };
 
         ColPin.prototype.destroyFixedColumns = function () {
+            if (!this.dt.fixedColumns)
+                return;
             this.dt.settings.oApi._fnCallbackFire(this.dt.settings, null, 'colPinFcDestroying', [this]);
 
             var cf = this.dt.fixedColumns;
@@ -138,7 +140,8 @@
         ColPin.prototype.createFixedColumns = function (settings) {
             var _this = this;
             settings = settings || {};
-
+            if (this.settings.fixedColumns)
+                settings = $.extend(true, {}, this.settings.fixedColumns, settings);
             var pinnIcons = function (elem) {
                 if (elem == null)
                     return;
@@ -250,6 +253,14 @@
                 $th.append(_this.createPinIcon(false, col));
             });
 
+            var fixCol = this.settings.fixedColumns;
+            if (fixCol && (fixCol.leftColumns || fixCol.rightColumns)) {
+                this.destroyFixedColumns();
+                this.dom.leftPinned = fixCol.leftColumns;
+                this.dom.rightPinned = fixCol.rightColumns;
+                this.createFixedColumns(fixCol);
+            }
+
             if (this.dt.settings.oInit.bStateSave && this.dt.settings.oLoadedState) {
                 this.loadState(this.dt.settings.oLoadedState);
             }
@@ -264,7 +275,8 @@
                     pinnedClass: 'pinned',
                     unpinnedClass: 'unpinned'
                 }
-            }
+            },
+            fixedColumns: null
         };
         return ColPin;
     })();

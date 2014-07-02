@@ -19,7 +19,8 @@
             scrollFootTable: null,
             scrollBody: null,
             scrollBodyTable: null,
-            scrollX: false
+            scrollX: false,
+            scrollY: false
         };
 
         constructor(api, settings) {
@@ -87,6 +88,7 @@
             }
 
             this.dom.scrollX = this.dt.settings.oInit.sScrollX === undefined ? false : true;
+            this.dom.scrollY = this.dt.settings.oInit.sScrollY === undefined ? false : true;
 
             //SaveTableWidth
             this.dt.settings.sTableWidthOrig = $(this.dt.settings.nTable).width();
@@ -173,6 +175,8 @@
                 }
 
                 this.dt.api.columns.adjust();
+                if (this.dom.scrollX || this.dom.scrollY) // TODO: when stateSave is enabled with scrollX or scrollY resize will not work corectly. Check if can be fixed without a redraw
+                    this.dt.api.draw(false);
             };
 
             if (this.initialized) {
