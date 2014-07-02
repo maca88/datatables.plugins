@@ -166,13 +166,13 @@
                         col.sWidth = wMap[idx];
                         col.sWidthOrig = wMap[idx];
                     }
+
+                    for (i = 0; i < columns.length; i++) {
+                        this.dt.settings.aoColumns[i].nTh.style.width = columns[i];
+                    }
                 }
 
-                for (i = 0; i < columns.length; i++) {
-                    this.dt.settings.aoColumns[i].nTh.style.width = columns[i];
-                }
                 this.dt.api.columns.adjust();
-                //this.dt.api.draw(false);
             };
 
             if (this.initialized) {
