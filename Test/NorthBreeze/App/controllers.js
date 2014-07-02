@@ -45,6 +45,7 @@ app.controller('CustomerCtrl', ['$scope', 'dataservice', function ($scope, datas
         lengthChange: true,
         searching: true,
         info: true,
+        stateSave: true,
         autoWidth: true,
         deferRender: true,
         processing: false,
@@ -136,6 +137,7 @@ app.controller('OrderCtrl', function ($scope, dataservice) {
         scrollX: true,
         scrollCollapse: true,
         deferRender: true,
+        stateSave: true,
         remoteState: {
             storeId: 'OrderGrid',
             getStatesFromServer: true,

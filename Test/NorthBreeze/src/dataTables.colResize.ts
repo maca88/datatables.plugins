@@ -91,6 +91,11 @@
             //SaveTableWidth
             this.dt.settings.sTableWidthOrig = $(this.dt.settings.nTable).width();
 
+
+            if (this.dt.settings.oInit.bStateSave && this.dt.settings.oLoadedState) {
+                this.loadState(this.dt.settings.oLoadedState);
+            }
+            
             this.initialized = true;
             this.dt.settings.oApi._fnCallbackFire(this.dt.settings, 'colResizeInitCompleted', 'colResizeInitCompleted', [this]);
         }
@@ -162,7 +167,12 @@
                         col.sWidthOrig = wMap[idx];
                     }
                 }
+
+                for (i = 0; i < columns.length; i++) {
+                    this.dt.settings.aoColumns[i].nTh.style.width = columns[i];
+                }
                 this.dt.api.columns.adjust();
+                //this.dt.api.draw(false);
             };
 
             if (this.initialized) {
@@ -174,7 +184,13 @@
             }, "ColResize_Init");
         }
 
-        private saveState(data) : void {
+        private saveState(data): void {
+            if (!this.dt.settings._bInitComplete) {
+                var oData = this.dt.settings.fnStateLoadCallback.call(this.dt.settings.oInstance, this.dt.settings);
+                if (oData && oData.colResize)
+                    data.colResize = oData.colResize;
+                return;
+            }
             data.colResize = {
                 columns: [],
                 tableSize: this.tableSize
@@ -260,7 +276,7 @@
             $(document).on('mouseup.ColResize', (event) => { this.onMouseUp(event, col); });
 
             /* Save the state */
-            this.dt.settings.oInstance.oApi._fnSaveState(this.dt.settings);
+            //this.dt.settings.oInstance.oApi._fnSaveState(this.dt.settings);
 
             return false;
         }
@@ -276,7 +292,7 @@
             var previousVisibleColumnIndex;
 
             //Save the new resized column's width - add only the diff to the orig width in order ColPin to work
-            col.sWidth = Number(col.sWidth.replace('px', '')) + (e.pageX - this.dom.mouse.startX) + 'px'; //  $(this.dom.mouse.resizeElem).innerWidth() + "px";
+            col.sWidth = $(this.dom.mouse.resizeElem).css('width'); /*Number(col.sWidth.replace('px', '')) + (e.pageX - this.dom.mouse.startX) + 'px'; $(this.dom.mouse.resizeElem).innerWidth() + "px";*/
 
             //If other columns might have changed their size, save their size too
             if (!this.dom.scrollX) {
@@ -292,13 +308,13 @@
                 }
 
                 if (this.dt.settings.aoColumns.length > nextVisibleColumnIndex)
-                    this.dt.settings.aoColumns[nextVisibleColumnIndex].sWidth = $(this.dom.mouse.resizeElem).next().innerWidth() + "px";
+                    this.dt.settings.aoColumns[nextVisibleColumnIndex].sWidth = $(this.dom.mouse.resizeElem).next().css('width'); //$(this.dom.mouse.resizeElem).next().innerWidth() + "px";
                 else { //The column resized is the right-most, so save the sizes of all the columns at the left
                     currentColumn = this.dom.mouse.resizeElem;
                     for (i = previousVisibleColumnIndex; i > 0; i--) {
                         if (this.dt.settings.aoColumns[i].bVisible) {
                             currentColumn = $(currentColumn).prev();
-                            this.dt.settings.aoColumns[i].sWidth = $(currentColumn).innerWidth() + "px";
+                            this.dt.settings.aoColumns[i].sWidth = $(currentColumn).css('width'); //$(currentColumn).innerWidth() + "px";
                         }
                     }
                 }

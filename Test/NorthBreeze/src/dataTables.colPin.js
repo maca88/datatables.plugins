@@ -161,6 +161,12 @@
         };
 
         ColPin.prototype.saveState = function (data) {
+            if (!this.dt.settings._bInitComplete) {
+                var oData = this.dt.settings.fnStateLoadCallback.call(this.dt.settings.oInstance, this.dt.settings);
+                if (oData && oData.colPin)
+                    data.colPin = oData.colPin;
+                return;
+            }
             data.colPin = {
                 leftPinned: this.dom.leftPinned,
                 rightPinned: this.dom.rightPinned
@@ -243,6 +249,11 @@
                 var $th = $(col.nTh);
                 $th.append(_this.createPinIcon(false, col));
             });
+
+            if (this.dt.settings.oInit.bStateSave && this.dt.settings.oLoadedState) {
+                this.loadState(this.dt.settings.oLoadedState);
+            }
+
             this.initialized = true;
             this.dt.settings.oApi._fnCallbackFire(this.dt.settings, 'colPinInitCompleted', 'colPinInitCompleted', [this]);
         };
