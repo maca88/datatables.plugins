@@ -203,7 +203,6 @@
                 }
 
                 //reInit FixedColumns
-                _this.destroyFixedColumns();
                 _this.createFixedColumns({
                     leftColumns: _this.dom.leftPinned,
                     rightColumns: _this.dom.rightPinned
@@ -228,9 +227,13 @@
             }, "ColPin_StateSave");
 
             /* State loading */
-            this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'aoStateLoadParams', function (oS, oData) {
+            this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'aoStateLoaded', function (oS, oData) {
                 _this.loadState(oData);
-            }, "ColPin_StateLoad");
+            }, "ColPin_StateLoaded");
+
+            this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'aoStateLoadParams', function (oS, oData) {
+                _this.reset();
+            }, "ColPin_StateLoading");
 
             if ($.fn.DataTable.models.oSettings.remoteStateInitCompleted !== undefined) {
                 //Integrate with remote state
@@ -262,6 +265,7 @@
             }
 
             if (this.dt.settings.oInit.bStateSave && this.dt.settings.oLoadedState) {
+                this.reset();
                 this.loadState(this.dt.settings.oLoadedState);
             }
 

@@ -50,6 +50,7 @@
     <Content Include="App\views\performance.html" />
     <Content Include="Content\font-awesome.css" />
     <Content Include="Content\font-awesome.min.css" />
+    <Content Include="Examples\pin.resize.state.html" />
     <Content Include="fonts\fontawesome-webfont.svg" />
     <Content Include="libs\angular-route.js" />
     <Content Include="libs\bootstrap\css\bootstrap-theme.css.map" />

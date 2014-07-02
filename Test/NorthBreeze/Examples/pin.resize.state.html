@@ -1,0 +1,84 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <link href="../libs/bootstrap/css/bootstrap.css" rel="stylesheet" type="text/css" />
+    <link href="../libs/datatables/css/jquery.dataTables.css" rel="stylesheet" type="text/css" />
+    <link href="../libs/datatables/extensions/ColReorder/css/dataTables.colReorder.css" rel="stylesheet" type="text/css" />
+    <link href="../libs/datatables/extensions/Scroller/css/dataTables.scroller.css" rel="stylesheet" type="text/css" />
+    <link href="../libs/datatables/extensions/FixedColumns/css/dataTables.fixedColumns.css" rel="stylesheet" type="text/css" />
+    <link href="../src/dataTables.colPin.css" rel="stylesheet" type="text/css" />
+
+    <style media="screen" type="text/css">
+    </style>
+
+    <script src="../Scripts/jquery-1.9.1.js"></script>
+    <script src="../libs/datatables/js/jquery.dataTables.js"></script>
+    <script src="../libs/datatables/extensions/Scroller/js/dataTables.scroller.js"></script>
+    <script src="../libs/datatables/extensions/ColReorder/js/dataTables.colReorder.js"></script>
+    <script src="../libs/datatables/extensions/FixedColumns/js/dataTables.fixedColumns.js"></script>
+    <script src="../src/dataTables.colResize.js"></script>
+    <script src="../src/dataTables.colPin.js"></script>
+    <meta charset=utf-8 />
+    <title>DataTables - JS Bin</title>
+    
+    <script type="text/javascript">
+        $(function() {
+
+            var opts = {
+                "ajax": "data.txt",
+                "columns": [
+                    { title: "input", "defaultContent": '<input type="text"/>', type: "html", width: '150px' },
+                    { "data": "position", width: '600px' },
+                    { "data": "office", width: '150px' },
+                    { "data": "salary", width: '200px' }
+                ],
+                "stateSave": true,
+                "dom": 'Rlfrtip',
+                "scrollX": true,
+                "order": [[1, 'asc']]
+            };
+
+
+            var api = $('#example').DataTable(opts);
+            var colPinOpts = {
+                fixedColumns: {
+                    leftColumns: 1,
+                    rightColumns: 0,
+                    heightMatch: 'auto'
+                }
+            };
+
+            api.colPin(colPinOpts);
+            api.colResize();
+
+        });
+
+        
+
+    </script>
+</head>
+<body>
+    <div class="container">
+
+        <table id="example" class="display">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Position</th>
+                    <th>Office</th>
+                    <th>Salary</th>
+                </tr>
+            </thead>
+            <tfoot>
+                <tr>
+                    <th>Name</th>
+                    <th>Position</th>
+                    <th>Office</th>
+                    <th>Salary</th>
+                </tr>
+            </tfoot>
+
+        </table>
+    </div>
+</body>
+</html>

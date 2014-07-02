@@ -216,12 +216,12 @@
             /* State saving */
             this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'aoStateSaveParams', function (oS, oData) {
                 _this.saveState(oData);
-            }, "ColResize_State");
+            }, "ColResize_StateSave");
 
             /* State loading */
-            this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'aoStateLoadParams', function (oS, oData) {
+            this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'aoStateLoaded', function (oS, oData) {
                 _this.loadState(oData);
-            }, "ColResize_State");
+            }, "ColResize_StateLoad");
 
             if ($.fn.DataTable.models.oSettings.remoteStateInitCompleted !== undefined) {
                 //Integrate with remote state
