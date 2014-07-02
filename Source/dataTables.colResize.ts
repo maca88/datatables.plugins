@@ -256,7 +256,7 @@
             if ($th.css('cursor') != 'col-resize' || col.resizable === false ) {
                 if (colReorderMouseDownEvent != null && $.isFunction(colReorderMouseDownEvent.handler))
                     return colReorderMouseDownEvent.handler(e);
-                return false;
+                return true;
             }
             this.dom.mouse.startX = e.pageX;
             this.dom.mouse.startWidth = $th.width();
