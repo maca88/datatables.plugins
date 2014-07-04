@@ -49,6 +49,9 @@ app.controller('CustomerCtrl', ['$scope', 'dataservice', function ($scope, datas
         autoWidth: true,
         deferRender: true,
         processing: false,
+        colResize: {
+            widthMatch: 'auto'
+        },
         rowDetails: {
             icon: {
                 openHtml: '<span class="glyphicon glyphicon-plus row-detail-icon"></span>',
@@ -185,8 +188,8 @@ app.controller('OrderCtrl', function ($scope, dataservice) {
         "<'pull-right'A><'clearfix'>" + //AdvancedFilter
         "t" +
         "K" + //FormFilter
-        "J" + //ColResize
         "I" + //ColPin
+        "J" + //ColResize
 		"<'row'<'col-xs-6'i><'col-xs-6'p>>R"
 
     };
@@ -217,6 +220,7 @@ app.controller('OrderCtrl', function ($scope, dataservice) {
     function querySucceeded(data) {
         $scope.orders = data.results;
         $scope.$apply();
+        $scope.orderTable.colResize.calcMinWidths();
         app.logger.info("Fetched " + data.results.length + " Orders ");
     }
 

@@ -9,6 +9,10 @@
     <link href="../src/dataTables.colPin.css" rel="stylesheet" type="text/css" />
 
     <style media="screen" type="text/css">
+        table.dataTable {
+            margin: 0;
+        }
+         
     </style>
 
     <script src="../Scripts/jquery-1.9.1.js"></script>
@@ -28,7 +32,7 @@
                 "ajax": "data.txt",
                 "columns": [
                     { "defaultContent": '<input type="text"/>', type: "html", width: '150px' },
-                    { "data": "position", width: '600px' },
+                    { "data": "position", width: '600px', minWidth: 220 },
                     { "data": "office", width: '150px' },
                     { "data": "salary", width: '200px' }
                 ],
@@ -48,8 +52,8 @@
                 }
             };
 
-            api.colPin(colPinOpts);
-            api.colResize();
+            //api.colPin.init(colPinOpts);
+            api.colResize.init();
 
         });
 
@@ -63,8 +67,8 @@
         <table id="example" class="display">
             <thead>
                 <tr>
-                    <th>Name</th>
-                    <th>Position</th>
+                    <th>Name<input type="text"/></th>
+                    <th>Position<input type="text" /></th>
                     <th>Office</th>
                     <th>Salary</th>
                 </tr>

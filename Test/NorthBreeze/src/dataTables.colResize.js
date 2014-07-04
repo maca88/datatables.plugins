@@ -8,7 +8,6 @@
             this.dom = {
                 mouse: {
                     startX: -1,
-                    nextStartWidth: null,
                     startWidth: null,
                     resizeElem: null
                 },
@@ -22,7 +21,7 @@
                 scrollX: false,
                 scrollY: false
             };
-            this.settings = $.extend(true, {}, settings);
+            this.settings = $.extend(true, dt.ColResize.defaultSettings, settings);
             this.dt.settings = api.settings()[0];
             this.dt.api = api;
             this.dt.settings.colResize = this;
@@ -34,6 +33,9 @@
                 var $th = $(col.nTh);
                 if (col.resizable === false)
                     return;
+
+                if (col.minWidth)
+                    col._minWidthManual = col.minWidth;
 
                 // listen to mousemove event for resize
                 $th.bind('mousemove.ColResize', function (e) {
@@ -54,15 +56,11 @@
 
                 //Save the original width
                 //col._sWidth_Orig = col.sWidth;
-                var colReorderMouseDownEvent = _this.getColumnEvent(col, 'mousedown', 'ColReorder');
-
-                //Remove the ColReorder handler so that reordering will not occur on resizing
-                if (colReorderMouseDownEvent)
-                    $th.off('mousedown.ColReorder');
+                $th.off('mousedown.ColReorder');
 
                 // listen to mousedown event
                 $th.on('mousedown.ColResize', function (e) {
-                    return _this.onMouseDown(e, $th, col, colReorderMouseDownEvent);
+                    return _this.onMouseDown(e, $th, col);
                 });
             });
 
@@ -94,8 +92,25 @@
             this.dom.scrollX = this.dt.settings.oInit.sScrollX === undefined ? false : true;
             this.dom.scrollY = this.dt.settings.oInit.sScrollY === undefined ? false : true;
 
+            switch (this.settings.widthMatch) {
+                case 'none':
+                    break;
+                case 'auto':
+                    this.dt.api.on('draw.dt', this.calcColumnMinWidths.bind(this)); //on every draw
+                    if (this.dt.settings._bInitComplete)
+                        this.calcColumnMinWidths();
+                    break;
+                default:
+                    if (this.dt.settings._bInitComplete)
+                        this.calcColumnMinWidths();
+                    else
+                        this.dt.api.one('draw.dt', this.calcColumnMinWidths.bind(this));
+                    break;
+            }
+
             //SaveTableWidth
             this.dt.settings.sTableWidthOrig = $(this.dt.settings.nTable).width();
+            this.updateTableSize();
 
             if (this.dt.settings.oInit.bStateSave && this.dt.settings.oLoadedState) {
                 this.loadState(this.dt.settings.oLoadedState);
@@ -103,6 +118,56 @@
 
             this.initialized = true;
             this.dt.settings.oApi._fnCallbackFire(this.dt.settings, 'colResizeInitCompleted', 'colResizeInitCompleted', [this]);
+        };
+
+        ColResize.prototype.calcColumnMinWidths = function (e) {
+            var _this = this;
+            if (typeof e === "undefined") { e = null; }
+            if (e != null && e.target !== this.dt.settings.nTable)
+                return;
+
+            $.each(this.dt.settings.aoColumns, function (i, col) {
+                if (col.resizable === false || col._minWidthManual)
+                    return;
+                var $th = $(col.nTh);
+                var colIdx = $th.parent().children().index(col.nTh);
+
+                var maxWidth = -1;
+
+                if (_this.dom.scrollX || _this.dom.scrollY) {
+                    $('thead>tr>th:nth-child(' + (colIdx + 1) + ')', _this.dom.scrollHeadTable).each(function (ii, td) {
+                        maxWidth = Math.max(maxWidth, ColResizeHelper.calcWidth($(td)));
+                    });
+                    $('tbody>tr>td:nth-child(' + (colIdx + 1) + ')', _this.dom.scrollBodyTable).each(function (ii, td) {
+                        maxWidth = Math.max(maxWidth, ColResizeHelper.calcWidth($(td)));
+                    });
+                    if (_this.dom.scrollFootTable.length) {
+                        $('tfoot>tr>th:nth-child(' + (colIdx + 1) + ')', _this.dom.scrollFootTable).each(function (ii, td) {
+                            maxWidth = Math.max(maxWidth, ColResizeHelper.calcWidth($(td)));
+                        });
+                    }
+                } else {
+                    $('thead>tr>th:nth-child(' + (colIdx + 1) + ')', _this.dt.settings.nTable).each(function (ii, td) {
+                        maxWidth = Math.max(maxWidth, ColResizeHelper.calcWidth($(td)));
+                    });
+                    $('tbody>tr>td:nth-child(' + (colIdx + 1) + ')', _this.dt.settings.nTable).each(function (ii, td) {
+                        maxWidth = Math.max(maxWidth, ColResizeHelper.calcWidth($(td)));
+                    });
+                    $('tfoot>tr>th:nth-child(' + (colIdx + 1) + ')', _this.dt.settings.nTable).each(function (ii, td) {
+                        maxWidth = Math.max(maxWidth, ColResizeHelper.calcWidth($(td)));
+                    });
+                }
+
+                console.log(maxWidth);
+                col.minWidth = maxWidth;
+            });
+        };
+
+        ColResize.prototype.updateTableSize = function () {
+            if (this.dom.scrollX && this.dom.scrollHeadTable.length)
+                this.tableSize = this.dom.scrollHeadTable.width();
+            else
+                this.tableSize = -1;
         };
 
         ColResize.prototype.getColumnIndex = function (col) {
@@ -198,6 +263,7 @@
                     data.colResize = oData.colResize;
                 return;
             }
+            this.updateTableSize();
             data.colResize = {
                 columns: [],
                 tableSize: this.tableSize
@@ -238,11 +304,15 @@
             if (e != null && e.target !== this.dt.settings.nTable)
                 return;
 
-            $('thead', this.dom.scrollFootTable).remove();
-            this.dom.scrollFootTable.prepend($('thead', this.dom.scrollBodyTable).clone());
+            if (this.dom.scrollFootTable.length) {
+                $('thead', this.dom.scrollFootTable).remove();
+                this.dom.scrollFootTable.prepend($('thead', this.dom.scrollBodyTable).clone());
+            }
 
-            $('tfoot', this.dom.scrollHeadTable).remove();
-            this.dom.scrollHeadTable.append($('tfoot', this.dom.scrollBodyTable).clone());
+            if (this.dom.scrollHeadTable.length) {
+                $('tfoot', this.dom.scrollHeadTable).remove();
+                this.dom.scrollHeadTable.append($('tfoot', this.dom.scrollBodyTable).clone());
+            }
 
             var removeHeaderWidth = function (table) {
                 $('tfoot>tr>th', table).each(function (i, th) {
@@ -256,17 +326,33 @@
             removeHeaderWidth(this.dom.scrollHeadTable);
         };
 
-        ColResize.prototype.onMouseDown = function (e, $th, col, colReorderMouseDownEvent) {
+        ColResize.prototype.overrideClickHander = function (col, $th) {
+            var dtClickEvent = this.getColumnEvent(col, 'click', 'DT');
+
+            //Remove the DataTables event so that ordering will not occur
+            if (dtClickEvent) {
+                $th.off('click.DT');
+                $(document).one('click.ColResize', function (e) {
+                    $th.on('click.DT', dtClickEvent.handler);
+                });
+            }
+        };
+
+        ColResize.prototype.onMouseDown = function (e, $th, col) {
             var _this = this;
+            if (e.target !== $th.get(0))
+                return true;
             if ($th.css('cursor') != 'col-resize' || col.resizable === false) {
-                if (colReorderMouseDownEvent != null && $.isFunction(colReorderMouseDownEvent.handler))
-                    return colReorderMouseDownEvent.handler(e);
+                var colReorder = this.dt.settings._colReorder;
+                if (colReorder) {
+                    colReorder._fnMouseDown.call(colReorder, e, $th.get(0)); //Here we fix the e.preventDefault() in ColReorder so that we can have working inputs in headers
+                }
                 return true;
             }
             this.dom.mouse.startX = e.pageX;
+            this.dom.mouse.prevX = e.pageX;
             this.dom.mouse.startWidth = $th.width();
             this.dom.mouse.resizeElem = $th;
-            this.dom.mouse.nextStartWidth = $th.next().width();
             this.dom.resize = true;
             if (this.dt.settings.oFeatures.bAutoWidth)
                 this.dt.settings.oFeatures.bAutoWidthOrig = true;
@@ -276,134 +362,235 @@
             $(document).on('mousemove.ColResize', function (event) {
                 _this.onMouseMove(event, col);
             });
-
-            var dtClickEvent = this.getColumnEvent(col, 'click', 'DT');
-
-            //Remove the DataTables event so that ordering will not occur
-            if (dtClickEvent) {
-                $th.off('click.DT');
-                $(document).one('click.ColResize', function (event) {
-                    $th.on('click.DT', dtClickEvent.handler);
-                }); //Add the original handler so that ordering will work
-            }
-
-            $(document).on('mouseup.ColResize', function (event) {
+            this.overrideClickHander(col, $th);
+            $(document).one('mouseup.ColResize', function (event) {
                 _this.onMouseUp(event, col);
             });
 
-            /* Save the state */
-            //this.dt.settings.oInstance.oApi._fnSaveState(this.dt.settings);
             return false;
         };
 
         ColResize.prototype.onMouseUp = function (e, col) {
             $(document).off('mousemove.ColResize');
-            $(document).off('mouseup.ColResize');
             if (!this.dom.resize)
                 return;
             var i;
-            var colIdx = this.getColumnIndex(col);
-            var currentColumn;
-            var nextVisibleColumnIndex;
-            var previousVisibleColumnIndex;
-
-            //Save the new resized column's width - add only the diff to the orig width in order ColPin to work
-            col.sWidth = $(this.dom.mouse.resizeElem).css('width'); /*Number(col.sWidth.replace('px', '')) + (e.pageX - this.dom.mouse.startX) + 'px'; $(this.dom.mouse.resizeElem).innerWidth() + "px";*/
-
-            //If other columns might have changed their size, save their size too
-            if (!this.dom.scrollX) {
-                for (nextVisibleColumnIndex = colIdx + 1; nextVisibleColumnIndex < this.dt.settings.aoColumns.length; nextVisibleColumnIndex++) {
-                    if (this.dt.settings.aoColumns[nextVisibleColumnIndex].bVisible)
-                        break;
-                }
-
-                for (previousVisibleColumnIndex = colIdx - 1; previousVisibleColumnIndex >= 0; previousVisibleColumnIndex--) {
-                    if (this.dt.settings.aoColumns[previousVisibleColumnIndex].bVisible)
-                        break;
-                }
-
-                if (this.dt.settings.aoColumns.length > nextVisibleColumnIndex)
-                    this.dt.settings.aoColumns[nextVisibleColumnIndex].sWidth = $(this.dom.mouse.resizeElem).next().css('width'); //$(this.dom.mouse.resizeElem).next().innerWidth() + "px";
-                else {
-                    currentColumn = this.dom.mouse.resizeElem;
-                    for (i = previousVisibleColumnIndex; i > 0; i--) {
-                        if (this.dt.settings.aoColumns[i].bVisible) {
-                            currentColumn = $(currentColumn).prev();
-                            this.dt.settings.aoColumns[i].sWidth = $(currentColumn).css('width'); //$(currentColumn).innerWidth() + "px";
-                        }
-                    }
-                }
+            var columns = this.dt.settings.aoColumns;
+            for (i = 0; i < columns.length; i++) {
+                if (!columns[i].bVisible)
+                    continue;
+                columns[i].sWidth = $(columns[i].nTh).css('width');
             }
 
             //Update the internal storage of the table's width (in case we changed it because the user resized some column and scrollX was enabled
-            if (this.dom.scrollX && this.dom.scrollHead.length) {
-                this.tableSize = this.dom.scrollHeadTable.width();
-            }
+            this.updateTableSize();
 
             //Save the state
             this.dt.settings.oInstance.oApi._fnSaveState(this.dt.settings);
-
             this.dom.resize = false;
+        };
+
+        ColResize.prototype.canColumnBeResized = function (col, newWidth) {
+            return (!col.minWidth || col.minWidth < newWidth) && (!col.maxWidth || col.maxWidth > newWidth);
+        };
+
+        ColResize.prototype.getPrevResizableColumnIdx = function (col, moveLength) {
+            var columns = this.dt.settings.aoColumns;
+            var colIdx = ColResizeHelper.indexOf(columns, col);
+            for (var i = colIdx; i >= 0; i--) {
+                if (!columns[i].bVisible)
+                    continue;
+                if (!columns[i].minWidth || columns[i].minWidth < ($(columns[i].nTh).width() + moveLength))
+                    return i;
+            }
+            return -1;
+        };
+
+        ColResize.prototype.getNextResizableColumnIdx = function (col, moveLength) {
+            var columns = this.dt.settings.aoColumns;
+            var colIdx = ColResizeHelper.indexOf(columns, col);
+            for (var i = (colIdx + 1); i < columns.length; i++) {
+                if (!columns[i].bVisible)
+                    continue;
+                if (!columns[i].minWidth || columns[i].minWidth < ($(columns[i].nTh).width() - moveLength))
+                    return i;
+            }
+            return -1;
         };
 
         ColResize.prototype.onMouseMove = function (e, col) {
             var moveLength = e.pageX - this.dom.mouse.startX;
-            if (moveLength == 0)
+            var lastMoveLength = e.pageX - this.dom.mouse.prevX;
+            if (moveLength == 0 || lastMoveLength == 0)
                 return;
-            var $th = $(this.dom.mouse.resizeElem);
-            var $thNext = $th.next();
-
+            var i;
+            var columns = this.dt.settings.aoColumns;
+            var headCol = $(this.dom.mouse.resizeElem);
+            var headColNext = headCol.next();
+            var colIdx = this.getColumnIndex(col);
             var thWidth = this.dom.mouse.startWidth + moveLength;
-            var thNextWidth = this.dom.mouse.nextStartWidth - moveLength;
+            var thNextWidth;
+            var nextColIdx, prevColIdx;
 
-            if (this.dom.scrollX) {
-                if (this.tableSize < 0)
-                    this.tableSize = this.dom.scrollHeadTable.width();
+            if (!this.dom.scrollX) {
+                if (lastMoveLength < 0) {
+                    thWidth = headColNext.width() - lastMoveLength;
+                    prevColIdx = this.getPrevResizableColumnIdx(col, lastMoveLength);
+                    if (prevColIdx < 0) {
+                        this.dom.mouse.prevX = e.pageX;
+                        return;
+                    }
+                    headCol = headColNext;
+                    colIdx = colIdx + 1;
+                    headColNext = $(columns[prevColIdx].nTh);
+                    nextColIdx = prevColIdx;
+                    thNextWidth = headColNext.width() + lastMoveLength;
+                } else {
+                    thWidth = headCol.width() + lastMoveLength;
+                    nextColIdx = this.getNextResizableColumnIdx(col, lastMoveLength);
+
+                    //If there is no columns that can be shrinked dont resize anymore
+                    if (nextColIdx < 0) {
+                        this.dom.mouse.prevX = e.pageX;
+                        return;
+                    }
+                    headColNext = $(columns[nextColIdx].nTh);
+                    thNextWidth = headColNext.width() - lastMoveLength;
+
+                    if (col.maxWidth && col.maxWidth < thWidth) {
+                        this.dom.mouse.prevX = e.pageX;
+                        return;
+                    }
+                }
+                if (!this.canColumnBeResized(columns[nextColIdx], thNextWidth)) {
+                    this.dom.mouse.prevX = e.pageX;
+                    return;
+                }
+                headColNext.width(thNextWidth);
+            } else {
+                if (!this.canColumnBeResized(col, thWidth)) {
+                    this.dom.mouse.prevX = e.pageX;
+                    return;
+                }
                 this.dom.scrollHeadTable.width(this.tableSize + moveLength);
                 this.dom.scrollBodyTable.width(this.tableSize + moveLength);
                 this.dom.scrollFootTable.width(this.tableSize + moveLength);
-            } else {
-                $thNext.width(thNextWidth).width();
             }
-            $th.width(thWidth).width();
+            headCol.width(thWidth);
 
             //scrollX or scrollY enabled
             if (this.dom.scrollBody.length) {
-                var visibleColumnIndex;
-                var colIdx = this.getColumnIndex(col);
-                var currentColumnIndex;
-                visibleColumnIndex = 0;
-                for (currentColumnIndex = 0; currentColumnIndex < this.dt.settings.aoColumns.length && currentColumnIndex != colIdx; currentColumnIndex++) {
-                    if (this.dt.settings.aoColumns[currentColumnIndex].bVisible)
-                        visibleColumnIndex++;
+                var colDomIdx = 0;
+                for (i = 0; i < this.dt.settings.aoColumns.length && i != colIdx; i++) {
+                    if (this.dt.settings.aoColumns[i].bVisible)
+                        colDomIdx++;
                 }
 
                 //Get the table
-                var resizingBodyHeadColumn = $('thead>tr>th:nth(' + visibleColumnIndex + ')', this.dom.scrollBodyTable);
-                var resizingFootHeadColumn = $('thead>tr>th:nth(' + visibleColumnIndex + ')', this.dom.scrollFootTable);
+                var bodyCol = $('thead>tr>th:nth(' + colDomIdx + ')', this.dom.scrollBodyTable);
+                var footCol = $('thead>tr>th:nth(' + colDomIdx + ')', this.dom.scrollFootTable);
 
                 //This will happen only when Scroller plugin is used without scrollX
                 if (!this.dom.scrollX) {
-                    resizingBodyHeadColumn.next().width(thNextWidth);
-                    resizingBodyHeadColumn.width(thWidth);
+                    var nextColDomIdx = 0;
+                    for (i = 0; i < this.dt.settings.aoColumns.length && i != nextColIdx; i++) {
+                        if (this.dt.settings.aoColumns[i].bVisible)
+                            nextColDomIdx++;
+                    }
+                    var bodyColNext = $('thead>tr>th:nth(' + nextColDomIdx + ')', this.dom.scrollBodyTable);
+                    var footColNext = $('thead>tr>th:nth(' + nextColDomIdx + ')', this.dom.scrollFootTable);
 
-                    resizingFootHeadColumn.next().width(thNextWidth);
-                    resizingFootHeadColumn.width(thWidth);
+                    bodyColNext.width(thNextWidth);
+                    if (thWidth > 0)
+                        bodyCol.width(thWidth);
+
+                    footColNext.width(thNextWidth);
+                    if (thWidth > 0)
+                        footCol.width(thWidth);
                 }
 
                 //Resize the table and the column
-                if (this.dom.scrollX) {
-                    resizingBodyHeadColumn.width(thWidth);
-                    resizingFootHeadColumn.width(thWidth);
+                if (this.dom.scrollX && thWidth > 0) {
+                    bodyCol.width(thWidth);
+                    footCol.width(thWidth);
                 }
             }
+            this.dom.mouse.prevX = e.pageX;
         };
 
         ColResize.prototype.destroy = function () {
         };
+        ColResize.defaultSettings = {
+            widthMatch: 'semiauto'
+        };
         return ColResize;
     })();
     dt.ColResize = ColResize;
+
+    var ColResizeHelper = (function () {
+        function ColResizeHelper() {
+        }
+        ColResizeHelper.indexOf = function (arr, item, equalFun) {
+            if (typeof equalFun === "undefined") { equalFun = null; }
+            for (var i = 0; i < arr.length; i++) {
+                if (equalFun) {
+                    if (equalFun(arr[i], item))
+                        return i;
+                } else if (arr[i] === item)
+                    return i;
+            }
+            return -1;
+        };
+
+        ColResizeHelper.calcBlockWidth = function (item) {
+            var pos = item.css("position");
+            item.css("position", "absolute");
+            var width = item.width();
+            item.css("position", pos);
+            return (width);
+        };
+
+        ColResizeHelper.calcWidth = function (elem) {
+            var children = elem.children();
+            if (children.length) {
+                var textWidth = ColResizeHelper.calcTextWidth(elem);
+                var maxWidth = -1;
+                var inlineElemsWidth = 0;
+                $.each(children, function (i, child) {
+                    var $child = $(child);
+                    var display = $child.css('display');
+                    switch (display) {
+                        case 'inline-block':
+                            inlineElemsWidth += ColResizeHelper.calcBlockWidth($child);
+                            break;
+                        case 'inline':
+                            inlineElemsWidth += $(child).width();
+                            break;
+                        case 'block':
+                            maxWidth = Math.max(maxWidth, ColResizeHelper.calcBlockWidth($child));
+                            break;
+                        default:
+                            maxWidth = Math.max(maxWidth, $child.width());
+                            break;
+                    }
+                });
+                return Math.max(textWidth + inlineElemsWidth, maxWidth);
+            } else {
+                return ColResizeHelper.calcTextWidth(elem);
+            }
+        };
+
+        ColResizeHelper.calcTextWidth = function (elem, text, font) {
+            if (typeof text === "undefined") { text = null; }
+            if (typeof font === "undefined") { font = null; }
+            if (!ColResizeHelper.fakeEl)
+                ColResizeHelper.fakeEl = $('<span>').hide().appendTo(document.body);
+            ColResizeHelper.fakeEl.text(text || elem.val() || elem.text()).css('font', font || elem.css('font'));
+            return ColResizeHelper.fakeEl.width();
+        };
+        return ColResizeHelper;
+    })();
+    dt.ColResizeHelper = ColResizeHelper;
 })(dt || (dt = {}));
 
 (function (window, document, undefined) {
@@ -411,7 +598,7 @@
     $.fn.DataTable.models.oSettings.colResizeInitCompleted = [];
 
     //Register api function
-    $.fn.DataTable.Api.prototype.colResize = function (settings) {
+    $.fn.DataTable.Api.register('colResize.init()', function (settings) {
         var colResize = new dt.ColResize(this, settings);
         if (this.settings()[0]._bInitComplete)
             colResize.initialize();
@@ -421,12 +608,17 @@
             });
 
         return null;
-    };
+    });
+
+    $.fn.DataTable.Api.register('colResize.calcMinWidths()', function () {
+        var colResize = this.settings()[0].colResize;
+        colResize.calcColumnMinWidths();
+    });
 
     //Add as feature
     $.fn.dataTable.ext.feature.push({
         "fnInit": function (oSettings) {
-            return oSettings.oInstance.api().colResize(oSettings.oInit.colResize);
+            return oSettings.oInstance.api().colResize.init(oSettings.oInit.colResize);
         },
         "cFeature": "J",
         "sFeature": "ColResize"

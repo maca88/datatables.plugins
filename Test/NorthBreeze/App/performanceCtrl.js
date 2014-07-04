@@ -4,7 +4,7 @@
     var numItems = 50000;
     var data = [];
     for (var i = 0 ; i < 50000 ; i++) {
-        data.push([i, i, i, i, i]);
+        data.push(['<input type="text"/>', i, i, i, i]);
     }
     console.timeEnd('generateData');
 
