@@ -1,0 +1,108 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <link href="../libs/datatables/css/jquery.dataTables.css" rel="stylesheet" type="text/css" />
+    <link href="../libs/datatables/extensions/ColReorder/css/dataTables.colReorder.css" rel="stylesheet" type="text/css" />
+    <link href="../libs/datatables/extensions/Scroller/css/dataTables.scroller.css" rel="stylesheet" type="text/css" />
+    <link href="../libs/datatables/extensions/FixedColumns/css/dataTables.fixedColumns.css" rel="stylesheet" type="text/css" />
+    <link href="../src/dataTables.colPin.css" rel="stylesheet" type="text/css" />
+    <link href="../src/dataTables.colResize.css" rel="stylesheet" type="text/css" />
+
+    <style media="screen" type="text/css">
+        body {
+            font: 90%/1.45em "Helvetica Neue", HelveticaNeue, Verdana, Arial, Helvetica, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #333;
+            background-color: #fff;
+        }
+
+        div.container {
+            min-width: 980px;
+            margin: 0 auto;
+        }
+
+        table {
+            border-collapse: ollapse;
+            border: 1px solid black;
+        }
+
+        table td, table th {
+            border: 1px solid black;
+        }
+    </style>
+
+    <script src="../Scripts/jquery-1.9.1.js"></script>
+    <script src="../libs/datatables/js/jquery.dataTables.js"></script>
+    <script src="../libs/datatables/extensions/Scroller/js/dataTables.scroller.js"></script>
+    <script src="../libs/datatables/extensions/ColReorder/js/dataTables.colReorder.js"></script>
+    <script src="../libs/datatables/extensions/FixedColumns/js/dataTables.fixedColumns.js"></script>
+    <script src="../src/dataTables.colResize.js"></script>
+    <script src="../src/dataTables.colPin.js"></script>
+    <meta charset=utf-8 />
+    <title>DataTables - JS Bin</title>
+
+    <script type="text/javascript">
+        $(function () {
+
+            var opts2 = {
+                "stateSave": true,
+                "dom": 'Rlfrtip',
+                "scrollX": true,
+                "order": [[1, 'asc']]
+            };
+
+
+            var api = $('#example2').DataTable(opts2);
+            api.colResize.init();
+
+            //api.column(1).resize(500);
+        });
+
+
+
+    </script>
+</head>
+<body>
+    <div class="container">
+
+        <table class="table table-hover table-bordered table-condensed table-striped" id="example2">
+            <thead><tr><th class=""><a href="#">S</a><form accept-charset="utf-8" method="post" ><label><input onclick="submit()" checked="checked" name="43" class="checkbox" type="checkbox"><input name="44" class="hidden" type="hidden"></label></form></th><th class=" readonly"><div class="closeColumn"><a style="float:right;" href="#"><span class="glyphicon glyphicon-remove"></span></a></div><a href="#">Display Label</a><form accept-charset="utf-8" method="post"  id="id47" onkeypress="if((window.event ? window.event.keyCode : event.which) == 13){document.getElementById('id47').submit();; return false}; return true" style="margin: 0; border: 0; padding: 0;"><input style="min-width: 100px;width: 100%;" value="" name="48" class="text" type="text"><br><input style="white-space: nowrap; display:inline; vertical-align:middle;" onclick="submit()" name="49" class="checkbox" type="checkbox"><input name="50" class="hidden" type="hidden">&nbsp;invert</form></th><th class=""><div class="closeColumn"><a style="float:right;" href="#"><span class="glyphicon glyphicon-remove"></span></a></div><a href="#">Entity / CIK</a><form accept-charset="utf-8" method="post"  id="id53" onkeypress="if((window.event ? window.event.keyCode : event.which) == 13){document.getElementById('id53').submit();; return false}; return true" style="margin: 0; border: 0; padding: 0;"><input style="width: 100%;" value="" name="54" class="text" type="text"><br><input style="white-space: nowrap; display:inline; vertical-align:middle;" onclick="submit()" name="55" class="checkbox" type="checkbox"><input name="56" class="hidden" type="hidden">&nbsp;invert</form></th><th class=" required"><div class="closeColumn"><a style="float:right;" href="#"><span class="glyphicon glyphicon-remove"></span></a></div><a href="#">Asset Class</a><form accept-charset="utf-8" method="post"  style="margin: 0; border: 0; padding: 0;"><select style="width: 100%;" onchange="submit()" name="59"><option value="1" selected="selected">(all)</option><option value="2">Equity</option></select></form></th><th class=" required"><div class="closeColumn"><a style="float:right;" href="#"><span class="glyphicon glyphicon-remove"></span></a></div><a href="#">Security Class</a><form accept-charset="utf-8" method="post"  style="margin: 0; border: 0; padding: 0;"><select style="width: 100%;" onchange="submit()" name="62"><option value="1" selected="selected">(all)</option><option value="2">Options</option></select></form></th><th class=""><div class="closeColumn"><a style="float:right;" href="#"><span class="glyphicon glyphicon-remove"></span></a></div>Option Type<form accept-charset="utf-8" method="post"  style="margin: 0; border: 0; padding: 0;"><select style="width: 100%;" onchange="submit()" name="64"><option value="1" selected="selected">(all)</option><option value="2">CALL</option></select></form></th><th class=" required"><div class="closeColumn"><a style="float:right;" href="#"><span class="glyphicon glyphicon-remove"></span></a></div>Status<form accept-charset="utf-8" method="post"  style="margin: 0; border: 0; padding: 0;"><select style="width: 100%;" onchange="submit()" name="66"><option value="1" selected="selected">(all)</option><option value="2">CONFIRMED</option></select></form></th><th class=""><div class="closeColumn"><a style="float:right;" href="#"><span class="glyphicon glyphicon-remove"></span></a></div><a href="#">Expiration Date</a><form accept-charset="utf-8" method="post"  id="id69" onkeypress="if((window.event ? window.event.keyCode : event.which) == 13){document.getElementById('id69').submit();; return false}; return true" style="margin: 0; border: 0; padding: 0;"><input data-original-title="Upper bound limit" size="10" style="" data-toggle="tooltip" title="" data-placement="bottom" value="" name="70" class="text" type="text"><br><input data-original-title="Lower bound limit" size="10" style="" data-toggle="tooltip" title="" data-placement="top" value="" name="71" class="text" type="text"><br><input style="white-space: nowrap; display:inline; vertical-align:middle;" onclick="submit()" name="72" class="checkbox" type="checkbox"><input name="73" class="hidden" type="hidden">&nbsp;invert</form></th><th class=" readonly"><div class="closeColumn"><a style="float:right;" href="#"><span class="glyphicon glyphicon-remove"></span></a></div><a href="#">Has Expired</a><form accept-charset="utf-8" method="post"  style="margin: 0; border: 0; padding: 0;"><select style="width: 100%;" onchange="submit()" name="76"><option value="1" selected="selected">(all)</option><option value="2">false</option></select></form></th><th title="Enter an alternative asset identifier." class=""><div class="closeColumn"><a style="float:right;" href="#"><span class="glyphicon glyphicon-remove"></span></a></div><a href="#">Alternative Identifier</a><form accept-charset="utf-8" method="post"  id="id79" onkeypress="if((window.event ? window.event.keyCode : event.which) == 13){document.getElementById('id79').submit();; return false}; return true" style="margin: 0; border: 0; padding: 0;"><input style="width: 100%;" value="" name="80" class="text" type="text"><br><input style="white-space: nowrap; display:inline; vertical-align:middle;" onclick="submit()" name="81" class="checkbox" type="checkbox"><input name="82" class="hidden" type="hidden">&nbsp;invert</form></th><th title="Strike price for futures and future-options" class=" right"><div class="closeColumn"><a style="float:right;" href="#"><span class="glyphicon glyphicon-remove"></span></a></div><a href="#">Strike Price</a></th><th title="Multiplier, e.g. stock options ==> 100 shares, enter 100." class=" right required"><div class="closeColumn"><a style="float:right;" href="#"><span class="glyphicon glyphicon-remove"></span></a></div><a href="#">Multiplier</a><form accept-charset="utf-8" method="post"  id="id87" onkeypress="if((window.event ? window.event.keyCode : event.which) == 13){document.getElementById('id87').submit();; return false}; return true" style="margin: 0; border: 0; padding: 0;"><input data-original-title="Upper bound limit" style="width: 100%;" data-toggle="tooltip" title="" data-placement="bottom" value="" name="88" class="text" type="text"><br><input data-original-title="Lower bound limit" style="width: 100%;" data-toggle="tooltip" title="" data-placement="top" value="" name="89" class="text" type="text"><br><input style="white-space: nowrap; display:inline; vertical-align:middle;" onclick="submit()" name="90" class="checkbox" type="checkbox"><input name="91" class="hidden" type="hidden">&nbsp;invert</form></th><th class=""><div class="closeColumn"><a style="float:right;" href="#"><span class="glyphicon glyphicon-remove"></span></a></div><a href="#">CUSIP</a><form accept-charset="utf-8" method="post"  id="id94" onkeypress="if((window.event ? window.event.keyCode : event.which) == 13){document.getElementById('id94').submit();; return false}; return true" style="margin: 0; border: 0; padding: 0;"><input style="width: 100%;" value="" name="95" class="text" type="text"><br><input style="white-space: nowrap; display:inline; vertical-align:middle;" onclick="submit()" name="96" class="checkbox" type="checkbox"><input name="97" class="hidden" type="hidden">&nbsp;invert</form></th><th class=""><div class="closeColumn"><a style="float:right;" href="#"><span class="glyphicon glyphicon-remove"></span></a></div><a href="#">ISIN</a><form accept-charset="utf-8" method="post"  id="id100" onkeypress="if((window.event ? window.event.keyCode : event.which) == 13){document.getElementById('id100').submit();; return false}; return true" style="margin: 0; border: 0; padding: 0;"><input style="width: 100%;" value="" name="101" class="text" type="text"><br><input style="white-space: nowrap; display:inline; vertical-align:middle;" onclick="submit()" name="102" class="checkbox" type="checkbox"><input name="103" class="hidden" type="hidden">&nbsp;invert</form></th><th class=""><div class="closeColumn"><a style="float:right;" href="#"><span class="glyphicon glyphicon-remove"></span></a></div><a href="#">Asset Description</a><form accept-charset="utf-8" method="post"  id="id106" onkeypress="if((window.event ? window.event.keyCode : event.which) == 13){document.getElementById('id106').submit();; return false}; return true" style="margin: 0; border: 0; padding: 0;"><input style="width: 100%;" value="" name="107" class="text" type="text"><br><input style="white-space: nowrap; display:inline; vertical-align:middle;" onclick="submit()" name="108" class="checkbox" type="checkbox"><input name="109" class="hidden" type="hidden">&nbsp;invert</form></th><th class=" readonly"><div class="closeColumn"><a style="float:right;" href="#"><span class="glyphicon glyphicon-remove"></span></a></div><a href="#">Last Ticker Symbol</a><form accept-charset="utf-8" method="post"  id="id112" onkeypress="if((window.event ? window.event.keyCode : event.which) == 13){document.getElementById('id112').submit();; return false}; return true" style="margin: 0; border: 0; padding: 0;"><input style="width: 100%;" value="" name="113" class="text" type="text"><br><input style="white-space: nowrap; display:inline; vertical-align:middle;" onclick="submit()" name="114" class="checkbox" type="checkbox"><input name="115" class="hidden" type="hidden">&nbsp;invert</form></th><th class=""><div class="closeColumn"><a style="float:right;" href="#"><span class="glyphicon glyphicon-remove"></span></a></div><a href="#">Is ADR</a><form accept-charset="utf-8" method="post"  style="margin: 0; border: 0; padding: 0;"><select style="width: 100%;" onchange="submit()" name="118"><option value="1" selected="selected">(all)</option><option value="2">false</option></select></form></th><th class=""><div class="closeColumn"><a style="float:right;" href="#"><span class="glyphicon glyphicon-remove"></span></a></div><a href="#">Is Foreign Security</a><form accept-charset="utf-8" method="post"  style="margin: 0; border: 0; padding: 0;"><select style="width: 100%;" onchange="submit()" name="121"><option value="1" selected="selected">(all)</option><option value="2">false</option></select></form></th><th class=""><div class="closeColumn"><a style="float:right;" href="#"><span class="glyphicon glyphicon-remove"></span></a></div><a href="#">Underlying Security</a><form accept-charset="utf-8" method="post"  id="id124" onkeypress="if((window.event ? window.event.keyCode : event.which) == 13){document.getElementById('id124').submit();; return false}; return true" style="margin: 0; border: 0; padding: 0;"><input style="width: 100%;" value="" name="125" class="text" type="text"><br><input style="white-space: nowrap; display:inline; vertical-align:middle;" onclick="submit()" name="126" class="checkbox" type="checkbox"><input name="127" class="hidden" type="hidden">&nbsp;invert</form></th><th class=" right readonly"><div class="closeColumn"><a style="float:right;" href="#"><span class="glyphicon glyphicon-remove"></span></a></div><a href="#">Tnxs Refs</a><form accept-charset="utf-8" method="post"  id="id130" onkeypress="if((window.event ? window.event.keyCode : event.which) == 13){document.getElementById('id130').submit();; return false}; return true" style="margin: 0; border: 0; padding: 0;"><input data-original-title="Upper bound limit" style="width: 100%;" data-toggle="tooltip" title="" data-placement="bottom" value="" name="131" class="text" type="text"><br><input data-original-title="Lower bound limit" style="width: 100%;" data-toggle="tooltip" title="" data-placement="top" value="" name="132" class="text" type="text"><br><input style="white-space: nowrap; display:inline; vertical-align:middle;" onclick="submit()" name="133" class="checkbox" type="checkbox"><input name="134" class="hidden" type="hidden">&nbsp;invert</form></th><th class=""><div class="closeColumn"><a style="float:right;" href="#"><span class="glyphicon glyphicon-remove"></span></a></div><a href="#">Notes</a><form accept-charset="utf-8" method="post"  id="id137" onkeypress="if((window.event ? window.event.keyCode : event.which) == 13){document.getElementById('id137').submit();; return false}; return true" style="margin: 0; border: 0; padding: 0;"><input style="width: 100%;" value="" name="138" class="text" type="text"><br><input style="white-space: nowrap; display:inline; vertical-align:middle;" onclick="submit()" name="139" class="checkbox" type="checkbox"><input name="140" class="hidden" type="hidden">&nbsp;invert</form></th><th class=" readonly"><div class="closeColumn"><a style="float:right;" href="#"><span class="glyphicon glyphicon-remove"></span></a></div><a href="#">Original OFX String</a><form accept-charset="utf-8" method="post"  id="id143" onkeypress="if((window.event ? window.event.keyCode : event.which) == 13){document.getElementById('id143').submit();; return false}; return true" style="margin: 0; border: 0; padding: 0;"><input style="width: 100%;" value="" name="144" class="text" type="text"><br><input style="white-space: nowrap; display:inline; vertical-align:middle;" onclick="submit()" name="145" class="checkbox" type="checkbox"><input name="146" class="hidden" type="hidden">&nbsp;invert</form></th></tr></thead>
+            <tbody>
+                <tr class="odd selectedRow">
+                    <td><form accept-charset="utf-8" method="post" ><label><input onclick="submit()" checked="checked" name="147" class="checkbox" type="checkbox"><input name="148" class="hidden" type="hidden"></label></form></td>
+                    <td class="readonly">ABX JAN 17'15 $25 CALL</td>
+                    <td><a class="clickablePopup" id="id149" href="#">Barrick / 0000756894 </a></td>
+                    <td class="required">Equity</td>
+                    <td class="required">Options</td>
+                    <td>CALL</td>
+                    <td class="required">CONFIRMED</td>
+                    <td>2015-01-17</td>
+                    <td class="readonly">false</td>
+                    <td></td>
+                    <td class="right">25.0</td>
+                    <td class="right required">100</td>
+                    <td>150117ABXC25E</td>
+                    <td></td>
+                    <td>ABX JAN 17'15 $25 CALL</td>
+                    <td class="readonly">ABX   150117C00025000</td>
+                    <td>false</td>
+                    <td>false</td>
+                    <td><a class="clickablePopup" id="id150" href="#">Barrick / Common / 067901108</a></td>
+                    <td class="right readonly">3</td>
+                    <td></td>
+                    <td class="readonly">
+                        <a class="clickablePopup" id="id151" href="#">
+                            &lt;OPTINFO&gt;
+                            &lt;SECINFO&gt;
+                            &lt;SECID&gt;
+                            &lt;UNIQUEID&gt;150117ABXC25E&lt;/UNIQUEID&gt;
+                            ...
+                        </a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

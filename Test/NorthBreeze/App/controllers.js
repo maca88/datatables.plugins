@@ -42,6 +42,12 @@ app.controller('CustomerCtrl', ['$scope', 'dataservice', function ($scope, datas
 
     $scope.customerGridOpts = {
         paging: true,
+        columnDefs: [
+            {
+                targets: 0,
+                resizable: false
+            }
+        ],
         lengthChange: true,
         searching: true,
         info: true,
@@ -50,7 +56,7 @@ app.controller('CustomerCtrl', ['$scope', 'dataservice', function ($scope, datas
         deferRender: true,
         processing: false,
         colResize: {
-            widthMatch: 'auto'
+         
         },
         rowDetails: {
             icon: {

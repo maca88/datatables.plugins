@@ -50,7 +50,9 @@
     <Content Include="App\views\performance.html" />
     <Content Include="Content\font-awesome.css" />
     <Content Include="Content\font-awesome.min.css" />
+    <Content Include="Examples\data.txt" />
     <Content Include="Examples\pin.resize.state.html" />
+    <Content Include="Examples\resize-complex-header.html" />
     <Content Include="fonts\fontawesome-webfont.svg" />
     <Content Include="libs\angular-route.js" />
     <Content Include="libs\bootstrap\css\bootstrap-theme.css.map" />
@@ -200,6 +202,7 @@
     <Content Include="src\dataTables.breezeRemote.js" />
     <Content Include="src\dataTables.colPin.css" />
     <Content Include="src\dataTables.colPin.js" />
+    <Content Include="src\dataTables.colResize.css" />
     <Content Include="src\dataTables.colResize.js" />
     <Content Include="src\dataTables.editable.js" />
     <Content Include="src\dataTables.formFilter.js" />
