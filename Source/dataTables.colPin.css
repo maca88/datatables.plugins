@@ -1,21 +1,44 @@
-﻿.unpinned {
-    -webkit-transform: rotate(+45deg);
-    -moz-transform: rotate(+45deg);
-    -o-transform: rotate(+45deg);
-    -ms-transform: rotate(+45deg);
-    transform: rotate(+45deg);
+﻿.pin {
+  background-color: #aaa;
+  background-image: linear-gradient(left, hsla(0,0%,100%,.2), hsla(0,0%,0%,.2));
+  display: inline-block;
+  height: 1em;
+  margin: 0 0 0 1em;
+  width: .2em;
+}
+.pin:after {
+  background-color: darkgray;
+  background-image: radial-gradient(25% 25%, circle, hsla(0,0%,100%,.2), hsla(0,0%,0%,.2));
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px hsla(0,0%,0%,.1),
+              inset .2em .2em .2em hsla(0,0%,100%,.2),
+              inset -.2em -.2em .2em hsla(0,0%,0%,.2);
+  content: '';
+  height: .8em;
+  left: -.35em;
+  position: absolute;
+  top: -.65em;
+  width: .8em;
+}
+
+
+.unpinned {
+    -webkit-transform: rotate(+90deg);
+    -moz-transform: rotate(+90deg);
+    -o-transform: rotate(+90deg);
+    -ms-transform: rotate(+90deg);
+    transform: rotate(+90deg);
+}
+
+.pinned:after {
+    background-color: red;
 }
 
 .pinned {
-	color: red;
-    -webkit-transform:rotate(-45deg);
-    -moz-transform:rotate(-45deg);
-    -o-transform:rotate(-45deg);
-    -ms-transform: rotate(-45deg);
-    transform: rotate(-45deg);
+    -webkit-transform:rotate(45deg);
+    -moz-transform:rotate(45deg);
+    -o-transform:rotate(45deg);
+    -ms-transform: rotate(45deg);
+    transform: rotate(45deg);
 }
 
-table.dataTable { /*We have to override the margins from dt bootstrap csss*/
-	margin-top: 0 !important; 
-	margin-bottom: 0 !important;
-}

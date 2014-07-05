@@ -24,10 +24,15 @@
             var fromIndex = this.getColumnIndex(col);
             col.nTh._DT_PinDir = direction === 'left' ? 'left' : 'right';
             var toIndex = direction === 'left' ? this.dom.leftPinned : (this.dt.settings.aoColumns.length - 1) - this.dom.rightPinned;
+            this.destroyFixedColumns();
             this.moveColumn(fromIndex, toIndex);
             this.incPinnedColumns(direction);
             col.resizableOrig = col.resizable;
             col.resizable = false;
+            this.createFixedColumns({
+                leftColumns: this.dom.leftPinned,
+                rightColumns: this.dom.rightPinned
+            });
         };
 
         ColPin.prototype.getColumnIndex = function (col) {
@@ -80,35 +85,55 @@
         ColPin.prototype.unpinColumn = function (col) {
             if (col == null)
                 return;
+            var i, cIdx;
+            var columns = this.dt.settings.aoColumns;
             var fromIndex = this.getColumnIndex(col);
             var direction = col.nTh._DT_PinDir;
-            var toIndex = direction === 'left' ? this.dom.leftPinned - 1 : this.dt.settings.aoColumns.length - this.dom.rightPinned;
+            var origPos = col._ColReorder_iOrigCol != null ? col._ColReorder_iOrigCol : fromIndex;
+            var toIndex;
+
+            switch (direction) {
+                case 'left':
+                    toIndex = (this.dom.leftPinned - 1) > origPos ? (this.dom.leftPinned - 1) : origPos;
+                    for (i = toIndex + 1; i < columns.length; i++) {
+                        cIdx = columns[i]._ColReorder_iOrigCol != null ? columns[i]._ColReorder_iOrigCol : i;
+                        if (cIdx >= origPos)
+                            break;
+                        toIndex++;
+                    }
+                    break;
+                default:
+                    toIndex = (columns.length - this.dom.rightPinned) < origPos ? (columns.length - this.dom.rightPinned) : origPos;
+                    for (i = toIndex - 1; i >= 0; i--) {
+                        cIdx = columns[i]._ColReorder_iOrigCol != null ? columns[i]._ColReorder_iOrigCol : i;
+                        if (cIdx <= origPos)
+                            break;
+                        toIndex--;
+                    }
+                    break;
+            }
+            this.destroyFixedColumns();
             this.moveColumn(fromIndex, toIndex);
             this.decPinnedColumns(direction);
             col.nTh._DT_PinDir = null;
             col.resizable = col.resizableOrig;
+            this.createFixedColumns({
+                leftColumns: this.dom.leftPinned,
+                rightColumns: this.dom.rightPinned
+            });
         };
 
         ColPin.prototype.createPinIcon = function (pinned, col) {
             var _this = this;
-            return $('<span />').addClass('dt-pin').data('_DT_Column', col).addClass(this.settings.dom.pinIcon.iconClass).addClass(pinned ? this.settings.dom.pinIcon.pinnedClass : this.settings.dom.pinIcon.unpinnedClass).on('click', function (evt) {
-                evt.stopPropagation(); //We have to do this in order to skip dt ordering
-            }).on('mouseup', function (evt) {
-                evt.preventDefault();
+            return $('<span />').addClass('dt-pin').data('_DT_Column', col).addClass(this.settings.classes.iconClass).addClass(pinned ? this.settings.classes.pinnedClass : this.settings.classes.unpinnedClass).on('click', function (evt) {
+                evt.stopPropagation();
                 var $target = $(evt.target);
                 var direction = !evt.shiftKey ? 'left' : 'right';
 
-                if ($target.hasClass(_this.settings.dom.pinIcon.pinnedClass))
+                if ($target.hasClass(_this.settings.classes.pinnedClass))
                     _this.unpinColumn($target.data('_DT_Column'));
                 else
                     _this.pinColumn($target.data('_DT_Column'), direction);
-
-                //reInit FixedColumns
-                _this.destroyFixedColumns();
-                _this.createFixedColumns({
-                    leftColumns: _this.dom.leftPinned,
-                    rightColumns: _this.dom.rightPinned
-                });
             });
         };
 
@@ -147,8 +172,8 @@
                     return;
                 $('thead>tr>th', elem).each(function (i, th) {
                     var pin = $('span.dt-pin', th);
-                    pin.removeClass(_this.settings.dom.pinIcon.unpinnedClass);
-                    pin.addClass(_this.settings.dom.pinIcon.pinnedClass);
+                    pin.removeClass(_this.settings.classes.unpinnedClass);
+                    pin.addClass(_this.settings.classes.pinnedClass);
                 });
             };
             settings.drawCallback = function (leftClone, rightClone) {
@@ -182,40 +207,39 @@
             this.destroyFixedColumns();
         };
 
+        ColPin.prototype.repinColumns = function (data) {
+            this.reset();
+            var i;
+            var leftPinned = data.leftColumns;
+            for (i = 0; i < leftPinned; i++) {
+                this.pinColumn(this.dt.settings.aoColumns[i], 'left');
+            }
+
+            var rightPinned = data.rightColumns;
+            var colNum = this.dt.settings.aoColumns.length - 1;
+            for (i = colNum; i > (colNum - rightPinned); i--) {
+                this.pinColumn(this.dt.settings.aoColumns[i], 'right');
+            }
+        };
+
         ColPin.prototype.loadState = function (data) {
             var _this = this;
             if (!data.colPin) {
                 this.reset();
                 return;
             }
-
-            var onInit = function () {
-                var i;
-                var leftPinned = data.colPin.leftPinned;
-                for (i = 0; i < leftPinned; i++) {
-                    _this.pinColumn(_this.dt.settings.aoColumns[i], 'left');
-                }
-
-                var rightPinned = data.colPin.rightPinned;
-                var colNum = _this.dt.settings.aoColumns.length - 1;
-                for (i = colNum; i > (colNum - rightPinned); i--) {
-                    _this.pinColumn(_this.dt.settings.aoColumns[i], 'right');
-                }
-
-                //reInit FixedColumns
-                _this.createFixedColumns({
-                    leftColumns: _this.dom.leftPinned,
-                    rightColumns: _this.dom.rightPinned
-                });
+            var opts = {
+                leftColumns: data.colPin.leftPinned,
+                rightColumns: data.colPin.rightPinned
             };
 
             //If the plugin aws already initialized we can pin the columns otherwise register a callback
             if (this.initialized) {
-                onInit();
+                this.repinColumns(opts);
                 return;
             }
             this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'colPinInitCompleted', function () {
-                onInit();
+                _this.repinColumns(opts);
             }, "ColPin_Init");
         };
 
@@ -258,14 +282,13 @@
 
             var fixCol = this.settings.fixedColumns;
             if (fixCol && (fixCol.leftColumns || fixCol.rightColumns)) {
-                this.destroyFixedColumns();
-                this.dom.leftPinned = fixCol.leftColumns;
-                this.dom.rightPinned = fixCol.rightColumns;
-                this.createFixedColumns(fixCol);
+                this.repinColumns({
+                    leftColumns: fixCol.leftColumns || 0,
+                    rightColumns: fixCol.rightColumns || 0
+                });
             }
 
             if (this.dt.settings.oInit.bStateSave && this.dt.settings.oLoadedState) {
-                this.reset();
                 this.loadState(this.dt.settings.oLoadedState);
             }
 
@@ -273,12 +296,10 @@
             this.dt.settings.oApi._fnCallbackFire(this.dt.settings, 'colPinInitCompleted', 'colPinInitCompleted', [this]);
         };
         ColPin.defaultSettings = {
-            dom: {
-                pinIcon: {
-                    iconClass: 'glyphicon glyphicon-pushpin',
-                    pinnedClass: 'pinned',
-                    unpinnedClass: 'unpinned'
-                }
+            classes: {
+                iconClass: 'pin',
+                pinnedClass: 'pinned',
+                unpinnedClass: 'unpinned'
             },
             fixedColumns: null
         };
@@ -292,7 +313,7 @@
     $.fn.DataTable.models.oSettings.colPinInitCompleted = [];
 
     //Register api function
-    $.fn.DataTable.Api.prototype.colPin = function (settings) {
+    $.fn.DataTable.Api.register('colPin.init()', function (settings) {
         var colPin = new dt.ColPin(this, settings);
         if (this.settings()[0]._bInitComplete)
             colPin.initialize();
@@ -302,15 +323,25 @@
             });
 
         return null;
-    };
+    });
+
+    $.fn.DataTable.Api.register('colPin.repin()', function (settings) {
+        var colPin = this.settings()[0].colPin;
+        colPin.repinColumns(settings);
+    });
 
     //Add as feature
     $.fn.dataTable.ext.feature.push({
         "fnInit": function (oSettings) {
-            return oSettings.oInstance.api().colPin(oSettings.oInit.colPin);
+            return oSettings.oInstance.api().colPin.init(oSettings.oInit.colPin);
         },
         "cFeature": "I",
         "sFeature": "ColPin"
     });
+
+    //Integrate with boostrap 3 if present
+    var bootstrap3Enabled = (typeof $().emulateTransitionEnd == 'function');
+    if (bootstrap3Enabled)
+        dt.ColPin.defaultSettings.classes.iconClass = 'glyphicon glyphicon-pushpin';
 }(window, document, undefined));
 //# sourceMappingURL=dataTables.colPin.js.map

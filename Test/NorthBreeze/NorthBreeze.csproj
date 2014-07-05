@@ -200,6 +200,7 @@
     <Content Include="src\dataTables.breezeEditable.js" />
     <Content Include="src\dataTables.breezeFilter.js" />
     <Content Include="src\dataTables.breezeRemote.js" />
+    <Content Include="src\dataTables.colPin.boostrap.css" />
     <Content Include="src\dataTables.colPin.css" />
     <Content Include="src\dataTables.colPin.js" />
     <Content Include="src\dataTables.colResize.css" />

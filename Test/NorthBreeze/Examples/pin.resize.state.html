@@ -47,13 +47,13 @@
             var api = $('#example').DataTable(opts);
             var colPinOpts = {
                 fixedColumns: {
-                    leftColumns: 1,
-                    rightColumns: 0,
+                    //leftColumns: 1,
+                    //rightColumns: 0,
                     heightMatch: 'auto'
                 }
             };
 
-            //api.colPin.init(colPinOpts);
+            api.colPin.init(colPinOpts);
             api.colResize.init();
 
         });

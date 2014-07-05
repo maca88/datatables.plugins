@@ -55,7 +55,14 @@
 
             var api = $('#example2').DataTable(opts2);
             api.colResize.init();
-
+            
+            api.colPin.init({
+                fixedColumns: {
+                    leftColumns: 1,
+                    rightColumns: 1,
+                    heightMatch: 'auto'
+                }
+            });
             //api.column(1).resize(500);
         });
 
