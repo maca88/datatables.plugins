@@ -19,3 +19,7 @@ table.dataTable { /*We have to override the margins from dt bootstrap csss*/
 	margin-top: 0 !important; 
 	margin-bottom: 0 !important;
 }
+
+.pinned:hover, .unpinned:hover {
+    cursor: pointer;
+}

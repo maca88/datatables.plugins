@@ -1,6 +1,3 @@
-﻿table.dataTable {
-    table-layout: fixed;
-}
-table.dataTable th, table.dataTable td {
+﻿table.dataTable th, table.dataTable td {
     overflow: hidden;
 }
