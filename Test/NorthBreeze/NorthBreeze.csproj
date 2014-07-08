@@ -52,6 +52,7 @@
     <Content Include="Content\font-awesome.min.css" />
     <Content Include="Examples\data.txt" />
     <Content Include="Examples\pin.resize.state.html" />
+    <Content Include="Examples\resize-complex-header-bootstrap.html" />
     <Content Include="Examples\resize-complex-header.html" />
     <Content Include="fonts\fontawesome-webfont.svg" />
     <Content Include="libs\angular-route.js" />
