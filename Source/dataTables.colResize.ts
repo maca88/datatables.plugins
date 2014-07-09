@@ -111,7 +111,6 @@
                 this.onDraw();
             }
                 
-            
             this.initialized = true;
             this.dt.settings.oApi._fnCallbackFire(this.dt.settings, 'colResizeInitCompleted', 'colResizeInitCompleted', [this]);
         }
@@ -301,6 +300,11 @@
                     if ($(columns[i].nTh).width() < columns[i].minWidth)
                         this.resize(columns[i], columns[i].minWidth);
                 }
+            } else {
+                if (!this.dom.fixedLayout) {
+                    this.setTablesLayout('fixed');
+                    this.afterResizing();
+                }
             }
         }
 
@@ -405,17 +409,17 @@
             var moveLength = width - $(col.nTh).width();
             this.beforeResizing(col);
             var resized = this.resizeColumn(col, colWidth, moveLength, moveLength);
-            this.afterResizing(col);
+            this.afterResizing();
             return resized;
         }
 
         private beforeResizing(col) {
             this.dt.settings.oFeatures.bAutoWidth = false;
-            if (this.settings.fixedLayout)
+            if (this.settings.fixedLayout && !this.dom.fixedLayout)
                 this.setTablesLayout('fixed');
         }
 
-        private afterResizing(col) {
+        private afterResizing() {
             var i;
             var columns = this.dt.settings.aoColumns;
             for (i = 0; i < columns.length; i++) {
@@ -434,7 +438,7 @@
             $(document).off('mousemove.ColResize');
             if (!this.dom.resize) return;
             this.dom.resize = false;
-            this.afterResizing(col);
+            this.afterResizing();
         }
 
         private canColumnBeResized(col, newWidth): boolean {

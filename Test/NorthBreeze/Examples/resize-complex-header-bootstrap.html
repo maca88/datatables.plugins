@@ -4,6 +4,7 @@
         <link href="../libs/bootstrap/css/bootstrap.css" rel="stylesheet" />
         <!--<link href="../libs/datatables/css/jquery.dataTables.css" rel="stylesheet" type="text/css" />-->
         <link href="../libs/datatables/extensions/ColReorder/css/dataTables.colReorder.css" rel="stylesheet" type="text/css" />
+        <link href="../libs/datatables/extensions/ColVis/css/dataTables.colVis.css" rel="stylesheet" type="text/css" />
         <link href="../libs/datatables/extensions/Scroller/css/dataTables.scroller.css" rel="stylesheet" type="text/css" />
         <link href="../libs/datatables/extensions/FixedColumns/css/dataTables.fixedColumns.css" rel="stylesheet" type="text/css" />
         <link href="../src/dataTables.colPin.boostrap.css" rel="stylesheet" type="text/css" />
@@ -40,6 +41,7 @@
         <script src="../libs/datatables/extensions/Scroller/js/dataTables.scroller.js"></script>
         <script src="../libs/datatables/extensions/ColReorder/js/dataTables.colReorder.js"></script>
         <script src="../libs/datatables/extensions/FixedColumns/js/dataTables.fixedColumns.js"></script>
+        <script src="../libs/datatables/extensions/ColVis/js/dataTables.colVis.js"></script>
         <script src="../src/dataTables.colResize.js"></script>
         <script src="../src/dataTables.colPin.js"></script>
         <meta charset=utf-8 />
@@ -60,15 +62,28 @@
                 }
                 $('#wFixedLayout').after($('#example').clone().attr('id', 'example2'));
 
+
+                var getCellText = function (elem) {
+                    //get only the element text
+                    return elem.contents().filter(function() {
+                        return this.nodeType == 3;
+                    }).first().text();
+                }
+
                 var opts = {
                     stateSave: true,
                     autoWidth: false,
-                    dom: 'Rrtip',
+                    dom: 'CRrtip',
                     lengthMenu: [[2], [2]],
                     //deferRender: true,
                     scrollX: true,
                     scrollY: '100px',
                     order: [[1, 'asc']],
+                    colVis: {
+                        label: function (index, title, th) {
+                            return $('a[href]', th).text() || getCellText($(th));
+                        }
+                    }
                 };
                 var api = $('#example').DataTable(opts);
                 api.colResize.init({ dblClick: 'matchContent', fixedLayout: false });

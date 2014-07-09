@@ -306,6 +306,11 @@
                     if ($(columns[i].nTh).width() < columns[i].minWidth)
                         this.resize(columns[i], columns[i].minWidth);
                 }
+            } else {
+                if (!this.dom.fixedLayout) {
+                    this.setTablesLayout('fixed');
+                    this.afterResizing();
+                }
             }
         };
 
@@ -417,17 +422,17 @@
             var moveLength = width - $(col.nTh).width();
             this.beforeResizing(col);
             var resized = this.resizeColumn(col, colWidth, moveLength, moveLength);
-            this.afterResizing(col);
+            this.afterResizing();
             return resized;
         };
 
         ColResize.prototype.beforeResizing = function (col) {
             this.dt.settings.oFeatures.bAutoWidth = false;
-            if (this.settings.fixedLayout)
+            if (this.settings.fixedLayout && !this.dom.fixedLayout)
                 this.setTablesLayout('fixed');
         };
 
-        ColResize.prototype.afterResizing = function (col) {
+        ColResize.prototype.afterResizing = function () {
             var i;
             var columns = this.dt.settings.aoColumns;
             for (i = 0; i < columns.length; i++) {
@@ -449,7 +454,7 @@
             if (!this.dom.resize)
                 return;
             this.dom.resize = false;
-            this.afterResizing(col);
+            this.afterResizing();
         };
 
         ColResize.prototype.canColumnBeResized = function (col, newWidth) {
