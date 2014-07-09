@@ -149,6 +149,11 @@
             var i, col;
 
             var onInit = () => {
+                if (this.settings.fixedLayout) {
+                    this.setTablesLayout('fixed');
+                } else {
+                    this.setTablesLayout('auto');
+                }
                 if (!data.colResize) {
                     if (this.dt.settings.oFeatures.bAutoWidthOrig)
                         this.dt.settings.oFeatures.bAutoWidth = true;
@@ -334,7 +339,7 @@
             } else {
                 widths = this.getTableMinColWidths(this.dt.settings.nTable);
             }
-            console.log(widths);
+            //console.log(widths);
 
             var visColIdx = 0;
             for (i = 0; i < columns.length; i++) {
