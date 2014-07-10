@@ -72,6 +72,7 @@
 
             //Save scroll head and body if found
             this.dom.scrollHead = $('div.' + this.dt.settings.oClasses.sScrollHead, this.dt.settings.nTableWrapper);
+            this.dom.scrollHeadInner = $('div.' + this.dt.settings.oClasses.sScrollHeadInner, this.dom.scrollHead);
             this.dom.scrollHeadTable = $('div.' + this.dt.settings.oClasses.sScrollHeadInner + ' > table', this.dom.scrollHead);
 
             this.dom.scrollFoot = $('div.' + this.dt.settings.oClasses.sScrollFoot, this.dt.settings.nTableWrapper);
@@ -178,6 +179,7 @@
 
                     if (_this.dom.scrollX && data.colResize.tableSize > 0) {
                         _this.dom.scrollHeadTable.width(data.colResize.tableSize);
+                        _this.dom.scrollHeadInner.width(data.colResize.tableSize);
                         _this.dom.scrollBodyTable.width(data.colResize.tableSize);
                         _this.dom.scrollFootTable.width(data.colResize.tableSize);
                     }
@@ -272,7 +274,6 @@
         ColResize.prototype.onDraw = function (e) {
             if (e != null && e.target !== this.dt.settings.nTable)
                 return;
-
             if (this.dom.scrollX || this.dom.scrollY) {
                 if (this.dom.scrollFootTable.length) {
                     $('thead', this.dom.scrollFootTable).remove();
@@ -290,6 +291,14 @@
                 removeHeaderWidth(this.dom.scrollFootTable);
                 removeHeaderWidth(this.dom.scrollBodyTable);
                 removeHeaderWidth(this.dom.scrollHeadTable);
+
+                //Fix the header table padding
+                if (this.dt.settings._bInitComplete) {
+                    var borderWidth = this.dom.scrollHeadTable.outerWidth() - this.dom.scrollHeadTable.innerWidth();
+                    var paddingType = this.dt.settings.oBrowser.bScrollbarLeft ? 'padding-left' : 'padding-right';
+                    var paddingVal = parseFloat(this.dom.scrollHeadInner.css(paddingType));
+                    this.dom.scrollHeadInner.css(paddingType, (paddingVal + borderWidth) + 'px');
+                }
             }
             if (this.settings.dblClick == 'matchContent' || !this.settings.fixedLayout)
                 this.updateColumnsContentWidth();
@@ -529,9 +538,12 @@
             } else {
                 if (!this.canColumnBeResized(col, thWidth))
                     return false;
-                this.dom.scrollHeadTable.width(this.tableSize + moveLength);
-                this.dom.scrollBodyTable.width(this.tableSize + moveLength);
-                this.dom.scrollFootTable.width(this.tableSize + moveLength);
+                var tSize = this.tableSize + moveLength + 'px';
+                this.dom.scrollHeadInner.css('width', tSize);
+                this.dom.scrollHeadInner.css('width', tSize);
+                this.dom.scrollHeadTable.css('width', tSize);
+                this.dom.scrollBodyTable.css('width', tSize);
+                this.dom.scrollFootTable.css('width', tSize);
             }
             headCol.width(thWidth);
 
