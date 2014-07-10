@@ -1,7 +1,7 @@
 ﻿'use strict';
 
 // Declare app level module which depends ngGrid
-var app = angular.module('NorthBreeze', ['ngRoute', 'dt']);
+var app = angular.module('NorthBreeze', ['ngRoute', 'dt', 'breeze.angular']);
 
 // Define route objects, which are used by the routeProvider (for loading ng-view) and by the RouteCtrl (for displaying navigation bar)
 app.routes = [
@@ -15,7 +15,7 @@ app.routes = [
 
 app.factory('dataServicePromise', ['$q', function ($q) {
 
-    breeze.config.initializeAdapterInstance("modelLibrary", "backingStore", true); // backingStore is the modelLibrary for Angular
+    //breeze.config.initializeAdapterInstance("modelLibrary", "backingStore", true); // backingStore is the modelLibrary for Angular
 
     var serviceName = 'breeze/NorthBreeze'; // route to the (same origin) Web Api controller
 
