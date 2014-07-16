@@ -12,6 +12,9 @@
                     startWidth: null,
                     resizeElem: null
                 },
+                window: {
+                    prevWidth: null
+                },
                 origState: true,
                 resize: false,
                 scrollHead: null,
@@ -80,7 +83,6 @@
 
             this.dom.scrollBody = $('div.' + this.dt.settings.oClasses.sScrollBody, this.dt.settings.nTableWrapper);
             this.dom.scrollBodyTable = $('> table', this.dom.scrollBody);
-            this.dt.api.on('preDraw.dt', this.onPreDraw.bind(this));
             this.dt.api.on('draw.dt', this.onDraw.bind(this));
             if (this.dom.scrollFootTable) {
                 this.dt.api.on('colPinFcDraw.dt', function (e, colPin, data) {
@@ -101,8 +103,9 @@
             //SaveTableWidth
             this.dt.settings.sTableWidthOrig = $(this.dt.settings.nTable).width();
             this.updateTableSize();
-            if (this.dt.settings.oFeatures.bAutoWidth)
-                this.dt.settings.oFeatures.bAutoWidthOrig = true;
+
+            this.dt.settings.oFeatures.bAutoWidthOrig = this.dt.settings.oFeatures.bAutoWidth;
+            this.dt.settings.oFeatures.bAutoWidth = false;
 
             if (this.dt.settings.oInit.bStateSave && this.dt.settings.oLoadedState) {
                 this.loadState(this.dt.settings.oLoadedState);
@@ -110,6 +113,23 @@
 
             if (this.dt.settings._bInitComplete) {
                 this.onDraw();
+            }
+
+            if (!this.dom.scrollX && this.dom.scrollY && this.settings.fixedLayout && this.dt.settings._reszEvt) {
+                //We have to manually resize columns on window resize
+                var eventName = 'resize.DT-' + this.dt.settings.sInstance;
+                var api = this.dt.settings.oApi;
+                $(window).off(eventName);
+                this.dom.window.prevWidth = $(window).width();
+                $(window).on(eventName, api._fnThrottle(function () {
+                    _this.proportionallyColumnSizing();
+                    api._fnAdjustColumnSizing(_this.dt.settings);
+                }));
+            }
+
+            if (this.dom.scrollX || this.dom.scrollY) {
+                this.dt.api.on('column-sizing.dt', this.fixFootAndHeadTables.bind(this));
+                this.dt.api.on('column-visibility.dt', this.fixFootAndHeadTables.bind(this));
             }
 
             this.initialized = true;
@@ -121,6 +141,20 @@
                 this.tableSize = this.dom.scrollHeadTable.width();
             else
                 this.tableSize = -1;
+        };
+
+        ColResize.prototype.proportionallyColumnSizing = function () {
+            /*
+            var diff = $(window).width() - this.dom.window.prevWidth;
+            var columns = this.dt.settings.aoColumns;
+            var visColumns = [];
+            
+            for (var i = 0; i < columns.length; i++) {
+            if (columns[i].bVisible)
+            visColumns.push(columns[i]);
+            }
+            
+            this.dom.window.prevWidth = $(window).width();*/
         };
 
         ColResize.prototype.getColumnIndex = function (col) {
@@ -174,7 +208,6 @@
 
                     if (_this.dt.settings.oFeatures.bAutoWidth) {
                         _this.dt.settings.oFeatures.bAutoWidth = false;
-                        _this.dt.settings.oFeatures.bAutoWidthOrig = true;
                     }
 
                     if (_this.dom.scrollX && data.colResize.tableSize > 0) {
@@ -255,11 +288,6 @@
             }
         };
 
-        ColResize.prototype.onPreDraw = function (e) {
-            if ((e != null && e.target !== this.dt.settings.nTable))
-                return;
-        };
-
         ColResize.prototype.setTablesLayout = function (value) {
             if (this.dom.scrollX || this.dom.scrollY) {
                 this.dom.scrollHeadTable.css('table-layout', value);
@@ -271,26 +299,33 @@
             this.dom.fixedLayout = value == 'fixed';
         };
 
+        ColResize.prototype.fixFootAndHeadTables = function (e) {
+            if (e != null && e.target !== this.dt.settings.nTable)
+                return;
+
+            if (this.dom.scrollFootTable.length) {
+                $('thead', this.dom.scrollFootTable).remove();
+                this.dom.scrollFootTable.prepend($('thead', this.dom.scrollBodyTable).clone());
+            }
+            $('tfoot', this.dom.scrollHeadTable).remove();
+            this.dom.scrollHeadTable.append($('tfoot', this.dom.scrollBodyTable).clone());
+            var removeFooterWidth = function (table) {
+                $('tfoot>tr>th', table).each(function (i, th) {
+                    $(th).css('width', '');
+                });
+            };
+
+            //Remove all tfoot headers widths
+            removeFooterWidth(this.dom.scrollFootTable);
+            removeFooterWidth(this.dom.scrollBodyTable);
+            removeFooterWidth(this.dom.scrollHeadTable);
+        };
+
         ColResize.prototype.onDraw = function (e) {
             if (e != null && e.target !== this.dt.settings.nTable)
                 return;
             if (this.dom.scrollX || this.dom.scrollY) {
-                if (this.dom.scrollFootTable.length) {
-                    $('thead', this.dom.scrollFootTable).remove();
-                    this.dom.scrollFootTable.prepend($('thead', this.dom.scrollBodyTable).clone());
-                }
-                $('tfoot', this.dom.scrollHeadTable).remove();
-                this.dom.scrollHeadTable.append($('tfoot', this.dom.scrollBodyTable).clone());
-                var removeHeaderWidth = function (table) {
-                    $('tfoot>tr>th', table).each(function (i, th) {
-                        $(th).css('width', '');
-                    });
-                };
-
-                //Remove all tfoot headers widths
-                removeHeaderWidth(this.dom.scrollFootTable);
-                removeHeaderWidth(this.dom.scrollBodyTable);
-                removeHeaderWidth(this.dom.scrollHeadTable);
+                this.fixFootAndHeadTables();
 
                 //Fix the header table padding
                 if (this.dt.settings._bInitComplete) {
@@ -328,7 +363,7 @@
             var widths = [];
             if (!$table.length)
                 return widths;
-            var clnTable = $table.clone().removeAttr('id').css('width', '').css('table-layout', 'auto').css('visibility', 'hidden');
+            var clnTable = $table.clone().removeAttr('id').css('width', '1px').css('table-layout', 'auto').css('position', 'absolute').css('visibility', 'hidden');
 
             // Remove any assigned widths from the footer (from scrolling)
             clnTable.find('thead th, tfoot th, tfoot td').css('width', '');
@@ -337,6 +372,8 @@
                 widths.push($(th).width());
             });
             clnTable.remove();
+
+            //console.log(widths);
             return widths;
         };
 
@@ -436,7 +473,6 @@
         };
 
         ColResize.prototype.beforeResizing = function (col) {
-            this.dt.settings.oFeatures.bAutoWidth = false;
             if (this.settings.fixedLayout && !this.dom.fixedLayout)
                 this.setTablesLayout('fixed');
         };
@@ -539,7 +575,6 @@
                 if (!this.canColumnBeResized(col, thWidth))
                     return false;
                 var tSize = this.tableSize + moveLength + 'px';
-                this.dom.scrollHeadInner.css('width', tSize);
                 this.dom.scrollHeadInner.css('width', tSize);
                 this.dom.scrollHeadTable.css('width', tSize);
                 this.dom.scrollBodyTable.css('width', tSize);
