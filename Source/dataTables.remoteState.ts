@@ -739,18 +739,18 @@
     $.fn.DataTable.models.oSettings.remoteStateLoadedParams = [];
     $.fn.DataTable.models.oSettings.remoteStateLoadingParams = [];
 
-    $.fn.DataTable.Api.prototype.remoteState = function (settings) {
+    $.fn.DataTable.Api.register('remoteState.init()', function (settings) {
         var remoteState = new dt.RemoteState(this, settings);
         if (this.settings()[0]._bInitComplete)
             remoteState.initialize();
         else
             this.one('init.dt', () => { remoteState.initialize(); });
         return remoteState.dom.container.get(0);
-    };
+    });
 
     $.fn.dataTable.ext.feature.push({
         "fnInit": (oSettings) => {
-            return oSettings.oInstance.api().remoteState(oSettings.oInit.remoteState);
+            return oSettings.oInstance.api().remoteState.init(oSettings.oInit.remoteState);
         },
         "cFeature": "B",
         "sFeature": "Remote state"

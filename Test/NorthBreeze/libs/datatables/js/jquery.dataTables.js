@@ -3591,8 +3591,7 @@
 	 *  @param {object} settings dataTables settings object
 	 *  @memberof DataTable#oApi
 	 */
-	function _fnScrollDraw ( settings )
-	{
+	function _fnScrollDraw ( settings ) {
 		// Given that this is such a monster function, a lot of variables are use
 		// to try and keep the minimised size as small as possible
 		var

@@ -1,5 +1,55 @@
 ﻿module dt {
     
+    export interface IColPinBindingAdapter {
+        fixedColumnsDestroying(fixedColumns): void
+        fixedColumnsDestroyed(): void
+        fixedColumnsDraw(data): void
+        fixedColumnsCreated(fixedColumns): void
+    }
+
+    export class AngularColPinAdapter implements IColPinBindingAdapter{
+        
+        private dt = {
+            settings: null,
+            api: null
+        }
+        private settings;
+
+        constructor(api, settings) {
+            this.dt.api = api;
+            this.dt.settings = api.settings()[0];
+            this.settings = settings;
+        }
+
+        public fixedColumnsDestroying(fixedColumns): void {
+            
+        }
+
+        public fixedColumnsDestroyed(): void {
+            
+        }
+
+        public fixedColumnsCreated(fixedColumns): void {
+            
+        }
+
+        public fixedColumnsDraw(data): void {
+            this.linkTable(data.leftClone.body);
+            this.linkTable(data.rightClone.body);
+        }
+
+        private linkTable(table) {
+            if (!table) return;
+            $('tr>td', table).each((i, td) => {
+                var $td = $(td);
+                var cellScope = (<any>$td).scope();
+                if (!cellScope) return;
+                this.dt.settings.oInit.angular.$compile($td)(cellScope);
+            });
+        }
+    }
+
+
     export class ColPin {
 
         public static defaultSettings: any = {
@@ -8,7 +58,8 @@
                 pinnedClass: 'pinned',
                 unpinnedClass: 'unpinned'
             },
-            fixedColumns: null
+            fixedColumns: null,
+            bindingAdapter: null,
         };
 
         private settings: any;
@@ -22,13 +73,28 @@
             leftPinned: 0,
             rightPinned: 0
         };
+        public bindingAdapterInstance: IColPinBindingAdapter;
 
         constructor(api, settings) {
             this.settings = $.extend(true, {}, ColPin.defaultSettings, settings);
             this.dt.settings = api.settings()[0];
             this.dt.api = api;
             this.dt.settings.colPin = this;
+            this.setupAdapters();
             this.registerCallbacks();
+        }
+
+        private setupAdapters() {
+            this.setupBindingAdapter();
+        }
+
+        private setupBindingAdapter() {
+            if (!this.settings.bindingAdapter) {
+                if (angular !== undefined)
+                    this.settings.bindingAdapter = dt.AngularColPinAdapter;
+            }
+            if (!this.settings.bindingAdapter) return;
+            this.bindingAdapterInstance = new this.settings.bindingAdapter(this.dt.api, this.settings);
         }
 
         private pinColumn(col, direction) : void {
@@ -157,10 +223,14 @@
 
         private destroyFixedColumns(): void {
             if (!this.dt.fixedColumns) return;
+
+            if (this.bindingAdapterInstance)
+                this.bindingAdapterInstance.fixedColumnsDestroying(this.dt.fixedColumns);
+
             this.dt.settings.oApi._fnCallbackFire(this.dt.settings, null, 'colPinFcDestroying', [this]);
 
+
             var cf = this.dt.fixedColumns;
-            if (!cf) return;
 
             $(this.dt.fixedColumns).off('draw.dtfc');
 
@@ -174,6 +244,9 @@
 
             $(cf.dom.grid.right.liner).off('scroll.DTFC wheel.DTFC mouseover.DTFC');
             $(cf.dom.grid.right.wrapper).remove();
+
+            if (this.bindingAdapterInstance)
+                this.bindingAdapterInstance.fixedColumnsDestroyed();
 
             this.dt.fixedColumns = null;
         }
@@ -195,11 +268,18 @@
                     "leftClone": leftClone,
                     "rightClone": rightClone
                 };
-                this.dt.settings.oApi._fnCallbackFire(this.dt.settings, null, 'colPinFcDraw', [this, data]);
+                
                 pinnIcons(leftClone.header);
                 pinnIcons(rightClone.header);
+
+                if (this.bindingAdapterInstance)
+                    this.bindingAdapterInstance.fixedColumnsDraw(data);
+
+                this.dt.settings.oApi._fnCallbackFire(this.dt.settings, null, 'colPinFcDraw', [this, data]);
             };
             this.dt.fixedColumns = new $.fn.DataTable.FixedColumns(this.dt.api, settings);
+            if (this.bindingAdapterInstance)
+                this.bindingAdapterInstance.fixedColumnsCreated(this.dt.fixedColumns);
         }
 
         private saveState(data) {
@@ -339,8 +419,7 @@
     });
 
     //Integrate with boostrap 3 if present
-    var bootstrap3Enabled = (typeof (<any>$)().emulateTransitionEnd == 'function');
-    if (bootstrap3Enabled)
+    if ((typeof (<any>$)().emulateTransitionEnd == 'function'))
         dt.ColPin.defaultSettings.classes.iconClass = 'glyphicon glyphicon-pushpin';
 
 } (window, document, undefined));

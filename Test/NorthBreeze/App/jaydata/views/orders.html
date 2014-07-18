@@ -1,0 +1,81 @@
+﻿<div>
+    <h2>Description</h2>
+
+    <style type="text/css">
+        div.dataTables_wrapper {
+            width: 100%;
+            margin: 0 auto;
+        }
+    </style>
+
+    <h2>Orders</h2>
+
+    <h3>Form filter</h3>
+    <form role="form" id="order-dt-filter">
+        <div class="row">
+            <div class="col-xs-4">
+                <div class="form-group">
+                    <label for="order-name">Name</label>
+                    <input type="text" name="name" class="form-control" id="order-name">
+                </div>
+            </div>
+            <div class="col-xs-4">
+                <div class="form-group">
+                    <label for="order-city">City</label>
+                    <input type="text" name="city" class="form-control" id="order-city">
+                </div>
+            </div>
+            <div class="col-xs-4">
+                <div class="form-group">
+                    <label for="order-region">Region</label>
+                    <input type="text" name="region" class="form-control" id="order-region">
+                </div>
+            </div>
+        </div>
+        <div class="form-group pull-right">
+            <button class="btn btn-primary">Filter</button>
+        </div>
+        <div class="clearfix"></div>
+    </form>
+
+
+    <div id="order-opt-tpl" ng-non-bindable style="display: none">
+        <button ng-show="order.entityState === undefined" ng-click="vm.setState($rowIndex, 'attach')"><span>Attach</span></button><br />
+        <button ng-show="order.entityState !== $data.EntityState.Detached" ng-click="vm.setState($rowIndex, 'modified')"><span>SetModified</span></button><br />
+        <button ng-show="order.entityState !== $data.EntityState.Detached" ng-click="vm.setState($rowIndex, 'deleted')"><span>SetDeleted</span></button><br />
+        <button ng-show="order.entityState !== $data.EntityState.Detached" ng-click="vm.setState($rowIndex, 'detached')"><span>SetDetached</span></button><br />
+        <button ng-show="order.entityState !== $data.EntityState.Detached" ng-click="vm.setState($rowIndex, 'unchanged')"><span>SetUnchanged</span></button>
+    </div>
+    <table class="table-striped table-bordered table-condensed table-small" dt-table="orderTable" dt-data="vm.orders" dt-options="vm.orderGridOpts" dt-row-data-path="order">
+        <thead>
+            <th dt-data="OrderID" dt-width="100px">Order ID</th>
+            <th dt-data="Freight" dt-expression="order.Freight | currency" dt-width="100px">Freight</th>
+            <th dt-data="OrderDate" dt-expression="order.OrderDate | date:'shortDate'" dt-width="150px">Order Date</th>
+            <th dt-expression="order.RequiredDate | date:'shortDate'" dt-width="150px">Required Date</th>
+            <th dt-expression="order.ShippedDate | date:'shortDate'" dt-width="150px">Shipped Date</th>
+            <th dt-data="ShipName" dt-width="100px">Name</th>
+            <th dt-data="ShipAddress" dt-width="100px">Address</th>
+            <th dt-data="ShipCity" dt-width="150px">City</th>
+            <th dt-data="ShipRegion" dt-width="150px">Region</th>
+            <th dt-data="ShipPostalCode" dt-width="150px">PostCode</th>
+            <th dt-data="ShipCountry" dt-width="150px">Country</th>
+            <th dt-expression="vm.getStateName(order.entityState)" dt-width="150px">Entity state</th>
+            <th dt-template="#order-opt-tpl" dt-width="150px">Options</th>
+        </thead>
+        <tfoot>
+            <th>Order ID</th>
+            <th>Freight</th>
+            <th>Order Date</th>
+            <th>Required Date</th>
+            <th>Shipped Date</th>
+            <th>Name</th>
+            <th>Address</th>
+            <th>City</th>
+            <th>Region</th>
+            <th>PostCode</th>
+            <th>Country</th>
+            <th>Entity state</th>
+            <th>Options</th>
+        </tfoot>
+    </table>
+</div>

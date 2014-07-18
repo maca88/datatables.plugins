@@ -41,21 +41,62 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="App\angular\views\browsers.js">
+      <DependentUpon>browsers.html</DependentUpon>
+    </Content>
+    <Content Include="App\angular\views\performance.js">
+      <DependentUpon>performance.html</DependentUpon>
+    </Content>
+    <Content Include="App\breeze\views\customers.js">
+      <DependentUpon>customers.html</DependentUpon>
+    </Content>
+    <Content Include="App\breeze\views\employee.js">
+      <DependentUpon>employee.html</DependentUpon>
+    </Content>
+    <Content Include="App\breeze\views\home.html" />
+    <Content Include="App\breeze\views\home.js">
+      <DependentUpon>home.html</DependentUpon>
+    </Content>
+    <Content Include="App\breeze\views\orders.js">
+      <DependentUpon>orders.html</DependentUpon>
+    </Content>
     <Content Include="App\browserCtrl.js" />
     <Content Include="App\employeeEditorCtrl.js" />
+    <Content Include="App\jaydata\views\customers.html" />
+    <Content Include="App\jaydata\views\customers.js">
+      <DependentUpon>customers.html</DependentUpon>
+    </Content>
+    <Content Include="App\jaydata\views\home.html" />
+    <Content Include="App\jaydata\views\home.js">
+      <DependentUpon>home.html</DependentUpon>
+    </Content>
+    <Content Include="App\jaydata\views\orders.html" />
+    <Content Include="App\jaydata\views\orders.js">
+      <DependentUpon>orders.html</DependentUpon>
+    </Content>
     <Content Include="App\performanceCtrl.js" />
-    <Content Include="App\views\browsers.html" />
-    <Content Include="App\views\browsersDetails.html" />
-    <Content Include="App\views\employeeEditor.html" />
-    <Content Include="App\views\performance.html" />
+    <Content Include="App\angular\views\browsers.html" />
+    <Content Include="App\angular\views\browsersDetails.html" />
+    <Content Include="App\breeze\views\employee.html" />
+    <Content Include="App\main\views\home.html" />
+    <Content Include="App\angular\views\performance.html" />
+    <Content Include="App_Data\Northwind.mdf" />
+    <Content Include="App_Data\Northwind_log.ldf">
+      <DependentUpon>Northwind.mdf</DependentUpon>
+    </Content>
+    <Content Include="CommandLine.dll" />
     <Content Include="Content\breeze.directives.css" />
     <Content Include="Content\font-awesome.css" />
     <Content Include="Content\font-awesome.min.css" />
     <Content Include="Examples\data.txt" />
     <Content Include="Examples\pin.resize.state.html" />
+    <Content Include="Examples\resize-autolayout-fullwidth.html" />
     <Content Include="Examples\resize-complex-header-bootstrap.html" />
     <Content Include="Examples\resize-complex-header.html" />
+    <Content Include="Examples\resize-fixedlayout-fullwidth.html" />
     <Content Include="fonts\fontawesome-webfont.svg" />
+    <Content Include="JayData_readme.txt" />
+    <Content Include="JaySvcUtil.exe" />
     <Content Include="libs\angular-route.js" />
     <Content Include="libs\bootstrap\css\bootstrap-theme.css.map" />
     <Content Include="libs\bootstrap\css\bootstrap.css.map" />
@@ -79,9 +120,8 @@
     <Content Include="App\directives.js" />
     <Content Include="App\logger.js" />
     <Content Include="App\style.css" />
-    <Content Include="App\views\customers.html" />
-    <Content Include="App\views\home.html" />
-    <Content Include="App\views\orders.html" />
+    <Content Include="App\breeze\views\customers.html" />
+    <Content Include="App\breeze\views\orders.html" />
     <Content Include="App_Data\NorthwindIB.sdf" />
     <Content Include="Content\bootstrap.css" />
     <Content Include="Content\ng-grid.css" />
@@ -177,43 +217,128 @@
     <Content Include="libs\datatables\js\jquery.dataTables.js" />
     <Content Include="libs\datatables\js\jquery.js" />
     <Content Include="libs\jquery-2.1.0.js" />
+    <Content Include="northwind.js" />
+    <Content Include="Scripts\angular-ui\ui-bootstrap-tpls.js" />
+    <Content Include="Scripts\angular-ui\ui-bootstrap-tpls.min.js" />
+    <Content Include="Scripts\angular-ui\ui-bootstrap.js" />
+    <Content Include="Scripts\angular-ui\ui-bootstrap.min.js" />
     <Content Include="Scripts\angular.js" />
     <Content Include="Scripts\breeze.ajaxpost.js" />
     <Content Include="Scripts\breeze.angular.js" />
     <Content Include="Scripts\breeze.debug.js" />
     <Content Include="Scripts\breeze.directives.js" />
     <Content Include="Scripts\breeze.min.js" />
+    <None Include="Scripts\jaydata-vsdoc.js" />
+    <Content Include="Scripts\datajs-1.1.3.js" />
+    <Content Include="Scripts\datajs-1.1.3.min.js" />
+    <Content Include="Scripts\jaydata.js" />
+    <Content Include="Scripts\jaydata.min.js" />
+    <Content Include="Scripts\jaydatamodules\angular.js" />
+    <Content Include="Scripts\jaydatamodules\angular.min.js" />
+    <Content Include="Scripts\jaydatamodules\deferred.js" />
+    <Content Include="Scripts\jaydatamodules\deferred.min.js" />
+    <Content Include="Scripts\jaydatamodules\errorhandler.js" />
+    <Content Include="Scripts\jaydatamodules\errorhandler.min.js" />
+    <Content Include="Scripts\jaydatamodules\formBinder.js" />
+    <Content Include="Scripts\jaydatamodules\formBinder.min.js" />
+    <Content Include="Scripts\jaydatamodules\handlebars.js" />
+    <Content Include="Scripts\jaydatamodules\inMemory.js" />
+    <Content Include="Scripts\jaydatamodules\inMemory.min.js" />
+    <Content Include="Scripts\jaydatamodules\jaydata.mscrm.js" />
+    <Content Include="Scripts\jaydatamodules\jaydata.mscrm.min.js" />
+    <Content Include="Scripts\jaydatamodules\jaydata.mscrm.server.js" />
+    <Content Include="Scripts\jaydatamodules\jaydata.mscrm.server.min.js" />
+    <Content Include="Scripts\jaydatamodules\kendo.js" />
+    <Content Include="Scripts\jaydatamodules\kendo.min.js" />
+    <Content Include="Scripts\jaydatamodules\knockout.js" />
+    <Content Include="Scripts\jaydatamodules\knockout.min.js" />
+    <Content Include="Scripts\jaydatamodules\NoBatch.min.js" />
+    <Content Include="Scripts\jaydatamodules\qDeferred.js" />
+    <Content Include="Scripts\jaydatamodules\qDeferred.min.js" />
+    <Content Include="Scripts\jaydatamodules\sencha.js" />
+    <Content Include="Scripts\jaydatamodules\sencha.min.js" />
+    <Content Include="Scripts\jaydatamodules\template.js" />
+    <Content Include="Scripts\jaydatamodules\template.min.js" />
+    <Content Include="Scripts\jaydatamodules\validate.js" />
+    <Content Include="Scripts\jaydatamodules\validate.min.js" />
+    <Content Include="Scripts\jaydataproviders\FacebookProvider.js" />
+    <Content Include="Scripts\jaydataproviders\FacebookProvider.min.js" />
+    <Content Include="Scripts\jaydataproviders\IndexedDbProvider.js" />
+    <Content Include="Scripts\jaydataproviders\IndexedDbProvider.min.js" />
+    <Content Include="Scripts\jaydataproviders\InMemoryProvider.js" />
+    <Content Include="Scripts\jaydataproviders\InMemoryProvider.min.js" />
+    <Content Include="Scripts\jaydataproviders\MongoDbProvider.js" />
+    <Content Include="Scripts\jaydataproviders\MongoDbProvider.min.js" />
+    <Content Include="Scripts\jaydataproviders\oDataProvider.js" />
+    <Content Include="Scripts\jaydataproviders\oDataProvider.min.js" />
+    <Content Include="Scripts\jaydataproviders\SqLiteProvider.js" />
+    <Content Include="Scripts\jaydataproviders\SqLiteProvider.min.js" />
+    <Content Include="Scripts\jaydataproviders\StormProvider.js" />
+    <Content Include="Scripts\jaydataproviders\StormProvider.min.js" />
+    <Content Include="Scripts\jaydataproviders\WebApiProvider.js" />
+    <Content Include="Scripts\jaydataproviders\WebApiProvider.min.js" />
+    <Content Include="Scripts\jaydataproviders\YQLProvider.js" />
+    <Content Include="Scripts\jaydataproviders\YQLProvider.min.js" />
     <Content Include="Scripts\jquery-1.9.1.js" />
+    <None Include="Scripts\jquery-2.1.1.intellisense.js" />
+    <Content Include="Scripts\jquery-2.1.1.js" />
+    <Content Include="Scripts\jquery-2.1.1.min.js" />
     <Content Include="Scripts\q.js" />
     <Content Include="Scripts\q.min.js" />
     <Content Include="Scripts\toastr.js" />
     <Content Include="src\angular.dataTables.breezeEditable.js" />
-    <Content Include="src\angular.dataTables.colPin.js" />
     <Content Include="src\angular.dataTables.editable.js" />
     <Content Include="src\angular.dataTables.js" />
-    <Content Include="src\angular.dataTables.rowDetails.js" />
     <Content Include="src\angular.dataTables.tableTools.js" />
-    <TypeScriptCompile Include="src\angular.dataTables.colPin.ts" />
+    <TypeScriptCompile Include="App\angular\views\browsers.ts">
+      <DependentUpon>browsers.html</DependentUpon>
+    </TypeScriptCompile>
+    <TypeScriptCompile Include="App\angular\views\performance.ts">
+      <DependentUpon>performance.html</DependentUpon>
+    </TypeScriptCompile>
+    <TypeScriptCompile Include="App\breeze\views\customers.ts">
+      <DependentUpon>customers.html</DependentUpon>
+    </TypeScriptCompile>
+    <TypeScriptCompile Include="App\breeze\views\employee.ts">
+      <DependentUpon>employee.html</DependentUpon>
+    </TypeScriptCompile>
+    <TypeScriptCompile Include="App\breeze\views\home.ts">
+      <DependentUpon>home.html</DependentUpon>
+    </TypeScriptCompile>
+    <TypeScriptCompile Include="App\breeze\views\orders.ts">
+      <DependentUpon>orders.html</DependentUpon>
+    </TypeScriptCompile>
+    <TypeScriptCompile Include="App\jaydata\views\customers.ts">
+      <DependentUpon>customers.html</DependentUpon>
+    </TypeScriptCompile>
+    <TypeScriptCompile Include="App\jaydata\views\home.ts">
+      <DependentUpon>home.html</DependentUpon>
+    </TypeScriptCompile>
+    <TypeScriptCompile Include="App\jaydata\views\orders.ts">
+      <DependentUpon>orders.html</DependentUpon>
+    </TypeScriptCompile>
+    <TypeScriptCompile Include="northwind.d.ts" />
+    <TypeScriptCompile Include="Scripts\jaydata.d.ts" />
     <TypeScriptCompile Include="src\angular.dataTables.editable.ts" />
     <TypeScriptCompile Include="src\dataTables.advancedFilter.ts" />
     <Content Include="src\dataTables.advancedFilter.js" />
-    <TypeScriptCompile Include="src\dataTables.breezeFilter.ts" />
-    <TypeScriptCompile Include="src\dataTables.breezeRemote.ts" />
+    <TypeScriptCompile Include="src\dataTables.entityFilter.ts" />
     <TypeScriptCompile Include="src\dataTables.colPin.ts" />
     <TypeScriptCompile Include="src\dataTables.colResize.ts" />
     <Content Include="src\dataTables.breezeEditable.js" />
-    <Content Include="src\dataTables.breezeFilter.js" />
-    <Content Include="src\dataTables.breezeRemote.js" />
     <Content Include="src\dataTables.colPin.boostrap.css" />
     <Content Include="src\dataTables.colPin.css" />
     <Content Include="src\dataTables.colPin.js" />
     <Content Include="src\dataTables.colResize.css" />
     <Content Include="src\dataTables.colResize.js" />
     <Content Include="src\dataTables.editable.js" />
+    <Content Include="src\dataTables.entityFilter.js" />
     <Content Include="src\dataTables.formFilter.js" />
+    <Content Include="src\dataTables.remoteFilter.js" />
     <Content Include="src\dataTables.remoteState.css" />
     <TypeScriptCompile Include="src\dataTables.formFilter.ts" />
     <TypeScriptCompile Include="src\dataTables.editable.ts" />
+    <TypeScriptCompile Include="src\dataTables.remoteFilter.ts" />
     <TypeScriptCompile Include="src\dataTables.remoteState.ts" />
     <TypeScriptCompile Include="src\dataTables.rowDetails.ts" />
     <Content Include="src\dataTables.remoteState.js" />
@@ -221,18 +346,24 @@
     <Content Include="Web.config">
       <SubType>Designer</SubType>
     </Content>
+    <TypeScriptCompile Include="typings\q\Q.d.ts" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App_Start\BreezeWebApiConfig.cs" />
+    <Compile Include="App_Start\EdmBuilder.cs" />
+    <Compile Include="App_Start\ODataConfig.cs" />
+    <Compile Include="Controllers\CategoriesController.cs" />
     <Compile Include="Controllers\FixedMsSqlCe40Dialect.cs" />
     <Compile Include="Controllers\NHConfig.cs" />
     <Compile Include="Controllers\NorthBreezeController.cs" />
     <Compile Include="Controllers\NorthwindContext.cs" />
+    <Compile Include="Controllers\OrdersController.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.config" />
     <Content Include="src\dataTables.advancedFilter.css" />
+    <Content Include="Scripts\jquery-2.1.1.min.map" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -244,6 +375,10 @@
     <ProjectReference Include="..\Model_NorthwindIB_NH\Model_NorthwindIB_NH.csproj">
       <Project>{afc1c3a8-40d5-4db3-82be-19730091a4f2}</Project>
       <Name>Model_NorthwindIB_NH</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Model_Northwind_EF\Model_Northwind_EF.csproj">
+      <Project>{0b50214e-5fe5-4e77-bba3-ddf96b28e6a3}</Project>
+      <Name>Model_Northwind_EF</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
@@ -258,6 +393,12 @@
     <Reference Include="Breeze.WebApi2, Version=1.4.0.0, Culture=neutral, PublicKeyToken=f6085f1a45e2ac59, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Breeze.Server.WebApi2.1.4.14\lib\Breeze.WebApi2.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework">
+      <HintPath>..\packages\EntityFramework.6.1.1\lib\net45\EntityFramework.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer">
+      <HintPath>..\packages\EntityFramework.6.1.1\lib\net45\EntityFramework.SqlServer.dll</HintPath>
     </Reference>
     <Reference Include="Iesi.Collections, Version=4.0.0.0, Culture=neutral, PublicKeyToken=aa95f207798dfdb4, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -284,6 +425,7 @@
       <HintPath>..\packages\NHibernate.4.0.0-Alpha2\lib\net40\NHibernate.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Data" />
     <Reference Include="System.Data.SqlServerCe, Version=4.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91, processorArchitecture=MSIL">
       <Private>True</Private>
@@ -293,6 +435,8 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Microsoft.AspNet.WebApi.Client.5.2.0\lib\net45\System.Net.Http.Formatting.dll</HintPath>
     </Reference>
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Security" />
     <Reference Include="System.Spatial, Version=5.6.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\System.Spatial.5.6.1\lib\net40\System.Spatial.dll</HintPath>
@@ -310,17 +454,19 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Microsoft.AspNet.WebApi.WebHost.5.2.0\lib\net45\System.Web.Http.WebHost.dll</HintPath>
     </Reference>
+    <Reference Include="System.Xml" />
     <Reference Include="WebActivator">
       <HintPath>..\packages\WebActivator.1.5.3\lib\net40\WebActivator.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="App\common\directives\" />
+    <Folder Include="App\common\services\" />
     <Folder Include="libs\datatables\media\" />
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="src\angular.dataTables.d.ts" />
     <TypeScriptCompile Include="src\angular.dataTables.breezeEditable.ts" />
-    <TypeScriptCompile Include="src\angular.dataTables.rowDetails.ts" />
     <TypeScriptCompile Include="src\angular.dataTables.tableTools.ts" />
     <TypeScriptCompile Include="src\angular.dataTables.ts" />
     <TypeScriptCompile Include="src\dataTables.breezeEditable.ts" />
@@ -338,7 +484,6 @@
     <TypeScriptCompile Include="typings\breeze\breeze.directives.validation.d.ts" />
     <TypeScriptCompile Include="typings\jquery.dataTables\jquery.dataTables.d.ts" />
     <TypeScriptCompile Include="typings\jquery\jquery.d.ts" />
-    <TypeScriptCompile Include="typings\q\Q.d.ts" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />

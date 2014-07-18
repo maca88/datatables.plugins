@@ -1,0 +1,71 @@
+﻿<div>
+    <h3>Breeze intergation</h3>
+    <div class="">
+        <p>
+            This module use the NorthwindIB database, a modified version of the Northwind sample database that comes with Microsoft SQL Server.  
+        </p>
+        <p>
+            This module use <a href="http://www.breezejs.com/">Breeze</a>, <a href="http://angularjs.org/">Angular</a> , 
+            and <a href="http://getbootstrap.com/2.3.2/index.html">Twitter Bootstrap</a>  on the client, 
+            and ASP.NET <a href="http://www.asp.net/web-api">Web API</a> and <a href="http://nhforge.org/">NHibernate</a> on the server.
+        </p>
+    </div>
+
+    <h3>Changed Entities</h3>
+    <div>
+        <div>
+            <p>
+                The table below shows all the entities in the EntityManager that have changes.  
+                Entities added, deleted, or modified will appear in this table.  The "Save" button on this page will cause all the entities
+                to be saved to the server.  The "Reset" button will cause all the changes to be discarded.
+            </p>
+            <p>
+                This table is not something you would find in a real app.  It is provided as a way to visualize the EntityManager cache
+                and a demonstration of the <a href="http://www.breezejs.com/sites/all/apidocs/index.html">Breeze API</a>.
+            </p>
+            <p>
+                This application uses a single EntityManager, so all changes occur in a single cache.  Some applications may require 
+                <a href="http://www.breezejs.com/documentation/multiple-managers">multiple EntityManagers</a>, 
+                so individual change sets (or Units of Work) can be managed independently.  For an example of this, see the 
+                <a href="http://www.breezejs.com/samples/temphire-sample">TempHire</a> sample application.
+            </p>
+
+        </div>
+        <table class="table table-striped table-bordered table-condensed">
+            <thead>
+                <th>Entity Type</th>
+                <th>Entity Key</th>
+                <th>Entity State</th>
+            </thead>
+            <tbody ng-repeat="e in vm.changedEntities">
+                <tr>
+                    <td rowspan="2">{{e.entityType.shortName}}</td>
+                    <td>{{e.entityAspect.getKey().values}}</td>
+                    <td>{{e.entityAspect.entityState.name}}</td>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        <table class="table table-small">
+                            <thead>
+                                <th>Property Name</th>
+                                <th>Original Value</th>
+                                <th>Current Value</th>
+                                <th>Validation Errors</th>
+                            </thead>
+                            <tr ng-repeat="(k,v) in e.entityAspect.originalValues">
+                                <td>{{k}}</td>
+                                <td>{{v}}</td>
+                                <td>{{e[k]}}</td>
+                                <td><span class="text-error" ng-repeat="r in e.entityAspect.getValidationErrors(k)">{{r.errorMessage}}</span></td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <button class="btn" ng-click="vm.reset()">Reset All</button>
+        <button class="btn" ng-click="vm.update()">Save All</button>
+    </div>
+
+</div>
+

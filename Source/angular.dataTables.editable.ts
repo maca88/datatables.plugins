@@ -2,11 +2,6 @@
 angular.module("dt")
     .config(["dtSettings", (dtSettings) => {
 
-        dtSettings.dtColumnParsingActions.push((elem, column) => {
-            if (elem.attr('dt-editable') == null) return;
-            column.editable = elem.attr('dt-editable') == "true";
-        });
-
         dtSettings.dtTableCreatingActions.push(($element, options, scope, attrs, $compile, $rootScope) => {
             if (!options.dom || options.dom.indexOf("E") < 0) return;
 
@@ -82,7 +77,7 @@ angular.module("dt")
                         break;
                     }
                     lazyContainer.replaceWith($template);
-                    this.dt.settings.angular.$compile($template)(cellScope);
+                    this.dt.settings.oInit.angular.$compile($template)(cellScope);
                     break;
             }
             cellScope.$digest();

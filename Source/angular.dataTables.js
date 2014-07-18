@@ -190,9 +190,10 @@
     });
 
     //#endregion
+    $.fn.DataTable.models.oSettings.cellCompiling = [];
+
     angular.module("dt", []).constant("dtSettings", {
         defaultDtOptions: {},
-        dtCellCompilingActions: [],
         dtFillWatchedPropertiesActions: [],
         dtTableCreatingActions: [],
         dtTableCreatedActions: [],
@@ -246,19 +247,24 @@
                     var explicitColumns = [];
                     angular.forEach(angular.element('thead>tr>th', element), function (node) {
                         var elem = angular.element(node);
-                        var column = {
-                            data: elem.attr('dt-data'),
-                            title: elem.text(),
-                            name: elem.attr('dt-name'),
-                            type: elem.attr('dt-type'),
-                            className: elem.attr('dt-class'),
-                            orderable: elem.attr('dt-orderable') == null ? true : elem.attr('dt-orderable') == "true",
-                            searchable: elem.attr('dt-searchable') == null ? true : elem.attr('dt-searchable') == "true",
-                            width: elem.attr('dt-width'),
-                            expression: elem.attr('dt-expression'),
-                            template: elem.attr('dt-template'),
-                            defaultContent: elem.attr('dt-def-content')
-                        };
+                        var column = { title: elem.text() };
+                        angular.forEach(node.attributes, function (nodeAttr) {
+                            if (nodeAttr.name.indexOf("dt-") !== 0)
+                                return;
+                            var words = nodeAttr.name.substring(3).split('-');
+                            var popName = '';
+                            angular.forEach(words, function (w) {
+                                if (popName.length)
+                                    popName += w.charAt(0).toUpperCase() + w.slice(1);
+                                else
+                                    popName += w;
+                            });
+                            column[popName] = elem.attr(nodeAttr.name);
+                            if (column[popName] && column[popName].toUpperCase() == 'TRUE')
+                                column[popName] = true;
+                            else if (column[popName] && column[popName].toUpperCase() == 'FALSE')
+                                column[popName] = false;
+                        });
 
                         angular.forEach(dtSettings.dtColumnParsingActions, function (fn) {
                             if (!angular.isFunction(fn))
@@ -420,11 +426,7 @@
                                     $td.html(colOpts.defaultContent);
                                 }
 
-                                angular.forEach(dtSettings.dtCellCompilingActions, function (fn) {
-                                    if (!angular.isFunction(fn))
-                                        return;
-                                    fn($td, colOpts, cellScope, rowData, rowDataPath, options, oSettings);
-                                });
+                                oSettings.oApi._fnCallbackFire(oSettings, 'cellCompiling', null, [$td, colOpts, cellScope, rowDataPath, dataIndex]);
 
                                 $compile($td)(cellScope); //We have to bind each td because of detached cells.
                             });
@@ -473,13 +475,18 @@
                     // Initialize datatables
                     if (debug)
                         console.time('initDataTable');
+                    options.angular = {
+                        $compile: $compile
+                    };
                     dataTable = $element.DataTable(options);
                     if (debug)
                         console.timeEnd('initDataTable');
                     oSettings = dataTable.settings()[0];
-                    oSettings.angular = {
-                        $compile: $compile
-                    };
+
+                    /*
+                    oSettings.angular = { //Save some angular stuff in order to use them by plugins
+                    $compile: $compile
+                    };*/
                     oSettings._rowsInserted = oSettings._rowsInserted || {};
                     oSettings._rowsRemoved = oSettings._rowsRemoved || {};
                     oSettings.oInit.data = oSettings.oInit.aoData = options.data; //set init data to be the same as binding collection - this will be fixed in 1.10.1

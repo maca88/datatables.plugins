@@ -1,12 +1,6 @@
 ﻿//Editable plugin
 angular.module("dt").config([
     "dtSettings", function (dtSettings) {
-        dtSettings.dtColumnParsingActions.push(function (elem, column) {
-            if (elem.attr('dt-editable') == null)
-                return;
-            column.editable = elem.attr('dt-editable') == "true";
-        });
-
         dtSettings.dtTableCreatingActions.push(function ($element, options, scope, attrs, $compile, $rootScope) {
             if (!options.dom || options.dom.indexOf("L") < 0)
                 return;

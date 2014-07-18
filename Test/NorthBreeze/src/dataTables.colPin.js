@@ -1,5 +1,45 @@
 ﻿var dt;
 (function (dt) {
+    var AngularColPinAdapter = (function () {
+        function AngularColPinAdapter(api, settings) {
+            this.dt = {
+                settings: null,
+                api: null
+            };
+            this.dt.api = api;
+            this.dt.settings = api.settings()[0];
+            this.settings = settings;
+        }
+        AngularColPinAdapter.prototype.fixedColumnsDestroying = function (fixedColumns) {
+        };
+
+        AngularColPinAdapter.prototype.fixedColumnsDestroyed = function () {
+        };
+
+        AngularColPinAdapter.prototype.fixedColumnsCreated = function (fixedColumns) {
+        };
+
+        AngularColPinAdapter.prototype.fixedColumnsDraw = function (data) {
+            this.linkTable(data.leftClone.body);
+            this.linkTable(data.rightClone.body);
+        };
+
+        AngularColPinAdapter.prototype.linkTable = function (table) {
+            var _this = this;
+            if (!table)
+                return;
+            $('tr>td', table).each(function (i, td) {
+                var $td = $(td);
+                var cellScope = $td.scope();
+                if (!cellScope)
+                    return;
+                _this.dt.settings.oInit.angular.$compile($td)(cellScope);
+            });
+        };
+        return AngularColPinAdapter;
+    })();
+    dt.AngularColPinAdapter = AngularColPinAdapter;
+
     var ColPin = (function () {
         function ColPin(api, settings) {
             this.initialized = false;
@@ -16,8 +56,23 @@
             this.dt.settings = api.settings()[0];
             this.dt.api = api;
             this.dt.settings.colPin = this;
+            this.setupAdapters();
             this.registerCallbacks();
         }
+        ColPin.prototype.setupAdapters = function () {
+            this.setupBindingAdapter();
+        };
+
+        ColPin.prototype.setupBindingAdapter = function () {
+            if (!this.settings.bindingAdapter) {
+                if (angular !== undefined)
+                    this.settings.bindingAdapter = dt.AngularColPinAdapter;
+            }
+            if (!this.settings.bindingAdapter)
+                return;
+            this.bindingAdapterInstance = new this.settings.bindingAdapter(this.dt.api, this.settings);
+        };
+
         ColPin.prototype.pinColumn = function (col, direction) {
             if (col == null)
                 return;
@@ -140,11 +195,13 @@
         ColPin.prototype.destroyFixedColumns = function () {
             if (!this.dt.fixedColumns)
                 return;
+
+            if (this.bindingAdapterInstance)
+                this.bindingAdapterInstance.fixedColumnsDestroying(this.dt.fixedColumns);
+
             this.dt.settings.oApi._fnCallbackFire(this.dt.settings, null, 'colPinFcDestroying', [this]);
 
             var cf = this.dt.fixedColumns;
-            if (!cf)
-                return;
 
             $(this.dt.fixedColumns).off('draw.dtfc');
 
@@ -158,6 +215,9 @@
 
             $(cf.dom.grid.right.liner).off('scroll.DTFC wheel.DTFC mouseover.DTFC');
             $(cf.dom.grid.right.wrapper).remove();
+
+            if (this.bindingAdapterInstance)
+                this.bindingAdapterInstance.fixedColumnsDestroyed();
 
             this.dt.fixedColumns = null;
         };
@@ -181,11 +241,18 @@
                     "leftClone": leftClone,
                     "rightClone": rightClone
                 };
-                _this.dt.settings.oApi._fnCallbackFire(_this.dt.settings, null, 'colPinFcDraw', [_this, data]);
+
                 pinnIcons(leftClone.header);
                 pinnIcons(rightClone.header);
+
+                if (_this.bindingAdapterInstance)
+                    _this.bindingAdapterInstance.fixedColumnsDraw(data);
+
+                _this.dt.settings.oApi._fnCallbackFire(_this.dt.settings, null, 'colPinFcDraw', [_this, data]);
             };
             this.dt.fixedColumns = new $.fn.DataTable.FixedColumns(this.dt.api, settings);
+            if (this.bindingAdapterInstance)
+                this.bindingAdapterInstance.fixedColumnsCreated(this.dt.fixedColumns);
         };
 
         ColPin.prototype.saveState = function (data) {
@@ -301,7 +368,8 @@
                 pinnedClass: 'pinned',
                 unpinnedClass: 'unpinned'
             },
-            fixedColumns: null
+            fixedColumns: null,
+            bindingAdapter: null
         };
         return ColPin;
     })();
@@ -340,8 +408,7 @@
     });
 
     //Integrate with boostrap 3 if present
-    var bootstrap3Enabled = (typeof $().emulateTransitionEnd == 'function');
-    if (bootstrap3Enabled)
+    if ((typeof $().emulateTransitionEnd == 'function'))
         dt.ColPin.defaultSettings.classes.iconClass = 'glyphicon glyphicon-pushpin';
 }(window, document, undefined));
 //# sourceMappingURL=dataTables.colPin.js.map

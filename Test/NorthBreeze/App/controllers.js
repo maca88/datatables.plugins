@@ -7,6 +7,7 @@ app.controller('RouteCtrl', function ($scope, $route) {
 });
 
 // HomeCtrl - expose the changed entities in the EntityManager
+
 app.controller('HomeCtrl', ['$scope', 'dataservice', function ($scope, dataservice) {
 
     $scope.reset = function () {

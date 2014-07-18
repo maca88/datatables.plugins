@@ -10,3 +10,5 @@ Test/Model_NorthwindIB_NH/obj/*
 Test/Model_NorthwindIB_NH/bin/Debug/
 Test/Model_NorthwindIB_NH/obj/
 *.user
+Test/Model_Northwind_EF/bin/
+Test/Model_Northwind_EF/obj/

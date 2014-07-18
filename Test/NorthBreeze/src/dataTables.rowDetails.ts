@@ -1,5 +1,39 @@
 ﻿module dt {
     
+
+    export interface IRowDetailsBindingAdapter {
+        rowExpanded(row, rowDetails): void;
+        rowCollapsed(row, iconCell):void;
+    }
+
+    export class AngularRowDetailsAdapter implements IRowDetailsBindingAdapter {
+        
+        private dt = {
+            settings: null,
+            api: null
+        }
+        private settings;
+
+        constructor(api, settings) {
+            this.dt.api = api;
+            this.dt.settings = api.settings()[0];
+            this.settings = settings;
+        }
+
+        public rowExpanded(row, rowDetails): void {
+            var rowScope = angular.element(row.node()).scope();
+            if (!rowScope) return;
+            this.dt.settings.oInit.angular.$compile(row.child())(rowScope);
+            if (!rowScope.$$phase) rowScope.$digest();
+        }
+
+        public rowCollapsed(row, iconCell): void {
+            var rowScope = angular.element(row.node()).scope();
+            if (!rowScope) return;
+            if (!rowScope.$$phase) rowScope.$digest();
+        }
+    }
+
     export class RowDetails {
         
         public static defaultSettings = {
@@ -18,6 +52,7 @@
             opened: null,
             destroying: null,
             closed: null,
+            bindingAdapter: null,
             template: null,
             /*
             template: {
@@ -39,14 +74,23 @@
             btnCollapseAll: null,
             btnExpandAll: null,
         };
+        public bindingAdapterInstance: IRowDetailsBindingAdapter;
 
         constructor(api, settings) {
             this.settings = $.extend(true, {}, RowDetails.defaultSettings, settings);
             this.dt.settings = api.settings()[0];
             this.dt.api = api;
             this.dt.settings.rowDetails = this;
+            this.setupAdapters();
             this.registerCallbacks();
             this.createDomElements();
+
+            $.each(this.dt.settings.aoColumns, (i, col) => {
+                if (!col.iconColumn) return;
+                col.orderable = false;
+                col.searchable = false;
+                col.type = "html";
+            });
         }
 
         public static animateElement(elem, animation, action, completeAction = null) {
@@ -69,6 +113,19 @@
                 default:
                     throw 'not valid animation ' + animation;
             }
+        }
+
+        private setupAdapters() {
+            this.setupBindingAdapter();
+        }
+
+        private setupBindingAdapter() {
+            if (!this.settings.bindingAdapter) {
+                if (angular !== undefined)
+                    this.settings.bindingAdapter = dt.AngularRowDetailsAdapter;
+            }
+            if (!this.settings.bindingAdapter) return;
+            this.bindingAdapterInstance = new this.settings.bindingAdapter(this.dt.api, this.settings);
         }
 
         private createDomElements() {
@@ -192,6 +249,10 @@
         var createdAction = (content?) => {
             if (content)
                 innerDetails.html(content);
+
+            if (rowDetails.bindingAdapterInstance)
+                rowDetails.bindingAdapterInstance.rowExpanded(row, innerDetails);
+
             if ($.isFunction(settings.created))
                 settings.created.call(rowDetails, row, innerDetails);
 
@@ -314,6 +375,9 @@
         $('.dt-close-icon', td).hide();
         $('.dt-open-icon', td).show();
 
+        if (rowDetails.bindingAdapterInstance)
+            rowDetails.bindingAdapterInstance.rowCollapsed(row, td);
+
         if ($.isFunction(settings.closed))
             settings.closed(rowDetails, row, td);
     });
@@ -321,7 +385,7 @@
         this.isOpen() ? this.closeDetails(settings) : this.openDetails(settings);
     });
 
-    $.fn.DataTable.Api.prototype.rowDetails = function (settings) {
+    $.fn.DataTable.Api.register('rowDetails.init()', function (settings) {
         var rowDetails = new dt.RowDetails(this, settings);
         if (this.settings()[0]._bInitComplete)
             rowDetails.initialize();
@@ -329,15 +393,21 @@
             this.one('init.dt', () => { rowDetails.initialize(); });
 
         return rowDetails.dom.btnGroup;
-    };
+    });
 
     //Add as feature
     $.fn.dataTable.ext.feature.push({
         "fnInit": (oSettings) => {
-            return oSettings.oInstance.api().rowDetails(oSettings.oInit.rowDetails);
+            return oSettings.oInstance.api().rowDetails.init(oSettings.oInit.rowDetails);
         },
         "cFeature": "D",
         "sFeature": "RowDetails"
     });
+
+    //Integrate with boostrap 3 if present
+    if ((typeof (<any>$)().emulateTransitionEnd == 'function')) {
+        dt.RowDetails.defaultSettings.icon.openHtml = '<span class="glyphicon glyphicon-plus row-detail-icon"></span>';
+        dt.RowDetails.defaultSettings.icon.closeHtml = '<span class="glyphicon glyphicon-minus row-detail-icon"></span>';
+    }
 
 } (window, document, undefined));

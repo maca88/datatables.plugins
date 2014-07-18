@@ -1,5 +1,35 @@
 ﻿var dt;
 (function (dt) {
+    var AngularRowDetailsAdapter = (function () {
+        function AngularRowDetailsAdapter(api, settings) {
+            this.dt = {
+                settings: null,
+                api: null
+            };
+            this.dt.api = api;
+            this.dt.settings = api.settings()[0];
+            this.settings = settings;
+        }
+        AngularRowDetailsAdapter.prototype.rowExpanded = function (row, rowDetails) {
+            var rowScope = angular.element(row.node()).scope();
+            if (!rowScope)
+                return;
+            this.dt.settings.oInit.angular.$compile(row.child())(rowScope);
+            if (!rowScope.$$phase)
+                rowScope.$digest();
+        };
+
+        AngularRowDetailsAdapter.prototype.rowCollapsed = function (row, iconCell) {
+            var rowScope = angular.element(row.node()).scope();
+            if (!rowScope)
+                return;
+            if (!rowScope.$$phase)
+                rowScope.$digest();
+        };
+        return AngularRowDetailsAdapter;
+    })();
+    dt.AngularRowDetailsAdapter = AngularRowDetailsAdapter;
+
     var RowDetails = (function () {
         function RowDetails(api, settings) {
             this.dt = {
@@ -16,8 +46,17 @@
             this.dt.settings = api.settings()[0];
             this.dt.api = api;
             this.dt.settings.rowDetails = this;
+            this.setupAdapters();
             this.registerCallbacks();
             this.createDomElements();
+
+            $.each(this.dt.settings.aoColumns, function (i, col) {
+                if (!col.iconColumn)
+                    return;
+                col.orderable = false;
+                col.searchable = false;
+                col.type = "html";
+            });
         }
         RowDetails.animateElement = function (elem, animation, action, completeAction) {
             if (typeof completeAction === "undefined") { completeAction = null; }
@@ -40,6 +79,20 @@
                 default:
                     throw 'not valid animation ' + animation;
             }
+        };
+
+        RowDetails.prototype.setupAdapters = function () {
+            this.setupBindingAdapter();
+        };
+
+        RowDetails.prototype.setupBindingAdapter = function () {
+            if (!this.settings.bindingAdapter) {
+                if (angular !== undefined)
+                    this.settings.bindingAdapter = dt.AngularRowDetailsAdapter;
+            }
+            if (!this.settings.bindingAdapter)
+                return;
+            this.bindingAdapterInstance = new this.settings.bindingAdapter(this.dt.api, this.settings);
         };
 
         RowDetails.prototype.createDomElements = function () {
@@ -138,6 +191,7 @@
             opened: null,
             destroying: null,
             closed: null,
+            bindingAdapter: null,
             template: null
         };
         RowDetails.templates = {};
@@ -186,6 +240,10 @@
         var createdAction = function (content) {
             if (content)
                 innerDetails.html(content);
+
+            if (rowDetails.bindingAdapterInstance)
+                rowDetails.bindingAdapterInstance.rowExpanded(row, innerDetails);
+
             if ($.isFunction(settings.created))
                 settings.created.call(rowDetails, row, innerDetails);
 
@@ -309,6 +367,9 @@
         $('.dt-close-icon', td).hide();
         $('.dt-open-icon', td).show();
 
+        if (rowDetails.bindingAdapterInstance)
+            rowDetails.bindingAdapterInstance.rowCollapsed(row, td);
+
         if ($.isFunction(settings.closed))
             settings.closed(rowDetails, row, td);
     });
@@ -316,7 +377,7 @@
         this.isOpen() ? this.closeDetails(settings) : this.openDetails(settings);
     });
 
-    $.fn.DataTable.Api.prototype.rowDetails = function (settings) {
+    $.fn.DataTable.Api.register('rowDetails.init()', function (settings) {
         var rowDetails = new dt.RowDetails(this, settings);
         if (this.settings()[0]._bInitComplete)
             rowDetails.initialize();
@@ -326,15 +387,21 @@
             });
 
         return rowDetails.dom.btnGroup;
-    };
+    });
 
     //Add as feature
     $.fn.dataTable.ext.feature.push({
         "fnInit": function (oSettings) {
-            return oSettings.oInstance.api().rowDetails(oSettings.oInit.rowDetails);
+            return oSettings.oInstance.api().rowDetails.init(oSettings.oInit.rowDetails);
         },
         "cFeature": "D",
         "sFeature": "RowDetails"
     });
+
+    //Integrate with boostrap 3 if present
+    if ((typeof $().emulateTransitionEnd == 'function')) {
+        dt.RowDetails.defaultSettings.icon.openHtml = '<span class="glyphicon glyphicon-plus row-detail-icon"></span>';
+        dt.RowDetails.defaultSettings.icon.closeHtml = '<span class="glyphicon glyphicon-minus row-detail-icon"></span>';
+    }
 }(window, document, undefined));
 //# sourceMappingURL=dataTables.rowDetails.js.map

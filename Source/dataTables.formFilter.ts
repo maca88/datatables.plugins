@@ -118,7 +118,7 @@
     $.fn.DataTable.models.oSettings.formFilterInitCompleted = [];
 
     //Register api function
-    $.fn.DataTable.Api.prototype.formFilter = function (settings) {
+    $.fn.DataTable.Api.register('formFilter.init()', function (settings) {
         var formFilter = new dt.FormFilter(this, settings);
         if (this.settings()[0]._bInitComplete)
             formFilter.initialize();
@@ -126,12 +126,12 @@
             this.one('init.dt', () => { formFilter.initialize(); });
 
         return null;
-    };
+    });
 
     //Add as feature
     $.fn.dataTable.ext.feature.push({
         "fnInit": (oSettings) => {
-            return oSettings.oInstance.api().formFilter(oSettings.oInit.formFilter);
+            return oSettings.oInstance.api().formFilter.init(oSettings.oInit.formFilter);
         },
         "cFeature": "K",
         "sFeature": "formFilter"

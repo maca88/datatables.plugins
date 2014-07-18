@@ -116,25 +116,39 @@
                 this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'remoteStateSaveParams', this.saveState.bind(this), "AdvFilter_StateSave");
             }
 
-            if (this.dt.settings.oInit.bServerSide || this.dt.settings.oInit.serverSide) {
-                this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'aoServerParams', this.setServerParams.bind(this), "AdvFilter_ServerParam");
+            if (!this.dt.settings.oInit.bServerSide && !this.dt.settings.oInit.serverSide)
+                return;
 
-                //If breezeRemote is used integrate advanceFilter with it
-                if (this.dt.settings.oInit.breezeRemote) {
-                    var origBeforeQueryExecution;
-                    var breezeRemoteSettings;
+            this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'aoServerParams', this.setServerParams.bind(this), "AdvFilter_ServerParam");
 
-                    //check if breezeRemote was already initialized
-                    breezeRemoteSettings = this.dt.settings.breezeRemote != null && this.dt.settings.breezeRemote.settings ? this.dt.settings.breezeRemote.settings : this.dt.settings.oInit.breezeRemote;
-                    origBeforeQueryExecution = breezeRemoteSettings.beforeQueryExecution;
+            //If remoteFilter is used integrate advanceFilter with it
+            if (!this.dt.settings.oInit.remoteFilter)
+                return;
 
-                    var that = this;
-                    breezeRemoteSettings.beforeQueryExecution = function (query, data) {
-                        query = that.serverSideBreezeRemoteFilter(query, data);
-                        return $.isFunction(origBeforeQueryExecution) ? origBeforeQueryExecution.call(this, query, data) : query;
-                    };
-                }
+            if (breeze !== undefined && $data !== undefined && !this.settings.remoteAdapter)
+                return;
+            if (!this.settings.remoteAdapter) {
+                if (breeze !== undefined)
+                    this.settings.remoteAdapter = dt.BreezeAdvancedFilterAdapter;
+                else if ($data !== undefined)
+                    this.settings.remoteAdapter = dt.JayDataAdvancedFilterAdapter;
             }
+            if (!this.settings.remoteAdapter)
+                return;
+
+            this.remoteAdapterInstance = new this.settings.remoteAdapter(this.dt.api, this.settings);
+
+            var origBeforeQueryExecution;
+            var remoteFilterSettings;
+
+            //check if remoteFilter was already initialized
+            remoteFilterSettings = this.dt.settings.remoteFilter != null && this.dt.settings.remoteFilter.settings ? this.dt.settings.remoteFilter.settings : this.dt.settings.oInit.remoteFilter;
+            origBeforeQueryExecution = remoteFilterSettings.beforeQueryExecution;
+            var that = this;
+            remoteFilterSettings.beforeQueryExecution = function (query, data) {
+                query = that.remoteAdapterInstance.filter(query, data);
+                return $.isFunction(origBeforeQueryExecution) ? origBeforeQueryExecution.call(this, query, data) : query;
+            };
         };
 
         AdvancedFilter.prototype.initialize = function () {
@@ -899,74 +913,6 @@
             var filter = this.groupToObject(filterGroup);
             return filter;
         };
-
-        //#region Server side implementation for breezeRemote plugin
-        AdvancedFilter.prototype.getRuleBreezePredicate = function (name, op, value) {
-            var operator = breeze.FilterQueryOp;
-            switch (op) {
-                case 'nn':
-                    return breeze.Predicate.create(name, operator.NotEquals, null);
-                case 'nl':
-                    return breeze.Predicate.create(name, operator.Equals, null);
-                case 'eq':
-                    return breeze.Predicate.create(name, operator.Equals, value);
-                case 'ne':
-                    return breeze.Predicate.create(name, operator.NotEquals, value);
-                case 'lt':
-                    return breeze.Predicate.create(name, operator.LessThan, value);
-                case 'le':
-                    return breeze.Predicate.create(name, operator.LessThanOrEqual, value);
-                case 'gt':
-                    return breeze.Predicate.create(name, operator.GreaterThan, value);
-                case 'ge':
-                    return breeze.Predicate.create(name, operator.GreaterThanOrEqual, value);
-                case 'co':
-                    return breeze.Predicate.create(name, operator.Contains, value);
-                case 'nc':
-                    return breeze.Predicate.not(breeze.Predicate.create(name, operator.Contains, value));
-                case 'sw':
-                    return breeze.Predicate.create(name, operator.StartsWith, value);
-                case 'ew':
-                    return breeze.Predicate.create(name, operator.EndsWith, value);
-                default:
-                    throw 'unknown operator for breezeRemote - ' + op;
-            }
-        };
-
-        AdvancedFilter.prototype.getGroupBreezePredicate = function (groupData, clientToServerNameFn) {
-            var index, rule, predicates = [], predicate;
-
-            for (index = 0; index < groupData.rules.length; index++) {
-                rule = groupData.rules[index];
-                predicate = this.getRuleBreezePredicate(clientToServerNameFn(rule.data), rule.op, rule.value);
-                if (predicate)
-                    predicates.push(predicate);
-            }
-
-            for (index = 0; index < groupData.groups.length; index++) {
-                predicate = this.getGroupBreezePredicate(groupData.groups[index], clientToServerNameFn);
-                if (predicate)
-                    predicates.push(predicate);
-            }
-
-            if (!predicates.length)
-                return null;
-
-            return groupData.groupOp === 'and' ? breeze.Predicate.and(predicates) : breeze.Predicate.or(predicates);
-        };
-
-        AdvancedFilter.prototype.serverSideBreezeRemoteFilter = function (query, data) {
-            var state = data.searchGroup;
-            if (!state || (!state.rules.length && !state.groups.length))
-                return query;
-
-            var breezeRemoteSettings = this.dt.settings.breezeRemote.settings;
-            var clientToServerNameFn = breezeRemoteSettings.entityManager.metadataStore.namingConvention.clientPropertyNameToServer;
-            var p = this.getGroupBreezePredicate(state, clientToServerNameFn);
-            if (!p)
-                return query;
-            return query.where(p);
-        };
         AdvancedFilter.defaultSettings = {
             operators: {
                 types: {
@@ -1121,11 +1067,230 @@
             },
             createFilterEditor: null,
             filterEditorCreated: null,
-            ruleRemoving: null
+            ruleRemoving: null,
+            remoteAdapter: null
         };
         return AdvancedFilter;
     })();
     dt.AdvancedFilter = AdvancedFilter;
+
+    var JayDataAdvancedFilterAdapter = (function () {
+        function JayDataAdvancedFilterAdapter(api, settings) {
+            this.dt = {
+                settings: null,
+                api: null
+            };
+            this.paramIdx = 0;
+            this.dt.api = api;
+            this.dt.settings = api.settings()[0];
+            this.settings = settings;
+        }
+        JayDataAdvancedFilterAdapter.prototype.filter = function (query, data) {
+            this.paramIdx = 0;
+            var state = data.searchGroup;
+            if (!state || (!state.rules.length && !state.groups.length))
+                return query;
+            var p = this.getGroupPredicate(state);
+            if (!p || !p.expression)
+                return query;
+            return query.filter(p.expression, p.parameters);
+        };
+
+        JayDataAdvancedFilterAdapter.prototype.getRulePredicate = function (name, op, value) {
+            var predicate = new JayDataPredicate();
+            var paramName = 'p' + this.paramIdx;
+            predicate.parameters[paramName] = value;
+            this.paramIdx++;
+            switch (op) {
+                case 'nn':
+                    predicate.expression = 'it.' + name + ' != null';
+                    break;
+                case 'nl':
+                    predicate.expression = 'it.' + name + ' == null';
+                    break;
+                case 'eq':
+                    predicate.expression = 'it.' + name + ' == this.' + paramName;
+                    break;
+                case 'ne':
+                    predicate.expression = 'it.' + name + ' != this.' + paramName;
+                    break;
+                case 'lt':
+                    predicate.expression = 'it.' + name + ' < this.' + paramName;
+                    break;
+                case 'le':
+                    predicate.expression = 'it.' + name + ' <= this.' + paramName;
+                    break;
+                case 'gt':
+                    predicate.expression = 'it.' + name + ' > this.' + paramName;
+                    break;
+                case 'ge':
+                    predicate.expression = 'it.' + name + ' >= this.' + paramName;
+                    break;
+                case 'co':
+                    predicate.expression = 'it.' + name + '.contains(this.' + paramName + ')';
+                    break;
+                case 'nc':
+                    predicate.expression = '!it.' + name + '.contains(this.' + paramName + ')';
+                    break;
+                case 'sw':
+                    predicate.expression = 'it.' + name + '.startsWith(this.' + paramName + ')';
+                    break;
+                case 'ew':
+                    predicate.expression = 'it.' + name + '.endsWith(this.' + paramName + ')';
+                    break;
+                case 'in':
+                    predicate.expression = 'it.' + name + ' in this.' + paramName;
+                    break;
+                default:
+                    throw 'unknown operator for remoteFilter - ' + op;
+            }
+            return predicate;
+        };
+
+        JayDataAdvancedFilterAdapter.prototype.getGroupPredicate = function (groupData) {
+            var index, rule, predicates = [], predicate;
+
+            for (index = 0; index < groupData.rules.length; index++) {
+                rule = groupData.rules[index];
+                predicate = this.getRulePredicate(rule.data, rule.op, rule.value);
+                if (predicate)
+                    predicates.push(predicate);
+            }
+
+            for (index = 0; index < groupData.groups.length; index++) {
+                predicate = this.getGroupPredicate(groupData.groups[index]);
+                if (predicate)
+                    predicates.push(predicate);
+            }
+
+            if (!predicates.length)
+                return null;
+
+            return groupData.groupOp === 'and' ? JayDataPredicate.and(predicates) : JayDataPredicate.or(predicates);
+        };
+        return JayDataAdvancedFilterAdapter;
+    })();
+    dt.JayDataAdvancedFilterAdapter = JayDataAdvancedFilterAdapter;
+
+    var JayDataPredicate = (function () {
+        function JayDataPredicate(expression, parameters) {
+            this.parameters = {};
+            this.expression = expression;
+            this.parameters = parameters || {};
+        }
+        JayDataPredicate.and = function (predicates) {
+            return JayDataPredicate.merge(predicates, '&&');
+        };
+
+        JayDataPredicate.or = function (predicates) {
+            return JayDataPredicate.merge(predicates, '||');
+        };
+
+        JayDataPredicate.prototype.and = function (predicates) {
+            predicates.unshift(this);
+            return JayDataPredicate.and(predicates);
+        };
+
+        JayDataPredicate.prototype.or = function (predicates) {
+            predicates.unshift(this);
+            return JayDataPredicate.or(predicates);
+        };
+
+        JayDataPredicate.merge = function (predicates, op) {
+            var newExpr = '';
+            var params = {};
+            for (var i = 0; i < predicates.length; i++) {
+                if (i > 0)
+                    newExpr += ' ' + op + ' ';
+                newExpr += predicates[i].expression;
+                $.extend(params, predicates[i].parameters);
+            }
+            if (predicates.length > 1)
+                newExpr = '(' + newExpr + ')';
+            return new JayDataPredicate(newExpr, params);
+        };
+        return JayDataPredicate;
+    })();
+
+    var BreezeAdvancedFilterAdapter = (function () {
+        function BreezeAdvancedFilterAdapter(api, settings) {
+            this.dt = {
+                api: null,
+                settings: null
+            };
+            this.dt.api = api;
+            this.dt.settings = api.settings()[0];
+            this.settings = settings;
+        }
+        BreezeAdvancedFilterAdapter.prototype.filter = function (query, data) {
+            var state = data.searchGroup;
+            if (!state || (!state.rules.length && !state.groups.length))
+                return query;
+
+            var remoteFilterSettings = this.dt.settings.remoteFilter.settings;
+            var clientToServerNameFn = remoteFilterSettings.entityManager.metadataStore.namingConvention.clientPropertyNameToServer;
+            var p = this.getGroupPredicate(state, clientToServerNameFn);
+            if (!p)
+                return query;
+            return query.where(p);
+        };
+
+        BreezeAdvancedFilterAdapter.prototype.getRulePredicate = function (name, op, value) {
+            var operator = breeze.FilterQueryOp;
+            switch (op) {
+                case 'nn':
+                    return breeze.Predicate.create(name, operator.NotEquals, null);
+                case 'nl':
+                    return breeze.Predicate.create(name, operator.Equals, null);
+                case 'eq':
+                    return breeze.Predicate.create(name, operator.Equals, value);
+                case 'ne':
+                    return breeze.Predicate.create(name, operator.NotEquals, value);
+                case 'lt':
+                    return breeze.Predicate.create(name, operator.LessThan, value);
+                case 'le':
+                    return breeze.Predicate.create(name, operator.LessThanOrEqual, value);
+                case 'gt':
+                    return breeze.Predicate.create(name, operator.GreaterThan, value);
+                case 'ge':
+                    return breeze.Predicate.create(name, operator.GreaterThanOrEqual, value);
+                case 'co':
+                    return breeze.Predicate.create(name, operator.Contains, value);
+                case 'nc':
+                    return breeze.Predicate.not(breeze.Predicate.create(name, operator.Contains, value));
+                case 'sw':
+                    return breeze.Predicate.create(name, operator.StartsWith, value);
+                case 'ew':
+                    return breeze.Predicate.create(name, operator.EndsWith, value);
+                default:
+                    throw 'unknown operator for remoteFilter - ' + op;
+            }
+        };
+
+        BreezeAdvancedFilterAdapter.prototype.getGroupPredicate = function (groupData, clientToServerNameFn) {
+            var index, rule, predicates = [], predicate;
+
+            for (index = 0; index < groupData.rules.length; index++) {
+                rule = groupData.rules[index];
+                predicate = this.getRulePredicate(clientToServerNameFn(rule.data), rule.op, rule.value);
+                if (predicate)
+                    predicates.push(predicate);
+            }
+
+            for (index = 0; index < groupData.groups.length; index++) {
+                predicate = this.getGroupPredicate(groupData.groups[index], clientToServerNameFn);
+                if (predicate)
+                    predicates.push(predicate);
+            }
+
+            if (!predicates.length)
+                return null;
+
+            return groupData.groupOp === 'and' ? breeze.Predicate.and(predicates) : breeze.Predicate.or(predicates);
+        };
+        return BreezeAdvancedFilterAdapter;
+    })();
+    dt.BreezeAdvancedFilterAdapter = BreezeAdvancedFilterAdapter;
 
     var GroupObject = (function () {
         function GroupObject(groupOp) {
@@ -1152,21 +1317,26 @@
     $.fn.DataTable.models.oSettings.advancedFilterInitCompleted = [];
 
     //#region Client side search engine implementation
-    function clientSideFilter(oSettings, aFilterData, rowIdx, aData) {
+    function clientSideFilter(oSettings, aFilterData, rowIdx, aData, counter) {
         if (oSettings.advancedFilter === undefined || !oSettings.oFeatures.bFilter)
             return true;
         var settings = oSettings.advancedFilter.settings;
         var operators = settings.operators;
+        var columns;
         var state = oSettings.advancedFilter.stateData;
         if (!state || (!state.rules.length && !state.groups.length))
             return true;
 
-        //TODO: do it only once
-        var columns = {};
-        for (var i = 0; i < oSettings.aoColumns.length; i++) {
-            var col = oSettings.aoColumns[i];
-            var mData = $.isNumeric(col.mData) ? (oSettings.aoColumns[col.mData]._ColReorder_iOrigCol != null ? oSettings.aoColumns[col.mData]._ColReorder_iOrigCol : col.mData) : col.mData;
-            columns[mData] = i;
+        if (counter == 0) {
+            columns = {};
+            for (var i = 0; i < oSettings.aoColumns.length; i++) {
+                var col = oSettings.aoColumns[i];
+                var mData = $.isNumeric(col.mData) ? (oSettings.aoColumns[col.mData]._ColReorder_iOrigCol != null ? oSettings.aoColumns[col.mData]._ColReorder_iOrigCol : col.mData) : col.mData;
+                columns[mData] = i;
+            }
+            oSettings.advancedFilter.columnIndexes = columns;
+        } else {
+            columns = oSettings.advancedFilter.columnIndexes;
         }
 
         function getGroupResult(groupData) {
@@ -1299,7 +1469,7 @@
 
     //#endregion
     //Register api function
-    $.fn.DataTable.Api.prototype.advancedFilter = function (settings) {
+    $.fn.DataTable.Api.register('advancedFilter.init()', function (settings) {
         var advancedFilter = new dt.AdvancedFilter(this, settings);
         if (this.settings()[0]._bInitComplete)
             advancedFilter.initialize();
@@ -1309,12 +1479,12 @@
             });
 
         return advancedFilter.dom.globalFilter.container.get(0);
-    };
+    });
 
     //Add as feature
     $.fn.dataTable.ext.feature.push({
         "fnInit": function (oSettings) {
-            return oSettings.oInstance.api().advancedFilter(oSettings.oInit.advancedFilter);
+            return oSettings.oInstance.api().advancedFilter.init(oSettings.oInit.advancedFilter);
         },
         "cFeature": "A",
         "sFeature": "AdvancedFilter"

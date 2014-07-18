@@ -13,13 +13,16 @@
                 background-color: #fff;
             }
 
-            table {
-                border-collapse: ollapse;
+            table.dataTable {
+                table-layout: fixed;
+                margin: 0;
+                border-collapse: collapse;
                 border: 1px solid black;
             }
 
             table td, table th {
                 border: 1px solid black;
+                overflow: hidden;
             }
 
             div.container {
@@ -29,7 +32,7 @@
         </style>
 
         <script src="../Scripts/jquery-1.9.1.js"></script>
-        <script src="../libs/datatables/js/jquery.dataTables.js"></script>
+        <script src="//datatables.net/download/build/nightly/jquery.dataTables.js"></script>
         <script src="../src/dataTables.colResize.js"></script>
         <meta charset=utf-8 />
         <title>DataTables - JS Bin</title>
@@ -39,12 +42,12 @@
                 $('#example').DataTable({
                     "info": true,
                     "paginate": true,
-                    stateSave: true,
+                    //stateSave: true,
                     "scrollY": "380px",
                     "paginationType": "full_numbers",
                     "processing": true,
                     autoWidth: true,
-                    "dom": 'Jlfrtip',
+                    "dom": 'lfrtip',
                     "lengthChange": false,
                     colResize: {
                         fixedLayout: false
