@@ -18,7 +18,7 @@
                 startWidth: null,
                 resizeElem: null
             },
-            window: {
+            table: {
                 prevWidth: null
             },
             origState: true,
@@ -27,6 +27,7 @@
             scrollHeadTable: null,
             scrollFoot: null,
             scrollFootTable: null,
+            scrollFootInner: null,
             scrollBody: null,
             scrollBodyTable: null,
             scrollX: false,
@@ -79,6 +80,7 @@
             this.dom.scrollHeadTable = $('div.' + this.dt.settings.oClasses.sScrollHeadInner + ' > table', this.dom.scrollHead);
             
             this.dom.scrollFoot = $('div.' + this.dt.settings.oClasses.sScrollFoot, this.dt.settings.nTableWrapper);
+            this.dom.scrollFootInner = $('div.' + this.dt.settings.oClasses.sScrollFootInner, this.dom.scrollFoot);
             this.dom.scrollFootTable = $('div.' + this.dt.settings.oClasses.sScrollFootInner + ' > table', this.dom.scrollFoot);
 
             this.dom.scrollBody = $('div.' + this.dt.settings.oClasses.sScrollBody, this.dt.settings.nTableWrapper);
@@ -99,7 +101,7 @@
 
             this.dom.scrollX = this.dt.settings.oInit.sScrollX === undefined ? false : true;
             this.dom.scrollY = this.dt.settings.oInit.sScrollY === undefined ? false : true;
-            
+
             //SaveTableWidth
             this.dt.settings.sTableWidthOrig = $(this.dt.settings.nTable).width();
             this.updateTableSize();
@@ -111,20 +113,17 @@
                 this.loadState(this.dt.settings.oLoadedState);
             }
 
-            if (this.dt.settings._bInitComplete) {
-                this.onDraw();
-            }
+            this.onDraw();
+            this.dom.table.preWidth = parseFloat(this.dom.scrollBodyTable.css('width'));
 
             if (!this.dom.scrollX && this.dom.scrollY && this.settings.fixedLayout && this.dt.settings._reszEvt) {
                 //We have to manually resize columns on window resize
                 var eventName = 'resize.DT-' + this.dt.settings.sInstance;
-                var api = this.dt.settings.oApi;
                 $(window).off(eventName);
-                this.dom.window.prevWidth = $(window).width();
-                $(window).on(eventName, api._fnThrottle(() => {
+                $(window).on(eventName, () => {
                     this.proportionallyColumnSizing();
-                    api._fnAdjustColumnSizing(this.dt.settings);
-                }));
+                    //api._fnAdjustColumnSizing(this.dt.settings);
+                });
             }
 
             if (this.dom.scrollX || this.dom.scrollY) {
@@ -144,17 +143,141 @@
         }
 
         private proportionallyColumnSizing() {
-            /*
-            var diff = $(window).width() - this.dom.window.prevWidth;
-            var columns = this.dt.settings.aoColumns;
-            var visColumns = [];
-
-            for (var i = 0; i < columns.length; i++) {
-                if (columns[i].bVisible)
-                    visColumns.push(columns[i]);
+            var prevWidths = [],
+                newWidths = [],
+                prevWidth,
+                newWidth,
+                newTableWidth,
+                prevTableWidth,
+                moveLength,
+                multiplier,
+                cWidth,
+                i, j,
+                prevTotalColWidths = 0,
+                currTotalColWidths,
+                columnRestWidths = [],
+                oApi = this.dt.settings.oApi,
+                columns = this.dt.settings.aoColumns,
+                //borderWidth = this.dom.scrollBodyTable.outerWidth() - this.dom.scrollBodyTable.innerWidth(),
+                bodyTableColumns = $('thead th', this.dom.scrollBodyTable),
+                headTableColumns = $('thead th', this.dom.scrollHeadTable),
+                footTableColumns = this.dom.scrollFootTable.length 
+                    ? $('thead th', this.dom.scrollFootTable)
+                    : <any>[],
+                visColumns = [];
+            //Save the visible columns for further iterations
+            for (i = 0; i < columns.length; i++) {
+                if (!columns[i].bVisible) continue;
+                visColumns.push(columns[i]);
+                columnRestWidths.push(0); //set default value
             }
 
-            this.dom.window.prevWidth = $(window).width();*/
+            //Save the current column widths for further calculation
+            for (i = 0; i < bodyTableColumns.length; i++) {
+                cWidth = parseFloat(bodyTableColumns[i].style.width);
+                prevTotalColWidths += cWidth;
+                prevWidths.push(cWidth);
+            }
+            //console.log(prevWidths);
+
+            //Remove body width in order to get the new widths calculated by the browser
+            for (i = 0; i < bodyTableColumns.length; i++) {
+                bodyTableColumns[i].style.width = '';
+            }
+
+            //Get the new table width calculated by the browser
+            newTableWidth = parseFloat(this.dom.scrollBodyTable.css('width'));
+            //Get the old table width
+            prevTableWidth = this.dom.table.preWidth;
+            moveLength = newTableWidth - prevTableWidth;
+            if (moveLength == 0) {
+                //if the table wasnt resized restore the column widths
+                for (i = 0; i < bodyTableColumns.length; i++) {
+                    bodyTableColumns[i].style.width = prevWidths[i] + 'px';
+                }
+                return;
+            }
+
+            //var tot = 0;
+            currTotalColWidths = prevTotalColWidths;
+            for (i = 0; i < visColumns.length; i++) {
+                //For each column calculate the new width
+                prevWidth = prevWidths[i];
+                multiplier = (+(prevWidth / prevTotalColWidths).toFixed(2));
+                //tot += multiplier;
+                newWidth = prevWidth + (moveLength * multiplier) + columnRestWidths[i];
+                currTotalColWidths -= prevWidth;
+
+                //Check whether the column can be resized to the new calculated value
+                //if not, set it to the min or max width depends on the moveLength value
+                if (!this.canColumnBeResized(visColumns[i], newWidth)) {
+                    cWidth = moveLength > 0
+                        ? this.getColumnMaxWidth(visColumns[i])
+                        : this.getColumnMinWidth(visColumns[i]);
+                    var rest = newWidth - cWidth; //when moveLength > 0 then rest will be a positive number otherwise will be a negative number
+                    newWidth = cWidth;
+                    //we have to proportionally split the rest value to the rest of the columns
+                    //save the calculated rest widths in order to use them in the next iteration
+                    for (j = (i + 1); j < visColumns.length; j++) {
+                        columnRestWidths[j] += rest * (+(visColumns[j] / currTotalColWidths).toFixed(2));
+                    }
+                }
+                newWidths.push(newWidth);
+            }
+
+            //Apply the calculated column widths to the headers cells
+            var tablesWidth = this.dom.scrollBodyTable.outerWidth() + 'px';
+            for (i = 0; i < headTableColumns.length; i++) {
+                headTableColumns[i].style.width = newWidths[i] + 'px';
+            }
+            this.dom.scrollHeadTable.css('width', tablesWidth);
+            this.dom.scrollHeadInner.css('width', tablesWidth);
+
+            //We dont need to set the body table width as it is 100%
+            for (i = 0; i < bodyTableColumns.length; i++) {
+                bodyTableColumns[i].style.width = newWidths[i] + 'px';
+            }
+
+            for (i = 0; i < footTableColumns.length; i++) {
+                footTableColumns[i].style.width = newWidths[i] + 'px';
+            }
+            if (this.dom.scrollFootTable.length) {
+                this.dom.scrollFootTable[0].style.width = tablesWidth;
+                this.dom.scrollFootInner[0].style.width = tablesWidth;
+            }
+            
+            //this.dom.scrollFootTable.css('width', tablesWidth);
+            //this.dom.scrollFootInner.css('width', tablesWidth);
+
+
+
+            //Look for the y scroller taken from dataTable source TODO: check whether we need this
+            /*
+            var divBody = this.dt.settings.nScrollBody,
+                scroll = this.dt.settings.oScroll,
+                barWidth = scroll.iBarWidth,
+                $divBody = $(divBody),
+                $table = $(this.dt.settings.nTable),
+                browser = this.dt.settings.oBrowser,
+                divHeader = $(this.dt.settings.nScrollHead),
+                divHeaderStyle = divHeader[0].style,
+                divHeaderInner = divHeader.children('div'),
+                divHeaderInnerStyle = divHeaderInner[0].style;
+            // Figure out if there are scrollbar present - if so then we need a the header and footer to
+            // provide a bit more space to allow "overflow" scrolling (i.e. past the scrollbar)
+            var bScrolling = $table.height() > divBody.clientHeight || $divBody.css('overflow-y') == "scroll";
+            var padding = 'padding' + (browser.bScrollbarLeft ? 'Left' : 'Right');
+            divHeaderInnerStyle[padding] = bScrolling ? barWidth + "px" : "0px";*/
+
+            //console.log('moveLength: ' + moveLength + ' multiplier: ' + tot);
+            
+            //console.log(newWidths);
+
+            this.dom.table.preWidth = newTableWidth;
+
+            oApi._fnThrottle(() => {
+                this.afterResizing();
+            });
         }
 
         private getColumnIndex(col: any) : number {
@@ -492,6 +615,14 @@
                 (!col.minWidth || col.minWidth <= newWidth) &&
                 (!this.settings.maxWidth || this.settings.maxWidth >= newWidth) &&
                 (!col.maxWidth || col.maxWidth >= newWidth);
+        }
+
+        private getColumnMaxWidth(col) {
+            return col.maxWidth ? col.maxWidth : this.settings.maxWidth;
+        }
+
+        private getColumnMinWidth(col) {
+            return col.minWidth ? col.minWidth : this.settings.minWidth;
         }
 
         private getPrevResizableColumnIdx(col, moveLength) {
