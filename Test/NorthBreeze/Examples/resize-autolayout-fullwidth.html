@@ -39,11 +39,12 @@
 
         <script type="text/javascript">
             $(document).ready(function () {
-                $('#example').DataTable({
+
+                var opts = {
                     "info": true,
                     "paginate": true,
-                    //stateSave: true,
-                    "scrollY": "380px",
+                    stateSave: true,
+                    "scrollY": "200px",
                     "paginationType": "full_numbers",
                     "processing": true,
                     autoWidth: true,
@@ -54,12 +55,21 @@
                     },
                     "iDisplayLength": -1
 
-                });
+                };
+                $('#colResize').after($('#example').clone().attr('id', 'example2'));
+                var opts2 = $.extend(true, {}, opts, { dom: 'Jlfrtip' });
+
+                //Without ColResize
+                $('#example').DataTable(opts);
+                //With ColResize
+                $('#example2').DataTable(opts2);
+
             });
         </script>
     </head>
     <body>
         <div class="container">
+            <h3>Without ColResize</h3>
             <table id="example" class="display" width="100%">
                 <thead>
                     <tr>
@@ -542,6 +552,8 @@
                     </tr>
                 </tbody>
             </table>
+            
+            <h3 id="colResize">With ColResize</h3>
         </div>
 	</body>
 </html>

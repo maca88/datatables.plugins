@@ -462,6 +462,7 @@
   <ItemGroup>
     <Folder Include="App\common\directives\" />
     <Folder Include="App\common\services\" />
+    <Folder Include="App\datatables\views\" />
     <Folder Include="libs\datatables\media\" />
   </ItemGroup>
   <ItemGroup>
