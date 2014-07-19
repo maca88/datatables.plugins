@@ -86,10 +86,10 @@
                     }
                 };
                 var api = $('#example').DataTable(opts);
-                api.colResize.init({ dblClick: 'matchContent', fixedLayout: false });
+                api.colResize.init({ dblClick: 'autoFit', fixedLayout: false });
 
                 var api2 = $('#example2').DataTable(opts);
-                api2.colResize.init({ fixedLayout: true });
+                api2.colResize.init({ dblClick: 'autoFit', fixedLayout: true });
                 /*
                 api.colPin.init({
                     fixedColumns: {

@@ -6,7 +6,7 @@
             maxWidth: null,
             fixedLayout: true,
             fixedHeader: null,
-            dblClick: 'restoreOrig' //matchContent
+            dblClick: 'initWidth' //autoFit, autoMinFit
         };
         private settings: any;
         private tableSize = -1;
@@ -530,15 +530,21 @@
                 }
             }
 
-            if (this.settings.dblClick == 'matchContent' || !this.settings.fixedLayout)
-                this.updateColumnsContentWidth();
+            var autoWidthTypes = [];
+            if (this.settings.dblClick == 'autoMinFit' || !this.settings.fixedLayout)
+                autoWidthTypes.push('autoMinWidth');
+            if (this.settings.dblClick == 'autoFit')
+                autoWidthTypes.push('autoWidth');
+            //Call this only once so that the table will be cloned only one time
+            if (autoWidthTypes.length)
+                this.updateColumnsAutoWidth(autoWidthTypes);
 
             if (!this.settings.fixedLayout) {
                 var columns = this.dt.settings.aoColumns;
                 var i;
                 for (i = 0; i < columns.length; i++) {
                     if (!columns[i].bVisible) continue;
-                    columns[i].minWidth = Math.max((columns[i].minWidthOrig || 0), columns[i].contentWidth);
+                    columns[i].minWidth = Math.max((columns[i].minWidthOrig || 0), columns[i].autoMinWidth);
                     //We have to resize if the current column width if is less that the column minWidth
                     if ($(columns[i].nTh).width() < columns[i].minWidth)
                         this.resize(columns[i], columns[i].minWidth);
@@ -551,52 +557,87 @@
             }
         }
 
-        private getTableMinColWidths(table) {
+        private getTableAutoColWidths(table, types: string[]) {
+            var widths = {}, i, colIdx;
             var $table = $(table);
-            var widths = [];
-            if (!$table.length) return widths;
+            for (i = 0; i < types.length; i++) {
+                widths[types[i]] = [];
+            }
+            if (!types.length || !$table.length) return widths;
+            
             var clnTable = $table
                 .clone()
                 .removeAttr('id')
-                .css('width', '1px') //let the browser calculate the min width
-                .css('table-layout', 'auto')
-                .css('position', 'absolute')
-                .css('visibility', 'hidden');
+                .css('table-layout', 'auto');
             // Remove any assigned widths from the footer (from scrolling)
             clnTable.find('thead th, tfoot th, tfoot td').css('width', '');
-            $(this.dt.settings.nTableWrapper).append(clnTable);
-            $('thead>tr>th', clnTable).each((i, th) => {
-                widths.push($(th).width());
+            var container = $('<div />').css({
+                'position': 'absolute',
+                'width': '9999px',
+                'height': '9999px',
             });
-            clnTable.remove();
-            //console.log(widths);
+            container.append(clnTable);
+            $(this.dt.settings.nTableWrapper).append(container);
+
+            var headerCols = $('thead>tr>th', clnTable);
+
+            for (i = 0; i < types.length; i++) {
+                var type = types[i];
+                var fn='';
+                switch(type) {
+                    case 'autoMinWidth':
+                        clnTable.css('width', '1px');
+                        fn = 'width';
+                        break;
+                    case 'autoWidth':
+                        clnTable.css('width', 'auto');
+                        fn = 'outerWidth';
+                        break;
+                    default:
+                        throw 'Invalid widthType ' + type;
+                }
+                for (colIdx = 0; colIdx < headerCols.length; colIdx++) {
+                    widths[type].push($(headerCols[colIdx])[fn]());
+                } 
+            }
+
+            container.remove();
             return widths;
         }
 
-        private updateColumnsContentWidth() {
+        private updateColumnsAutoWidth(types: string[]): void {
             var columns = this.dt.settings.aoColumns;
-            var i;
-            var widths = [];
+            var i, j, colLen, type, visColIdx= 0;
+            var widths = {};
             if (this.dom.scrollX || this.dom.scrollY) {
-                var headWidths = this.getTableMinColWidths(this.dom.scrollHeadTable);
-                var bodyWidths = this.getTableMinColWidths(this.dom.scrollBodyTable);
-                var footWidths = this.getTableMinColWidths(this.dom.scrollFootTable);
-                footWidths.length = headWidths.length;
-                for (i = 0; i < headWidths.length; i++) {
-                    widths.push(Math.max(headWidths[i], bodyWidths[i], (footWidths[i] || 0)));
+                var headWidths = this.getTableAutoColWidths(this.dom.scrollHeadTable, types);
+                var bodyWidths = this.getTableAutoColWidths(this.dom.scrollBodyTable, types);
+                var footWidths = this.getTableAutoColWidths(this.dom.scrollFootTable, types);
+                
+                for (i = 0; i < types.length; i++) {
+                    type = types[i];
+                    widths[type] = [];
+                    footWidths[type].length = headWidths[type].length;
+                    colLen = headWidths[type].length;
+                    for (j = 0; j < colLen; j++) {
+                        widths[type].push(Math.max(headWidths[type][j], bodyWidths[type][j], (footWidths[type][j] || 0)));
+                    }
                 }
             } else {
-                widths = this.getTableMinColWidths(this.dt.settings.nTable);
+                widths = this.getTableAutoColWidths(this.dt.settings.nTable, types);
             }
             //console.log(widths);
 
-            var visColIdx = 0;
             for (i = 0; i < columns.length; i++) {
                 if (!columns[i].bVisible) continue;
-                columns[i].contentWidth = widths[visColIdx];
+                for (j = 0; j < types.length; j++) {
+                    type = types[j];
+                    columns[i][type] = widths[type][visColIdx];
+                }
                 visColIdx++;
             }
         }
+
 
         private overrideClickHander(col, $th) {
             var dtClickEvent = this.getColumnEvent($th.get(0), 'click', 'DT');
@@ -615,8 +656,11 @@
 
             var width;
             switch(this.settings.dblClick) {
-                case 'matchContent':
-                    width = col.contentWidth;
+                case 'autoMinFit':
+                    width = col.autoMinWidth;
+                    break;
+                case 'autoFit':
+                    width = col.autoWidth;
                     break;
                 default:
                     width = col.initWidth;

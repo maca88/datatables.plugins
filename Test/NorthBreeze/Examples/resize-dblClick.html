@@ -1,0 +1,117 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <link href="//datatables.net/download/build/nightly/jquery.dataTables.css" rel="stylesheet" type="text/css" />
+    <link href="../src/dataTables.colResize.css" rel="stylesheet" type="text/css" />
+
+    <style media="screen" type="text/css">
+        body {
+            font: 90%/1.45em "Helvetica Neue", HelveticaNeue, Verdana, Arial, Helvetica, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #333;
+            background-color: #fff;
+        }
+
+        table.dataTable {
+            margin: 0;
+            border-collapse: collapse;
+            border: 1px solid black;
+        }
+
+        table td, table th {
+            border: 1px solid black;
+        }
+
+        div.container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+
+    </style>
+
+    <script src="../Scripts/jquery-1.9.1.js"></script>
+    <script src="../libs/datatables/js/jquery.dataTables.js"></script>
+    <script src="../src/dataTables.colResize.js"></script>
+    <meta charset=utf-8 />
+    <title>DataTables - JS Bin</title>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            var initWidthOpts = {
+                info: true,
+                paginate: false,
+                //stateSave: true,
+                scrollX: true,
+                processing: true,
+                //autoWidth: true,
+                dom: 'Jrti',
+                lengthChange: false,
+                colResize: {
+                    dblClick: 'initWidth'
+                }
+            };
+
+
+            $('#autoFit').after($('#initWidthTable').clone().attr('id', 'autoFitTable'));
+            $('#autoMinFit').after($('#initWidthTable').clone().attr('id', 'autoMinFitTable'));
+
+            var autoFitOpts = $.extend(true, {}, initWidthOpts, { colResize: { dblClick: 'autoFit' } });
+            var autoMinFitOpts = $.extend(true, {}, initWidthOpts, { colResize: { dblClick: 'autoMinFit' } });
+
+            $('#initWidthTable').DataTable(initWidthOpts);
+            $('#autoFitTable').DataTable(autoFitOpts);
+            $('#autoMinFitTable').DataTable(autoMinFitOpts);
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h3>DblClick - initWidth (default)</h3>
+        <table id="initWidthTable" class="display" >
+            <thead>
+                <tr>
+                    <th>Name <input type="text"/><input type="text" /></th>
+                    <th>Position</th>
+                    <th>Office</th>
+                    <th>Age</th>
+                    <th>Start date</th>
+                    <th>Salary</th>
+                </tr>
+            </thead>
+
+            <tfoot>
+                <tr>
+                    <th>Name</th>
+                    <th>Input Footer <input type="text" /></th>
+                    <th>
+                        <div>
+                            <h3>Office</h3>
+                            <span>Office</span>
+                        </div>
+                    </th>
+                    <th>UnbreakableTextHeeeeeeeeeeeeere</th>
+                    <th>Start date</th>
+                    <th>Salary</th>
+                </tr>
+            </tfoot>
+
+            <tbody>
+                <tr>
+                    <td>Tiger Nixon</td>
+                    <td>System Architect bla bla bla bla bla bla</td>
+                    <td>Edinburgh</td>
+                    <td>61</td>
+                    <td>2011/04/25</td>
+                    <td>$3,120</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3 id="autoFit">DblClick - autoFit</h3>
+        
+        <h3 id="autoMinFit">DblClick - autoMinFit</h3>
+    </div>
+</body>
+</html>

@@ -93,6 +93,8 @@
     <Content Include="Examples\resize-autolayout-fullwidth.html" />
     <Content Include="Examples\resize-complex-header-bootstrap.html" />
     <Content Include="Examples\resize-complex-header.html" />
+    <Content Include="Examples\resize-dblClick.html" />
+    <Content Include="Examples\resize-fixed-headers.html" />
     <Content Include="Examples\resize-fixedlayout-fullwidth.html" />
     <Content Include="fonts\fontawesome-webfont.svg" />
     <Content Include="JayData_readme.txt" />
