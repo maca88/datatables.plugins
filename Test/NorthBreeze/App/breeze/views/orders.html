@@ -98,7 +98,7 @@
         <button ng-show="order.entityAspect.entityState.name != 'Detached'" ng-click="setState($rowIndex, 'detached')"><span>SetDetached</span></button><br />
         <button ng-show="order.entityAspect.entityState.name != 'Detached'" ng-click="setState($rowIndex, 'unchanged')"><span>SetUnchanged</span></button>
     </div>
-    <table class="table-striped table-bordered table-condensed table-small" dt-table="orderTable" dt-data="vm.orders" dt-options="vm.orderGridOpts" dt-row-data-path="order">
+    <table class="table-striped table-bordered table-condensed table-small" dt-table="orderTable" dt-debug="true" dt-data="vm.orders" dt-options="vm.orderGridOpts" dt-row-data-path="order">
         <thead>
         <th dt-data="OrderID" dt-width="100px">Order ID</th>
         <th dt-data="Freight" dt-expression="order.Freight | currency" dt-width="100px">Freight</th>

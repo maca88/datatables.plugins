@@ -159,7 +159,7 @@
                 var entity = items[i].data();
                 entity.entityAspect.setDeleted();
                 if (entity.entityAspect.entityState === breeze.EntityState.Detached) continue;
-                //TODO: check if is an simple or breeze array if simple then remove from the araay manually
+                //TODO: check if is an simple or breeze array if not simple we have to add to the deleted entities
                 this.deletedEntities.push(entity);
                 removed.push(items[i]);
             }

@@ -47,7 +47,7 @@
             <div><span>Loading...</span></div>
         </div>
         <div ng-if="ordersLoaded === true">
-            <table class="table table-striped table-bordered" dt-table dt-data="data.Orders" dt-options="vm.customerOrdersGridOpts">
+            <table class="table table-striped table-bordered" dt-table dt-data="data.Orders" dt-debug="true" dt-options="vm.customerOrdersGridOpts">
                 <thead>
                     <tr>
                         <th dt-data="OrderID">Id</th>
