@@ -14,16 +14,19 @@
     </p>
 
     <h2>Browsers</h2>
-    <button class="btn" ng-click="vm.addItem()"><span>Add Item via model collection</span></button>
-    <button class="btn" ng-click="vm.addItemViaDt()"><span>Add Item via datatables</span></button>
-    <button class="btn" ng-click="vm.wapItems()"><span>Swap items (row 0 with 1)</span></button>
+    <div style="height: 80px">
+        <button class="btn" ng-click="vm.addItem()"><span>Add Item via model collection</span></button>
+        <button class="btn" ng-click="vm.addItemViaDt()"><span>Add Item via datatables</span></button>
+        <button class="btn" ng-click="vm.swapItems()"><span>Swap items (row 0 with 1)</span></button>
+        <button class="btn" ng-click="vm.editRandomItem()"><span>Edit random item</span></button>
 
-    <button class="btn" ng-click="vm.editRandomItem()"><span>Edit random item</span></button>
-    <div style="display: inline" ng-if="dtTable.selectedRows.length > 0">
-        <button class="btn" ng-show="vm.canRemoveItem()" ng-click="vm.editItem(dtTable.selectedRows[0])"><span>Edit item: {{dtTable.selectedRows[0].index}})</span></button>
-        <button class="btn" ng-show="vm.canRemoveItem()" ng-click="vm.removeItem(dtTable.selectedRows[0].index)"><span>Remove item via model collection (index: {{dtTable.selectedRows[0].index}})</span></button>
-        <button class="btn" ng-show="vm.canRemoveItem()" ng-click="vm.removeItemViaDt(dtTable.selectedRows[0])"><span>Remove item via datatables (index: {{dtTable.selectedRows[0].index}})</span></button>
+        <div style="display: inline" ng-if="dtTable.selectedRows.length == 1">
+            <button class="btn" ng-show="vm.canRemoveItem()" ng-click="vm.editItem(dtTable.selectedRows[0])"><span>Edit item: {{dtTable.selectedRows[0].index}})</span></button>
+            <button class="btn" ng-show="vm.canRemoveItem()" ng-click="vm.removeItem(dtTable.selectedRows[0].index)"><span>Remove item via model collection (index: {{dtTable.selectedRows[0].index}})</span></button>
+            <button class="btn" ng-show="vm.canRemoveItem()" ng-click="vm.removeItemViaDt(dtTable.selectedRows[0])"><span>Remove item via datatables (index: {{dtTable.selectedRows[0].index}})</span></button>
+        </div>
     </div>
+    
     
 
 

@@ -12,7 +12,7 @@
                 this.initialize();
             }
             BrowsersController.prototype.initialize = function () {
-                for (var i = 0; i < 1000; i++) {
+                for (var i = 0; i < 100; i++) {
                     var subItems = [];
                     for (var j = 0; j < i; j++) {
                         subItems.push({
@@ -29,6 +29,9 @@
                         "subItems": subItems
                     });
                 }
+
+                this.versions = [1, 2, 3, 4, 5, 6, 7];
+                this.versionGroups = [{ label: 'Group1', items: [1, 2, 3] }, { label: 'Group2', items: [4, 5, 6] }];
 
                 this.options = {
                     stateSave: false,
@@ -48,20 +51,106 @@
                         { data: "engine", title: "Engine", className: "text-right", type: "string", editable: { validators: { required: true } } },
                         { data: "browser", title: "Browser", type: "string", editable: true },
                         { data: "platform", title: "Platform", type: "string", editable: true },
-                        { data: "version", title: "Version", type: "number", editable: true },
+                        {
+                            data: "version", title: "Version", type: "number",
+                            //Settings1 - with a placeholder
+                            //editable: {
+                            //    validators: { required: true },
+                            //    options: [{ text: 'Version 1', value: 1 }, { text: 'Version 2', value: 2 }],
+                            //    type: 'select',
+                            //    settings: {
+                            //        allowClear: true,
+                            //        placeholder: 'Select a version',
+                            //        width: '150px'
+                            //    }
+                            //}
+                            //Setting2 - with a placeholder and custom option model - using the vm property versions
+                            //editable: {
+                            //    type: 'select',
+                            //    settings: {
+                            //        allowClear: true,
+                            //        placeholder: 'Select a version',
+                            //        width: '150px'
+                            //    },
+                            //    template: {
+                            //        option: {
+                            //            attrs: {
+                            //                'ng-repeat': 'item in vm.versions',
+                            //                'ng-bind': 'item',
+                            //                'ng-value': 'item',
+                            //            }
+                            //        }
+                            //    }
+                            //}
+                            //Settings3 - using groups with a placeholder
+                            //editable: {
+                            //    validators: { required: true },
+                            //    groups: [
+                            //        { name: 'Group 1', options: [{ text: 'Version 1', value: 1 }, { text: 'Version 2', value: 2 }] },
+                            //        { name: 'Group 2', options: [{ text: 'Version 3', value: 3 }, { text: 'Version 4', value: 4 }] }],
+                            //    type: 'select',
+                            //    settings: {
+                            //        allowClear: true,
+                            //        placeholder: 'Select a version',
+                            //        width: '150px'
+                            //    }
+                            //}
+                            //Settings4 - using groups with a placeholder and custom group model
+                            editable: {
+                                validators: { required: true },
+                                groups: true,
+                                type: 'select',
+                                settings: {
+                                    allowClear: true,
+                                    placeholder: 'Select a version',
+                                    width: '150px'
+                                },
+                                template: {
+                                    optgroup: {
+                                        attrs: {
+                                            'ng-repeat': 'group in vm.versionGroups',
+                                            'label': '{{group.label}}'
+                                        }
+                                    },
+                                    option: {
+                                        attrs: {
+                                            'ng-repeat': 'item in group.items',
+                                            'ng-bind': 'item',
+                                            'ng-value': 'item'
+                                        }
+                                    }
+                                }
+                            }
+                        },
                         { data: "grade", title: "Grade", type: "string", editable: true },
-                        { data: "date", title: "Date", type: "date", editable: true, expression: "data.date | date:'shortDate'" },
+                        {
+                            data: "date", title: "Date", type: "datetime", width: "200px",
+                            editable: {
+                                validators: { required: true },
+                                template: {
+                                    time: { attrs: { 'data-minute-step': 10 } }
+                                }
+                            },
+                            expression: "data.date | date:'shortDate'"
+                        },
                         { template: "#options-tpl" }
                     ],
                     editable: {
-                        createItem: this.getNewItem.bind(this),
-                        validate: function (val, validator, row) {
-                            switch (validator.name) {
-                                case 'required':
-                                    return !validator.options || (val != null && val != '');
-                                default:
-                                    throw 'Unknown validator ' + validator.name;
-                            }
+                        adapters: {
+                            data: {
+                                settings: {
+                                    createItem: this.getNewItem.bind(this),
+                                    validate: function (val, validator, row) {
+                                        switch (validator.name) {
+                                            case 'required':
+                                                return !validator.options || (val != null && val != '');
+                                            default:
+                                                throw 'Unknown validator ' + validator.name;
+                                        }
+                                    }
+                                }
+                            },
+                            display: {}
                         },
                         language: {
                             validators: {
@@ -71,13 +160,13 @@
                     },
                     rowDetails: {
                         template: {
-                            url: 'App/views/browsersDetails.html'
+                            url: 'App/angular/views/browsersDetails.html'
                         }
                     },
                     tableTools: {
                         "sRowSelect": "os",
                         "sSwfPath": "libs/datatables/extensions/TableTools/swf/copy_csv_xls_pdf.swf",
-                        "aButtons": ["copy", "pdf", "select_all", "select_none"]
+                        "aButtons": ["select_all", "select_none", "editable_remove", "editable_add"]
                     },
                     dom: "<'row'<'col-xs-6'l><'col-xs-6'f>r>" + "T" + "D" + "C" + "E" + "t" + "<'row'<'col-xs-6'i><'col-xs-6'p>>R"
                 };

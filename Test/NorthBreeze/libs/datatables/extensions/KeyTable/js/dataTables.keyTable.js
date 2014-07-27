@@ -104,15 +104,15 @@ KeyTable = function ( oInit )
 	 *           int:y - y coordinate
 	 * Notes:    Thanks to Rohan Daxini for the basis of this function
 	 */
-	this.fnSetPosition = function( x, y )
+	this.fnSetPosition = function( x, y, event )
 	{
 		if ( typeof x == 'object' && x.nodeName )
 		{
-			_fnSetFocus( x );
+		    _fnSetFocus(x, true, event);
 		}
 		else
 		{
-			_fnSetFocus( _fnCellFromCoords(x, y) );
+		    _fnSetFocus(_fnCellFromCoords(x, y), true, event);
 		}
 	};
 
@@ -185,7 +185,8 @@ KeyTable = function ( oInit )
 		"action": [],
 		"esc": [],
 		"focus": [],
-		"blur": []
+		"blur": [],
+		"bluring": [],
 	};
 
 	/*
@@ -376,16 +377,20 @@ KeyTable = function ( oInit )
 	/*
 	 * Function: _fnEventFire
 	 * Purpose:  Look thought the events cache and fire off the event of interest
-	 * Returns:  int:iFired - number of events fired
+	 * Returns:  object:  
+	 *              int:fired - number of events fired
+	 *              array: results - results of the fired event functions
 	 * Inputs:   string:sType - type of event to look for
 	 *           int:x - x coord of cell
 	 *           int:y - y coord of  ell
+	 *           Event: event - event that is responsable for the action
 	 * Notes:    It might be more efficient to return after the first event has been tirggered,
 	 *           but that would mean that only one function of a particular type can be
 	 *           subscribed to a particular node.
 	 */
 	function _fnEventFire ( sType, x, y, event )
 	{
+        var aoResults= [];
 		var iFired = 0;
 		var aEvents = _oaoEvents[sType];
 		for ( var i=0 ; i<aEvents.length ; i++ )
@@ -396,11 +401,16 @@ KeyTable = function ( oInit )
 				 (aEvents[i].x === null && aEvents[i].y === null )
 			)
 			{
-			    aEvents[i].fn(_fnCellFromCoords(x, y), x, y, event);
+			    var oResult = aEvents[i].fn(_fnCellFromCoords(x, y), x, y, event);
+			    if (oResult !== undefined)
+			        aoResults.push(oResult);
 				iFired++;
 			}
 		}
-		return iFired;
+		return {
+		    fired: iFired,
+		    results: aoResults
+		};
 	}
 
 
@@ -430,9 +440,9 @@ KeyTable = function ( oInit )
 		}
 
 		/* Remove old focus (with blur event if needed) */
-		if ( _nOldFocus !== null )
+		if (_nOldFocus !== null && !_fnRemoveFocus(_nOldFocus, event))
 		{
-			_fnRemoveFocus( _nOldFocus );
+            return;
 		}
 
 		/* Add the new class to highlight the focused cell */
@@ -586,13 +596,14 @@ KeyTable = function ( oInit )
 	 * Returns:  -
 	 * Inputs:   -
 	 */
-	function _fnBlur()
-	{
-		_fnRemoveFocus( _nOldFocus );
+	function _fnBlur(e) {
+	    if (!_fnRemoveFocus(_nOldFocus, e))
+	        return false;
 		_iOldX = null;
 		_iOldY = null;
 		_nOldFocus = null;
 		_fnReleaseKeys();
+	    return true;
 	}
 
 
@@ -602,11 +613,18 @@ KeyTable = function ( oInit )
 	 * Returns:  -
 	 * Inputs:   node:nTarget - cell of interest
 	 */
-	function _fnRemoveFocus( nTarget )
+	function _fnRemoveFocus( nTarget, event )
 	{
+	    var obj = _fnEventFire('bluring', _iOldX, _iOldY, event);
+	    if (obj.results.length) {
+	        for (var i = 0; i < obj.results.length; i++) {
+	            if (obj.results[i] === false) return false;
+	        }
+	    }
 		$(nTarget).removeClass( _sFocusClass );
 		$(nTarget).parent().removeClass( _sFocusClass );
-		_fnEventFire( "blur", _iOldX, _iOldY );
+		_fnEventFire("blur", _iOldX, _iOldY, event);
+	    return true;
 	}
 
 
@@ -690,14 +708,14 @@ KeyTable = function ( oInit )
 			case 13: /* return */
 				e.preventDefault();
 				e.stopPropagation();
-				_fnEventFire( "action", _iOldX, _iOldY );
+				_fnEventFire( "action", _iOldX, _iOldY, e );
 				return true;
 
 			case 27: /* esc */
-				if ( !_fnEventFire( "esc", _iOldX, _iOldY ) )
+				if ( !_fnEventFire( "esc", _iOldX, _iOldY, e ).fired )
 				{
 					/* Only lose focus if there isn't an escape handler on the cell */
-					_fnBlur();
+				    if (!_fnBlur(e)) return false;
 					return;
 				}
 				x = _iOldX;
@@ -727,7 +745,7 @@ KeyTable = function ( oInit )
 						 */
 						setTimeout( function(){ _bInputFocused = false; }, 0 );
 						_bKeyCapture = false;
-						_fnBlur();
+					    if (!_fnBlur(e)) return false;
 						return true;
 					}
 					else
@@ -782,7 +800,7 @@ KeyTable = function ( oInit )
 						 */
 						setTimeout( function(){ _bInputFocused = false; }, 0 );
 						_bKeyCapture = false;
-						_fnBlur();
+						if (!_fnBlur(e)) return false;
 						return true;
 					}
 					else
@@ -817,7 +835,6 @@ KeyTable = function ( oInit )
 			default: /* Nothing we are interested in */
 				return true;
 		}
-
 		_fnSetFocus( _fnCellFromCoords(x, y), null, e );
 		return false;
 	}
@@ -895,16 +912,13 @@ KeyTable = function ( oInit )
 	{
 		if ( _oDatatable )
 		{
-			return [
-				$('td', n.parentNode).index(n),
-                n.parentNode._DT_RowIndex
-			];
+		    return _fnFindDtCell(n);
 		}
-		else
-		{
+		else {
+		    var $n = $(n);
 			return [
-				$('td', n.parentNode).index(n),
-				n.parentNode._DT_RowIndex
+				$('td', $n.closest('tr')).index(n),
+                $('tr', $n.closest('tbody')).index(n)
 			];
 		}
 	}
@@ -973,18 +987,26 @@ KeyTable = function ( oInit )
 	 * Inputs:   node:nTarget - the node of interest
 	 */
 	function _fnFindDtCell(nTarget) {
-	    var nTr = nTarget.parentNode;
-	    if (nTr != null) {
-	        var nTds = nTr.getElementsByTagName('td');
-	        for ( var j=0, jLen=nTds.length ; j<jLen ; j++ )
-	        {
-	            if ( nTds[j] == nTarget )
-	            {
-	                return [j, nTr._DT_RowIndex];
-	            }
+	    if (nTarget == null || nTarget.parentNode == null) return null;
+	    var nTr = nTarget.parentNode,
+	        aiDisplay = _oDatatable.aiDisplay,
+            nTds = nTr.getElementsByTagName('td'),
+	        i, x,y;
+
+	    for (i = 0; i < aiDisplay.length; i++) {
+	        if (aiDisplay[i] === nTr._DT_RowIndex) {
+	            y = i;
+	            break;
+	        }     
+	    }
+
+	    for ( i=0; i < nTds.length; i++ ) {
+	        if ( nTds[i] == nTarget ) {
+	            x = i;
+	            break;
 	        }
 	    }
-		return null;
+	    return [x, y];
 	}
 
 
@@ -1040,7 +1062,6 @@ KeyTable = function ( oInit )
 			oInit.form = false;
 		}
 		_bForm = oInit.form;
-
 		/* Cache the tbody node of interest */
 		_nBody = oInit.table.getElementsByTagName('tbody')[0];
 
@@ -1087,11 +1108,11 @@ KeyTable = function ( oInit )
 			/* Set the initial focus on the table */
 			if ( typeof oInit.focus.nodeName != "undefined" )
 			{
-				_fnSetFocus( oInit.focus, oInit.initScroll );
+				_fnSetFocus( oInit.focus, oInit.initScroll, e );
 			}
 			else
 			{
-			    _fnSetFocus(_fnCellFromCoords(oInit.focus[0], oInit.focus[1]), oInit.initScroll);
+			    _fnSetFocus(_fnCellFromCoords(oInit.focus[0], oInit.focus[1]), oInit.initScroll, e);
 			}
 			_fnCaptureKeys();
 		}
@@ -1123,7 +1144,8 @@ KeyTable = function ( oInit )
 			}
 			if ( !bTableClick )
 			{
-				_fnBlur();
+
+				_fnBlur(e);
 			}
 		} );
 	}

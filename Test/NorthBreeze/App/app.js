@@ -1,6 +1,16 @@
 ﻿'use strict';
 
-var app = angular.module('app', ['ngRoute', 'dt', 'breeze.angular', 'jaydata', 'ui.bootstrap']);
+var app = angular.module('app', ['ngRoute', 'dt', 'breeze.angular', 'jaydata', 'ui.bootstrap', 'mgcrea.ngStrap', 'ui.select2']);
+
+////Workaround for manually trigger tooltips 
+////http://stackoverflow.com/questions/20939754/good-way-to-dynamically-open-close-a-popover-or-tooltip-using-angular-based
+////https://github.com/angular-ui/bootstrap/issues/590
+////var tooltipToggle = bootstrap.Directives.TooltipToggle.directiveSettings();
+//var popoverToggle = bootstrap.Directives.TooltipToggle.directiveSettings('popover', 'popoverHtmlUnsafe');
+//app.directive(popoverToggle.directiveName, popoverToggle.directive)
+//        .config(popoverToggle.directiveConfig);
+
+
 
 // Define route objects, which are used by the routeProvider (for loading ng-view) and by the RouteCtrl (for displaying navigation bar)
 app.modules = [

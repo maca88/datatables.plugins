@@ -1,11 +1,11 @@
-/*! FixedColumns 3.0.2-dev
+/*! FixedColumns 3.0.2
  * ©2010-2014 SpryMedia Ltd - datatables.net/license
  */
 
 /**
  * @summary     FixedColumns
  * @description Freeze columns in place on a scrolling DataTable
- * @version     3.0.2-dev
+ * @version     3.0.2
  * @file        dataTables.fixedColumns.js
  * @author      SpryMedia Ltd (www.sprymedia.co.uk)
  * @contact     www.sprymedia.co.uk/contact
@@ -1276,7 +1276,7 @@
          *  @default   See code
          *  @static
          */
-        FixedColumns.version = "3.0.2-dev";
+        FixedColumns.version = "3.0.2";
 
 
 
@@ -1307,7 +1307,11 @@
 
     // Define as an AMD module if possible
     if (typeof define === 'function' && define.amd) {
-        define('datatables-fixedcolumns', ['jquery', 'datatables'], factory);
+        define(['jquery', 'datatables'], factory);
+    }
+    else if (typeof exports === 'object') {
+        // Node/CommonJS
+        factory(require('jquery'), require('datatables'));
     }
     else if (jQuery && !jQuery.fn.dataTable.FixedColumns) {
         // Otherwise simply initialise as normal, stopping multiple evaluation
@@ -1316,3 +1320,4 @@
 
 
 })(window, document);
+
