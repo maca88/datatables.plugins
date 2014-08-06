@@ -9,6 +9,7 @@
             this.dt.api = api;
             this.dt.settings = api.settings()[0];
             this.settings = settings;
+            this.$templateCache = this.dt.settings.oInit.angular.$templateCache;
         }
         AngularRowDetailsAdapter.prototype.rowExpanded = function (row, rowDetails) {
             var rowScope = angular.element(row.node()).scope();
@@ -26,6 +27,14 @@
             if (!rowScope.$$phase)
                 rowScope.$digest();
         };
+
+        AngularRowDetailsAdapter.prototype.cacheTemplate = function (url, template) {
+            this.$templateCache.put(url, template);
+        };
+
+        AngularRowDetailsAdapter.prototype.getTemplate = function (url) {
+            return this.$templateCache.get(url);
+        };
         return AngularRowDetailsAdapter;
     })();
     dt.AngularRowDetailsAdapter = AngularRowDetailsAdapter;
@@ -39,8 +48,7 @@
             this.initialized = false;
             this.dom = {
                 btnGroup: null,
-                btnCollapseAll: null,
-                btnExpandAll: null
+                buttons: []
             };
             this.settings = $.extend(true, {}, RowDetails.defaultSettings, settings);
             this.dt.settings = api.settings()[0];
@@ -141,29 +149,51 @@
                 };
             });
 
-            this.dom.btnGroup = $('<div/>', { 'class': 'btn-group' });
+            this.setupButtons();
+        };
 
-            this.dom.btnCollapseAll = $('<div/>', { 'class': 'btn btn-default btn-sm', 'title': 'Collapse all' }).append($('<span/>', { 'class': 'glyphicon glyphicon-move' }));
-            this.dom.btnCollapseAll.click(function (e) {
-                e.preventDefault();
-                if (!_this.dt.api.table().hasRows())
+        RowDetails.prototype.setupButtons = function () {
+            var _this = this;
+            var groupOpt = this.settings.buttonPanel;
+            this.dom.btnGroup = $('<div/>').addClass(groupOpt.classes.join(' ')).attr(groupOpt.attrs);
+            var lang = this.settings.language;
+            $.each(this.settings.buttons, function (key, opt) {
+                if (!opt.visible)
                     return;
-                _this.dt.api.rows({ page: 'current' }).nodes().each(function (i, tr) {
-                    _this.dt.api.row(tr).closeDetails();
-                });
+                var btn = $('<' + opt.tagName + '/>').attr('title', lang[key]).attr(opt.attrs).addClass(opt.classes.join(' ')).on('click', function (e) {
+                    return opt.click.call(_this, e);
+                }).append(opt.html || lang[key]);
+                _this.dom.buttons.push(btn);
+                _this.dom.btnGroup.append(btn);
             });
+        };
 
-            this.dom.btnExpandAll = $('<div/>', { 'class': 'btn btn-default btn-sm', 'title': 'Expand all' }).append($('<span/>', { 'class': 'glyphicon glyphicon-fullscreen' }));
-            this.dom.btnExpandAll.click(function (e) {
-                e.preventDefault();
-                if (!_this.dt.api.table().hasRows())
-                    return;
-                _this.dt.api.table().rows({ page: 'current' }).nodes().each(function (i, tr) {
-                    _this.dt.api.row(tr).openDetails();
-                });
-            });
+        RowDetails.prototype.getFeatureElement = function () {
+            if (this.dom.buttons.length)
+                return this.dom.btnGroup[0];
+            else
+                return null;
+        };
 
-            this.dom.btnGroup.append(this.dom.btnCollapseAll, this.dom.btnExpandAll);
+        RowDetails.prototype.getTemplate = function (url) {
+            if (this.bindingAdapterInstance)
+                return this.bindingAdapterInstance.getTemplate(url);
+            else
+                return dt.RowDetails.templates[url];
+        };
+
+        RowDetails.prototype.hasTemplate = function (url) {
+            if (this.bindingAdapterInstance)
+                return !!this.bindingAdapterInstance.getTemplate(url);
+            else
+                return dt.RowDetails.templates.hasOwnProperty(url);
+        };
+
+        RowDetails.prototype.cacheTemplate = function (url, template) {
+            if (this.bindingAdapterInstance)
+                this.bindingAdapterInstance.cacheTemplate(url, template);
+            else
+                dt.RowDetails.templates[url] = template;
         };
 
         RowDetails.prototype.registerCallbacks = function () {
@@ -184,7 +214,40 @@
                     return true;
                 }
             },
+            behavior: 'default',
             destroyOnClose: false,
+            buttonPanel: {
+                attrs: {},
+                classes: []
+            },
+            buttons: {
+                expandAll: {
+                    visible: false,
+                    tagName: 'button',
+                    html: null,
+                    attrs: {},
+                    classes: [],
+                    click: function (e) {
+                        e.preventDefault();
+                        if (!this.dt.api.table().hasRows())
+                            return;
+                        this.dt.api.table().rows().expandAll();
+                    }
+                },
+                collapseAll: {
+                    visible: false,
+                    tagName: 'button',
+                    html: null,
+                    attrs: {},
+                    classes: [],
+                    click: function (e) {
+                        e.preventDefault();
+                        if (!this.dt.api.table().hasRows())
+                            return;
+                        this.dt.api.table().rows().collapseAll();
+                    }
+                }
+            },
             trClass: 'sub',
             tdClass: '',
             created: null,
@@ -192,7 +255,11 @@
             destroying: null,
             closed: null,
             bindingAdapter: null,
-            template: null
+            template: null,
+            language: {
+                'collapseAll': 'Collapse all',
+                'expandAll': 'Expand all'
+            }
         };
         RowDetails.templates = {};
         return RowDetails;
@@ -269,9 +336,9 @@
             if ($.isFunction(tplSetttings.url))
                 tplUrl = tplSetttings.url.call(rowDetails, row);
 
-            if (tplSetttings !== false && dt.RowDetails.templates.hasOwnProperty(tplUrl)) {
+            if (rowDetails.hasTemplate(tplUrl)) {
                 //retirive template from cache
-                createdAction(dt.RowDetails.templates[tplUrl]);
+                createdAction(rowDetails.getTemplate(tplUrl));
                 return;
             }
 
@@ -287,7 +354,7 @@
                 tplSetttings.requesting.call(rowDetails, row, innerDetails);
 
             $.ajax(ajaxSettings).done(function (msg) {
-                dt.RowDetails.templates[tplUrl] = msg;
+                rowDetails.cacheTemplate(tplUrl, msg);
                 createdAction(msg);
             });
         } else if ($.isFunction(settings.template)) {
@@ -306,6 +373,8 @@
         if (!rowDetails)
             throw 'RowDetails plugin is not initialized';
         settings = $.extend(true, {}, rowDetails.settings, settings);
+        var behavior = rowDetails.settings.behavior;
+
         var row = this;
 
         var filledAction = function () {
@@ -313,16 +382,27 @@
                 return;
 
             var td = $(row.node()).find('.' + settings.icon.className).closest('td');
-            var detailsRows = row.child().css('display', '');
+
+            var subRow = row.child();
+            if (!subRow)
+                return;
+            var detailsRows = subRow.css('display', '');
             $.each(detailsRows, function (idx, item) {
                 dt.RowDetails.animateElement($(item), settings.animation, 'open');
                 $(item).slideDown();
             });
             var details = $('div.innerDetails', detailsRows);
+
+            if (behavior === 'accordion') {
+                if (rowDetails.lastOpenedRow)
+                    rowDetails.lastOpenedRow.closeDetails();
+            }
             dt.RowDetails.animateElement(details, settings.animation, 'open');
 
             $('.dt-open-icon', td).hide();
             $('.dt-close-icon', td).show();
+
+            rowDetails.lastOpenedRow = row;
 
             if ($.isFunction(settings.opened))
                 settings.opened.call(rowDetails, row, td);
@@ -376,7 +456,23 @@
     $.fn.DataTable.Api.register('row().toggleDetails()', function (settings) {
         this.isOpen() ? this.closeDetails(settings) : this.openDetails(settings);
     });
-
+    $.fn.DataTable.Api.register('rows().collapseAll()', function (settings) {
+        var api = this;
+        this.iterator('row', function (dtSettings, row, thatIdx) {
+            api.row(row).closeDetails();
+        });
+    });
+    $.fn.DataTable.Api.register('rows().expandAll()', function (settings) {
+        var rowDetails = this.settings()[0].rowDetails;
+        if (!rowDetails)
+            throw 'RowDetails plugin is not initialized';
+        if (rowDetails.settings.behavior === 'accordion')
+            throw 'expandAll is not supported when behavior is set to accordion';
+        var api = this;
+        this.iterator('row', function (dtSettings, row, thatIdx) {
+            api.row(row).openDetails();
+        });
+    });
     $.fn.DataTable.Api.register('rowDetails.init()', function (settings) {
         var rowDetails = new dt.RowDetails(this, settings);
         if (this.settings()[0]._bInitComplete)
@@ -386,7 +482,7 @@
                 rowDetails.initialize();
             });
 
-        return rowDetails.dom.btnGroup;
+        return rowDetails.getFeatureElement();
     });
 
     //Add as feature
@@ -398,10 +494,28 @@
         "sFeature": "RowDetails"
     });
 
+    var checkAngularModulePresence = function (moduleName) {
+        if (angular === undefined)
+            return false;
+        try  {
+            angular.module(moduleName);
+            return true;
+        } catch (err) {
+            return false;
+        }
+    };
+
     //Integrate with boostrap 3 if present
-    if ((typeof $().emulateTransitionEnd == 'function')) {
+    if ((typeof $().emulateTransitionEnd == 'function') || checkAngularModulePresence("ui.bootstrap") || checkAngularModulePresence("mgcrea.ngStrap")) {
         dt.RowDetails.defaultSettings.icon.openHtml = '<span class="glyphicon glyphicon-plus row-detail-icon"></span>';
         dt.RowDetails.defaultSettings.icon.closeHtml = '<span class="glyphicon glyphicon-minus row-detail-icon"></span>';
+        dt.RowDetails.defaultSettings.buttonPanel.classes.push('btn-group');
+        dt.RowDetails.defaultSettings.buttons.expandAll.tagName = 'div';
+        dt.RowDetails.defaultSettings.buttons.expandAll.classes.push('btn btn-default btn-sm');
+        dt.RowDetails.defaultSettings.buttons.expandAll.html = '<span class="glyphicon glyphicon-fullscreen"></span>';
+        dt.RowDetails.defaultSettings.buttons.collapseAll.tagName = 'div';
+        dt.RowDetails.defaultSettings.buttons.collapseAll.classes.push('btn btn-default btn-sm');
+        dt.RowDetails.defaultSettings.buttons.collapseAll.html = '<span class="glyphicon glyphicon-move"></span>';
     }
 }(window, document, undefined));
 //# sourceMappingURL=dataTables.rowDetails.js.map

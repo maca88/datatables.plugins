@@ -160,7 +160,11 @@
                                     createItem: this.getNewItem.bind(this)
                                 }
                             },
-                            display: {}
+                            display: {
+                                plugins: {
+                                    cellValidation: dt.editable.InlineDisplayServiceCellValidationPlugin
+                                }
+                            }
                         },
                         editor: {
                             type: dt.editable.BatchEditor
@@ -172,6 +176,15 @@
                         }
                     },
                     rowDetails: {
+                        behavior: 'accordion',
+                        buttons: {
+                            collapseAll: {
+                                visible: true
+                            },
+                            expandAll: {
+                                visible: true
+                            }
+                        },
                         template: {
                             url: 'App/angular/views/browsersDetails.html'
                         }

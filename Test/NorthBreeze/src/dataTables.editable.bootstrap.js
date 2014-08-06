@@ -105,6 +105,11 @@ var dt;
             //Register commands
             dt.CommandTablePlugin.registerCommand(BootstrapRemoveCommand);
             dt.CommandTablePlugin.registerCommand(BootstrapIconRemoveCommand);
+
+            //#endregion
+            //#endregion
+            //Setup editable plugins
+            dt.editable.InlineDisplayServiceCellValidationPlugin.settings.className = 'help-block error';
         })(editable.bootstrap || (editable.bootstrap = {}));
         var bootstrap = editable.bootstrap;
     })(dt.editable || (dt.editable = {}));

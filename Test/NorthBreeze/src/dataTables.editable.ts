@@ -53,7 +53,7 @@ module dt.editable {
         
         cellCompiling(args: dt.ICellCompilingArgs): void;
         cellCompiled(args: dt.ICellCompiledArgs): void;
-        setupColumnTemplate(opts: IColumnTemplateSetupArgs): void;
+        setupColumnTemplate(args: IColumnTemplateSetupArgs): void;
         mergeCellErrors(errors: ValidationError[]): string;
 
 
@@ -84,7 +84,7 @@ module dt.editable {
     }
 
     export interface IDisplayServiceCellValidationPlugin {
-        setupColumnTemplate(opts: IColumnTemplateSetupArgs): void;
+        setupColumnTemplate(args: IColumnTemplateSetupArgs): void;
         mergeErrors(errors: ValidationError[]): string;
     }
 
@@ -209,8 +209,8 @@ module dt.editable {
                     plugins: {
                         editTypes: [],
                         style: null,
-                        cellValidation: null,
-                        rowValidation: null,
+                        cellValidation: InlineDisplayServiceCellValidationPlugin,
+                        rowValidation: InlineDisplayServiceRowValidationPlugin,
                     },
                 },
                 i18N: {
@@ -366,6 +366,15 @@ module dt.editable {
             }
         }
 
+        public static mergeErrors(errors: ValidationError[]): string {
+            if (!errors) return null;
+            var msg = ' '; //the default mesasge must be evaluated to true as the angularstrap check it at init
+            for (var i = 0; i < errors.length; i++) {
+                msg += errors[i].message + '<br />';
+            }
+            return msg;
+        }
+
         public static getColumnType(col) {
             var editablOpts = col.editable || {};
             return editablOpts.type || col._sManualType || col.sType;
@@ -478,7 +487,7 @@ module dt.editable {
                 'i18Service': this.i18NService
             };
             if (!displayService.type) 
-                displayService.type = DefaultDisplayAdapter;
+                displayService.type = DefaultDisplayService;
             //Instantiate the display adapter with the angular DI
             this.displayService = this.$injector.instantiate(displayService.type, locals);
         }
@@ -754,7 +763,46 @@ module dt.editable {
 
     //#endregion
 
-    export class DefaultDisplayAdapter implements IDisplayService {
+
+    export class InlineDisplayServiceCellValidationPlugin implements IDisplayServiceCellValidationPlugin {
+
+        public static settings = {
+            tagName: 'p',
+            className: ''
+        };
+
+        public setupColumnTemplate(args: IColumnTemplateSetupArgs): void {
+            var settings = InlineDisplayServiceCellValidationPlugin.settings;
+            var elem =
+                $('<div />')
+                    .append(
+                    $('<' + settings.tagName + '/>')
+                        .attr({
+                            'ng-repeat': 'error in $cellErrors',
+                            'ng-bind': 'error.message',
+                        })
+                        .addClass(settings.className)
+                    );
+            args.editCtrl.contentAfter.push(elem.html());
+        }
+
+        public mergeErrors(errors: ValidationError[]): string {
+            return Editable.mergeErrors(errors);
+        }
+    }
+
+    export class InlineDisplayServiceRowValidationPlugin implements IDisplayServiceRowValidationPlugin {
+
+        public setupRowTemplate(args: IRowTemplateSetupArgs): void {
+            //TODO
+        }
+
+        public mergeErrors(errors: ValidationError[]): string {
+            return Editable.mergeErrors(errors);
+        }
+    }
+
+    export class DefaultDisplayService implements IDisplayService {
         public dt = {
             settings: null,
             api: null
@@ -795,6 +843,8 @@ module dt.editable {
                 this.stylePlugin = this.$injector.instantiate(plugins.style, locals);
             }
 
+
+
             //Setup validation plugins
             this.cellValidationPlugin = this.$injector.instantiate(plugins.cellValidation, locals);
             this.rowValidationPlugin = this.$injector.instantiate(plugins.rowValidation, locals);
@@ -815,8 +865,15 @@ module dt.editable {
 
         public cellCompiled(args: dt.ICellCompiledArgs): void {
             var type = Editable.getColumnType(args.column);
+
+            var scope = args.scope;
+            scope.$getCellState = () => {
+                return scope.$getRowForm()[args.column.name || args.column.mData];
+            };
+
             if (this.pluginTypes.hasOwnProperty(type))
                 this.pluginTypes[type].cellCompiled(args);
+            
         }
 
         public rowCompiling(args: dt.IRowCompilingArgs): void {
@@ -1424,7 +1481,6 @@ module dt.editable {
         var ctx = this.settings()[0];
         ctx.editable.editor.editRow(this.index());
     });
-
     $.fn.DataTable.Api.register('row().save()', function () {
         var ctx = this.settings()[0];
         ctx.editable.editor.saveRow(this.index());

@@ -96,6 +96,8 @@
 
     //#endregion
 
+    //Setup editable plugins
+    dt.editable.InlineDisplayServiceCellValidationPlugin.settings.className = 'help-block error';
 }
 
 (function (window, document, undefined) {

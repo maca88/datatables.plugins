@@ -531,6 +531,11 @@ var dt;
 
             //this.settings.options.data = attrs.dtData ? scope.$eval(attrs.dtData) : this.settings.options.data;
             this.settings.collectionPath = attrs.dtData ? attrs.dtData : attrs.dtOptions + '.data';
+
+            this.mergeNodeAttributesToObject($element[0], this.settings.options, [
+                "dt-table", "dt-data", "dt-width", "dt-invalidate-rows", "dt-debug",
+                "dt-digest-on-draw", "dt-row-binding", "dt-options", "dt-row-data-path"
+            ]);
             if (attrs.dtWidth)
                 $element.css('width', attrs.dtWidth);
         };
@@ -581,28 +586,13 @@ var dt;
         };
 
         Table.prototype.mergeDomColumn = function () {
+            var _this = this;
             var table = this.$element;
             var explicitColumns = [];
             angular.forEach(angular.element('thead>tr>th', table), function (node) {
                 var elem = angular.element(node);
                 var column = { title: elem.text() };
-                angular.forEach(node.attributes, function (nodeAttr) {
-                    if (nodeAttr.name.indexOf("dt-") !== 0)
-                        return;
-                    var words = nodeAttr.name.substring(3).split('-');
-                    var popName = '';
-                    angular.forEach(words, function (w) {
-                        if (popName.length)
-                            popName += w.charAt(0).toUpperCase() + w.slice(1);
-                        else
-                            popName += w;
-                    });
-                    column[popName] = elem.attr(nodeAttr.name);
-                    if (column[popName] && column[popName].toUpperCase() == 'TRUE')
-                        column[popName] = true;
-                    else if (column[popName] && column[popName].toUpperCase() == 'FALSE')
-                        column[popName] = false;
-                });
+                _this.mergeNodeAttributesToObject(node, column);
                 explicitColumns.push(column);
             });
 
@@ -610,6 +600,28 @@ var dt;
             if (explicitColumns.length > 0) {
                 this.settings.options.columns = explicitColumns;
             }
+        };
+
+        Table.prototype.mergeNodeAttributesToObject = function (node, obj, ignoreAttrs) {
+            if (typeof ignoreAttrs === "undefined") { ignoreAttrs = []; }
+            var $node = angular.element(node);
+            angular.forEach(node.attributes, function (nodeAttr) {
+                if (nodeAttr.name.indexOf("dt-") !== 0 || ignoreAttrs.indexOf(nodeAttr.name) >= 0)
+                    return;
+                var words = nodeAttr.name.substring(3).split('-');
+                var popName = '';
+                angular.forEach(words, function (w) {
+                    if (popName.length)
+                        popName += w.charAt(0).toUpperCase() + w.slice(1);
+                    else
+                        popName += w;
+                });
+                obj[popName] = $node.attr(nodeAttr.name);
+                if (obj[popName] && obj[popName].toUpperCase() == 'TRUE')
+                    obj[popName] = true;
+                else if (obj[popName] && obj[popName].toUpperCase() == 'FALSE')
+                    obj[popName] = false;
+            });
         };
 
         Table.prototype.fillWatchedProperties = function (row) {

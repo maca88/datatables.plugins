@@ -21,13 +21,7 @@
                 };
 
                 DisplayServicePopoverCellValidationPlugin.prototype.mergeErrors = function (errors) {
-                    if (!errors)
-                        return null;
-                    var msg = ' ';
-                    for (var i = 0; i < errors.length; i++) {
-                        msg += errors[i].message + '<br />';
-                    }
-                    return msg;
+                    return Editable.mergeErrors(errors);
                 };
                 return DisplayServicePopoverCellValidationPlugin;
             })();
@@ -49,13 +43,7 @@
                 };
 
                 DisplayServicePopoverRowValidationPlugin.prototype.mergeErrors = function (errors) {
-                    if (!errors)
-                        return null;
-                    var msg = ' ';
-                    for (var i = 0; i < errors.length; i++) {
-                        msg += errors[i].message + '<br />';
-                    }
-                    return msg;
+                    return Editable.mergeErrors(errors);
                 };
                 return DisplayServicePopoverRowValidationPlugin;
             })();

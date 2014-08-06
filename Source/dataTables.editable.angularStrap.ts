@@ -19,12 +19,7 @@
         }
 
         public mergeErrors(errors: ValidationError[]): string {
-            if (!errors) return null;
-            var msg = ' '; //the default mesasge must be evaluated to true as the angularstrap check it at init
-            for (var i = 0; i < errors.length; i++) {
-                msg += errors[i].message + '<br />';
-            }
-            return msg;
+            return Editable.mergeErrors(errors);
         }
 
     }
@@ -44,12 +39,7 @@
         }
 
         public mergeErrors(errors: ValidationError[]): string {
-            if (!errors) return null;
-            var msg = ' '; //the default mesasge must be evaluated to true as the angularstrap check it at init
-            for (var i = 0; i < errors.length; i++) {
-                msg += errors[i].message + '<br />';
-            }
-            return msg;
+            return Editable.mergeErrors(errors);
         }
 
     }

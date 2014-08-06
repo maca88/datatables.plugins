@@ -198,6 +198,9 @@
                             }
                         },
                         display: {
+                            plugins: {
+                                cellValidation: dt.editable.InlineDisplayServiceCellValidationPlugin
+                            },
                         }
                     },
                     editor: {
@@ -210,6 +213,15 @@
                     }
                 },
                 rowDetails: {
+                    behavior: 'accordion',
+                    buttons: {
+                        collapseAll: {
+                            visible: true
+                        },
+                        expandAll: {
+                            visible: true
+                        },
+                    },
                     template: {
                         url: 'App/angular/views/browsersDetails.html'
                     }
@@ -223,7 +235,7 @@
                     "T" + //TableTools
                     "D" + //RowDetails
                     "C" + //ColVis
-                    "E" + //ColVis
+                    "E" + //Editable
                     "t" +
                     "<'row'<'col-xs-6'i><'col-xs-6'p>>R"
             };

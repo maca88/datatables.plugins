@@ -1,9 +1,10 @@
 ﻿module dt {
     
-
     export interface IRowDetailsBindingAdapter {
         rowExpanded(row, rowDetails): void;
-        rowCollapsed(row, iconCell):void;
+        rowCollapsed(row, iconCell): void;
+        cacheTemplate(url: string, template: string): void;
+        getTemplate(url: string): string;
     }
 
     export class AngularRowDetailsAdapter implements IRowDetailsBindingAdapter {
@@ -13,11 +14,13 @@
             api: null
         }
         private settings;
+        private $templateCache;
 
         constructor(api, settings) {
             this.dt.api = api;
             this.dt.settings = api.settings()[0];
             this.settings = settings;
+            this.$templateCache = this.dt.settings.oInit.angular.$templateCache;
         }
 
         public rowExpanded(row, rowDetails): void {
@@ -32,6 +35,14 @@
             if (!rowScope) return;
             if (!rowScope.$$phase) rowScope.$digest();
         }
+
+        public cacheTemplate(url: string, template: string): void {
+            this.$templateCache.put(url, template);
+        }
+
+        public getTemplate(url: string): string {
+            return this.$templateCache.get(url);
+        }
     }
 
     export class RowDetails {
@@ -45,7 +56,38 @@
                 defaultHtml: '',
                 hasIcon: (row) => { return true; }
             },
+            behavior: 'default', //accordion
             destroyOnClose: false,
+            buttonPanel: {
+                attrs: {},
+                classes: []
+            },
+            buttons: {
+                expandAll: {
+                    visible: false,
+                    tagName: 'button',
+                    html: null,
+                    attrs: {},
+                    classes: [],
+                    click: function(e) {
+                        e.preventDefault();
+                        if (!this.dt.api.table().hasRows()) return;
+                        this.dt.api.table().rows().expandAll();
+                    }
+                },
+                collapseAll: {
+                    visible: false,
+                    tagName: 'button',
+                    html: null,
+                    attrs: {},
+                    classes: [],
+                    click: function (e) {
+                        e.preventDefault();
+                        if (!this.dt.api.table().hasRows()) return;
+                        this.dt.api.table().rows().collapseAll();
+                    }
+                },
+            }, 
             trClass: 'sub',
             tdClass: '',
             created: null,
@@ -54,6 +96,12 @@
             closed: null,
             bindingAdapter: null,
             template: null,
+            language: {
+                'collapseAll': 'Collapse all',
+                'expandAll': 'Expand all'
+            }
+
+
             /*
             template: {
                 url: null,
@@ -71,10 +119,10 @@
         public initialized: boolean = false;
         public dom: any = {
             btnGroup: null,
-            btnCollapseAll: null,
-            btnExpandAll: null,
+            buttons: []
         };
         public bindingAdapterInstance: IRowDetailsBindingAdapter;
+        public lastOpenedRow;
 
         constructor(api, settings) {
             this.settings = $.extend(true, {}, RowDetails.defaultSettings, settings);
@@ -171,29 +219,54 @@
                 };
             });
 
-            this.dom.btnGroup = $('<div/>', { 'class': 'btn-group' });
+            this.setupButtons();
+        }
 
-            this.dom.btnCollapseAll = $('<div/>', { 'class': 'btn btn-default btn-sm', 'title': 'Collapse all' })
-                .append($('<span/>', { 'class': 'glyphicon glyphicon-move' }));
-            this.dom.btnCollapseAll.click((e) => {
-                e.preventDefault();
-                if (!this.dt.api.table().hasRows()) return;
-                this.dt.api.rows({ page: 'current' }).nodes().each((i, tr) => {
-                    this.dt.api.row(tr).closeDetails();
-                });
+        private setupButtons() {
+            var groupOpt = this.settings.buttonPanel;
+            this.dom.btnGroup = $('<div/>')
+                .addClass(groupOpt.classes.join(' '))
+                .attr(<Object>groupOpt.attrs);
+            var lang = this.settings.language;
+            $.each(this.settings.buttons, (key, opt) => {
+                if (!opt.visible) return;
+                var btn = $('<' + opt.tagName + '/>')
+                    .attr('title', lang[key])
+                    .attr(<Object>opt.attrs)
+                    .addClass(opt.classes.join(' '))
+                    .on('click', (e) => opt.click.call(this, e))
+                    .append(opt.html || lang[key]);
+                this.dom.buttons.push(btn);
+                this.dom.btnGroup.append(btn);
             });
+        }
 
-            this.dom.btnExpandAll = $('<div/>', { 'class': 'btn btn-default btn-sm', 'title': 'Expand all' })
-                .append($('<span/>', { 'class': 'glyphicon glyphicon-fullscreen' }));
-            this.dom.btnExpandAll.click((e) => {
-                e.preventDefault();
-                if (!this.dt.api.table().hasRows()) return;
-                this.dt.api.table().rows({ page: 'current' }).nodes().each((i, tr) => {
-                    this.dt.api.row(tr).openDetails();
-                });
-            });
+        public getFeatureElement() {
+            if (this.dom.buttons.length)
+                return this.dom.btnGroup[0];
+            else
+                return null;
+        }
 
-            this.dom.btnGroup.append(this.dom.btnCollapseAll, this.dom.btnExpandAll);
+        public getTemplate(url): string {
+            if (this.bindingAdapterInstance)
+                return this.bindingAdapterInstance.getTemplate(url);
+            else
+                return dt.RowDetails.templates[url];
+        }
+
+        public hasTemplate(url): boolean {
+            if (this.bindingAdapterInstance)
+                return !!this.bindingAdapterInstance.getTemplate(url);
+            else
+                return dt.RowDetails.templates.hasOwnProperty(url);
+        }
+
+        public cacheTemplate(url, template) {
+            if (this.bindingAdapterInstance)
+                this.bindingAdapterInstance.cacheTemplate(url, template);
+            else
+                dt.RowDetails.templates[url] = template;
         }
 
         private registerCallbacks() {
@@ -228,7 +301,7 @@
             return;
         } //we will not fill rows that are detached
 
-        var rowDetails = this.settings()[0].rowDetails;
+        var rowDetails: dt.RowDetails = this.settings()[0].rowDetails;
         if (!rowDetails)
             throw 'RowDetails plugin is not initialized';
         settings = $.extend(true, {}, rowDetails.settings, settings);
@@ -278,9 +351,9 @@
             if ($.isFunction(tplSetttings.url))
                 tplUrl = tplSetttings.url.call(rowDetails, row);
 
-            if (tplSetttings !== false && dt.RowDetails.templates.hasOwnProperty(tplUrl)) {
+            if (rowDetails.hasTemplate(tplUrl)) {
                 //retirive template from cache
-                createdAction(dt.RowDetails.templates[tplUrl]);
+                createdAction(rowDetails.getTemplate(tplUrl));
                 return;
             }
 
@@ -297,7 +370,7 @@
 
             $.ajax(ajaxSettings)
                 .done((msg) => {
-                    dt.RowDetails.templates[tplUrl] = msg;
+                    rowDetails.cacheTemplate(tplUrl, msg);
                     createdAction(msg);
                 });
         } else if ($.isFunction(settings.template)) {
@@ -312,26 +385,38 @@
         } 
     });
     $.fn.DataTable.Api.register('row().openDetails()', function (settings) {
-        var rowDetails = this.settings()[0].rowDetails;
+        var rowDetails: dt.RowDetails = this.settings()[0].rowDetails;
         if (!rowDetails)
             throw 'RowDetails plugin is not initialized';
         settings = $.extend(true, {}, rowDetails.settings, settings);
+        var behavior = rowDetails.settings.behavior;
+
         var row = this;
 
         var filledAction = () => {
             if (row.child.isShown() && row.child().is(':visible')) return;
 
             var td = $(row.node()).find('.' + settings.icon.className).closest('td'); //Icon td
-            var detailsRows = row.child().css('display', '');
+
+            var subRow = row.child();
+            if (!subRow) return; //fillDetails failed because of detached cell
+            var detailsRows = subRow.css('display', '');
             $.each(detailsRows, (idx, item) => {
                 dt.RowDetails.animateElement($(item), settings.animation, 'open');
                 $(item).slideDown();
             });
             var details = $('div.innerDetails', detailsRows);
+
+            if (behavior === 'accordion') {
+                if (rowDetails.lastOpenedRow)
+                    rowDetails.lastOpenedRow.closeDetails();
+            }
             dt.RowDetails.animateElement(details, settings.animation, 'open');
 
             $('.dt-open-icon', td).hide();
             $('.dt-close-icon', td).show();
+
+            rowDetails.lastOpenedRow = row;
 
             if ($.isFunction(settings.opened))
                 settings.opened.call(rowDetails, row, td);
@@ -384,7 +469,23 @@
     $.fn.DataTable.Api.register('row().toggleDetails()', function (settings) {
         this.isOpen() ? this.closeDetails(settings) : this.openDetails(settings);
     });
-
+    $.fn.DataTable.Api.register('rows().collapseAll()', function (settings) {
+        var api = this;
+        this.iterator('row', function (dtSettings, row, thatIdx) {
+            api.row(row).closeDetails();
+        });
+    });
+    $.fn.DataTable.Api.register('rows().expandAll()', function (settings) {
+        var rowDetails: dt.RowDetails = this.settings()[0].rowDetails;
+        if (!rowDetails)
+            throw 'RowDetails plugin is not initialized';
+        if (rowDetails.settings.behavior === 'accordion')
+            throw 'expandAll is not supported when behavior is set to accordion';
+        var api = this;
+        this.iterator('row', function (dtSettings, row, thatIdx) {
+            api.row(row).openDetails();
+        });
+    });
     $.fn.DataTable.Api.register('rowDetails.init()', function (settings) {
         var rowDetails = new dt.RowDetails(this, settings);
         if (this.settings()[0]._bInitComplete)
@@ -392,7 +493,7 @@
         else
             this.one('init.dt', () => { rowDetails.initialize(); });
 
-        return rowDetails.dom.btnGroup;
+        return rowDetails.getFeatureElement();
     });
 
     //Add as feature
@@ -404,10 +505,29 @@
         "sFeature": "RowDetails"
     });
 
+
+    var checkAngularModulePresence = (moduleName) => {
+        if (angular === undefined)
+            return false;
+        try {
+            angular.module(moduleName);
+            return true;
+        } catch (err) {
+            return false;
+        }
+    };
+
     //Integrate with boostrap 3 if present
-    if ((typeof (<any>$)().emulateTransitionEnd == 'function')) {
+    if ((typeof (<any>$)().emulateTransitionEnd == 'function') || checkAngularModulePresence("ui.bootstrap") || checkAngularModulePresence("mgcrea.ngStrap")) {
         dt.RowDetails.defaultSettings.icon.openHtml = '<span class="glyphicon glyphicon-plus row-detail-icon"></span>';
         dt.RowDetails.defaultSettings.icon.closeHtml = '<span class="glyphicon glyphicon-minus row-detail-icon"></span>';
+        dt.RowDetails.defaultSettings.buttonPanel.classes.push('btn-group');
+        dt.RowDetails.defaultSettings.buttons.expandAll.tagName = 'div';
+        dt.RowDetails.defaultSettings.buttons.expandAll.classes.push('btn btn-default btn-sm');
+        dt.RowDetails.defaultSettings.buttons.expandAll.html = '<span class="glyphicon glyphicon-fullscreen"></span>';
+        dt.RowDetails.defaultSettings.buttons.collapseAll.tagName = 'div';
+        dt.RowDetails.defaultSettings.buttons.collapseAll.classes.push('btn btn-default btn-sm');
+        dt.RowDetails.defaultSettings.buttons.collapseAll.html = '<span class="glyphicon glyphicon-move"></span>';
     }
 
 } (window, document, undefined));

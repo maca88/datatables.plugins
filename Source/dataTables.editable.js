@@ -127,6 +127,16 @@ var dt;
                 }
             };
 
+            Editable.mergeErrors = function (errors) {
+                if (!errors)
+                    return null;
+                var msg = ' ';
+                for (var i = 0; i < errors.length; i++) {
+                    msg += errors[i].message + '<br />';
+                }
+                return msg;
+            };
+
             Editable.getColumnType = function (col) {
                 var editablOpts = col.editable || {};
                 return editablOpts.type || col._sManualType || col.sType;
@@ -239,7 +249,7 @@ var dt;
                     'i18Service': this.i18NService
                 };
                 if (!displayService.type)
-                    displayService.type = DefaultDisplayAdapter;
+                    displayService.type = DefaultDisplayService;
 
                 //Instantiate the display adapter with the angular DI
                 this.displayService = this.$injector.instantiate(displayService.type, locals);
@@ -349,8 +359,8 @@ var dt;
                         plugins: {
                             editTypes: [],
                             style: null,
-                            cellValidation: null,
-                            rowValidation: null
+                            cellValidation: InlineDisplayServiceCellValidationPlugin,
+                            rowValidation: InlineDisplayServiceRowValidationPlugin
                         }
                     },
                     i18N: {
@@ -607,8 +617,45 @@ var dt;
         editable.DefaultDataSerice = DefaultDataSerice;
 
         //#endregion
-        var DefaultDisplayAdapter = (function () {
-            function DefaultDisplayAdapter(api, settings, plugins, $injector) {
+        var InlineDisplayServiceCellValidationPlugin = (function () {
+            function InlineDisplayServiceCellValidationPlugin() {
+            }
+            InlineDisplayServiceCellValidationPlugin.prototype.setupColumnTemplate = function (args) {
+                var settings = InlineDisplayServiceCellValidationPlugin.settings;
+                var elem = $('<div />').append($('<' + settings.tagName + '/>').attr({
+                    'ng-repeat': 'error in $cellErrors',
+                    'ng-bind': 'error.message'
+                }).addClass(settings.className));
+                args.editCtrl.contentAfter.push(elem.html());
+            };
+
+            InlineDisplayServiceCellValidationPlugin.prototype.mergeErrors = function (errors) {
+                return Editable.mergeErrors(errors);
+            };
+            InlineDisplayServiceCellValidationPlugin.settings = {
+                tagName: 'p',
+                className: ''
+            };
+            return InlineDisplayServiceCellValidationPlugin;
+        })();
+        editable.InlineDisplayServiceCellValidationPlugin = InlineDisplayServiceCellValidationPlugin;
+
+        var InlineDisplayServiceRowValidationPlugin = (function () {
+            function InlineDisplayServiceRowValidationPlugin() {
+            }
+            InlineDisplayServiceRowValidationPlugin.prototype.setupRowTemplate = function (args) {
+                //TODO
+            };
+
+            InlineDisplayServiceRowValidationPlugin.prototype.mergeErrors = function (errors) {
+                return Editable.mergeErrors(errors);
+            };
+            return InlineDisplayServiceRowValidationPlugin;
+        })();
+        editable.InlineDisplayServiceRowValidationPlugin = InlineDisplayServiceRowValidationPlugin;
+
+        var DefaultDisplayService = (function () {
+            function DefaultDisplayService(api, settings, plugins, $injector) {
                 this.dt = {
                     settings: null,
                     api: null
@@ -620,7 +667,7 @@ var dt;
                 this.$injector = $injector;
                 this.setupPlugins(plugins);
             }
-            DefaultDisplayAdapter.prototype.setupPlugins = function (plugins) {
+            DefaultDisplayService.prototype.setupPlugins = function (plugins) {
                 var _this = this;
                 var locals = {
                     displayService: this
@@ -644,26 +691,32 @@ var dt;
                 this.rowValidationPlugin = this.$injector.instantiate(plugins.rowValidation, locals);
             };
 
-            DefaultDisplayAdapter.prototype.canBlurCell = function (event, cell, col) {
+            DefaultDisplayService.prototype.canBlurCell = function (event, cell, col) {
                 var type = Editable.getColumnType(col);
                 if (this.pluginTypes.hasOwnProperty(type))
                     return this.pluginTypes[type].canBlurCell(event, cell, col);
                 return true;
             };
 
-            DefaultDisplayAdapter.prototype.cellCompiling = function (args) {
+            DefaultDisplayService.prototype.cellCompiling = function (args) {
                 var type = Editable.getColumnType(args.column);
                 if (this.pluginTypes.hasOwnProperty(type))
                     this.pluginTypes[type].cellCompiling(args);
             };
 
-            DefaultDisplayAdapter.prototype.cellCompiled = function (args) {
+            DefaultDisplayService.prototype.cellCompiled = function (args) {
                 var type = Editable.getColumnType(args.column);
+
+                var scope = args.scope;
+                scope.$getCellState = function () {
+                    return scope.$getRowForm()[args.column.name || args.column.mData];
+                };
+
                 if (this.pluginTypes.hasOwnProperty(type))
                     this.pluginTypes[type].cellCompiled(args);
             };
 
-            DefaultDisplayAdapter.prototype.rowCompiling = function (args) {
+            DefaultDisplayService.prototype.rowCompiling = function (args) {
                 var formName = ('row' + args.hash + 'Form').replace(':', '');
                 var attrs = {
                     'ng-form': formName
@@ -689,7 +742,7 @@ var dt;
                 Editable.setNgClass(rowSetup.ngClass, args.node);
             };
 
-            DefaultDisplayAdapter.prototype.rowCompiled = function (args) {
+            DefaultDisplayService.prototype.rowCompiled = function (args) {
                 var formName = $(args.node).attr('ng-form');
                 var scope = args.scope;
                 scope.$getRowForm = function () {
@@ -697,7 +750,7 @@ var dt;
                 };
             };
 
-            DefaultDisplayAdapter.prototype.selectControl = function (event, cell, col) {
+            DefaultDisplayService.prototype.selectControl = function (event, cell, col) {
                 var type = Editable.getColumnType(col);
 
                 if (this.pluginTypes.hasOwnProperty(type) && this.pluginTypes[type].selectControl(event, cell, col))
@@ -720,15 +773,15 @@ var dt;
                 ctrl.select();
             };
 
-            DefaultDisplayAdapter.prototype.getControlClass = function () {
+            DefaultDisplayService.prototype.getControlClass = function () {
                 return this.settings.controlClass;
             };
 
-            DefaultDisplayAdapter.prototype.getControlWrapperClass = function () {
+            DefaultDisplayService.prototype.getControlWrapperClass = function () {
                 return this.settings.controlWrapperClass;
             };
 
-            DefaultDisplayAdapter.prototype.getWrappedEditTemplate = function (type, template, content, col, plugin) {
+            DefaultDisplayService.prototype.getWrappedEditTemplate = function (type, template, content, col, plugin) {
                 template = template || {};
                 var wrapperOpts = $.isPlainObject(template) ? (template.wrapper || Editable.defaultEditTemplateWrapper) : Editable.defaultEditTemplateWrapper;
                 var $wrapper = $('<' + wrapperOpts.tagName + ' />').addClass(this.getControlWrapperClass()).attr(Editable.EDIT_CONTROL_WRAPPER_ATTRS, '').attr((wrapperOpts.attrs || {})).addClass(wrapperOpts.className || '');
@@ -742,7 +795,7 @@ var dt;
                 return $wrapper[0].outerHTML.replaceAll(Editable.EDIT_CONTROL_ATTRS + '=""', Editable.EDIT_CONTROL_ATTRS).replaceAll(Editable.EDIT_CONTROL_WRAPPER_ATTRS + '=""', Editable.EDIT_CONTROL_WRAPPER_ATTRS);
             };
 
-            DefaultDisplayAdapter.prototype.getEditTemplateForType = function (type, col) {
+            DefaultDisplayService.prototype.getEditTemplateForType = function (type, col) {
                 var template = Editable.getColumnTemplateSettings(col);
 
                 if (!template) {
@@ -779,11 +832,11 @@ var dt;
                 }
             };
 
-            DefaultDisplayAdapter.prototype.mergeCellErrors = function (errors) {
+            DefaultDisplayService.prototype.mergeCellErrors = function (errors) {
                 return this.cellValidationPlugin.mergeErrors(errors);
             };
 
-            DefaultDisplayAdapter.prototype.setupColumnTemplate = function (args) {
+            DefaultDisplayService.prototype.setupColumnTemplate = function (args) {
                 var settings = Editable.getColumnEditableSettings(args.column) || {};
                 var editCtrlAttrs = args.editCtrl.attrs;
                 if ($.isPlainObject(settings.validators)) {
@@ -798,13 +851,13 @@ var dt;
                     this.stylePlugin.setupColumnTemplate(args);
             };
 
-            DefaultDisplayAdapter.prototype.mergeRowErrors = function (errors) {
+            DefaultDisplayService.prototype.mergeRowErrors = function (errors) {
                 return this.rowValidationPlugin.mergeErrors(errors);
             };
-            DefaultDisplayAdapter.$inject = ['api', 'settings', 'plugins', '$injector'];
-            return DefaultDisplayAdapter;
+            DefaultDisplayService.$inject = ['api', 'settings', 'plugins', '$injector'];
+            return DefaultDisplayService;
         })();
-        editable.DefaultDisplayAdapter = DefaultDisplayAdapter;
+        editable.DefaultDisplayService = DefaultDisplayService;
 
         //#region Commands
         //#region Edit
@@ -1259,7 +1312,6 @@ var dt;
         var ctx = this.settings()[0];
         ctx.editable.editor.editRow(this.index());
     });
-
     $.fn.DataTable.Api.register('row().save()', function () {
         var ctx = this.settings()[0];
         ctx.editable.editor.saveRow(this.index());
