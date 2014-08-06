@@ -440,75 +440,60 @@
             return state;
         }
 
-        private generateStateData(oSettings) {
+        private generateStateData(settings) {
             var i, iLen;
             var api = this.dt.api;
+            var columns = settings.aoColumns;
             //var oSettings = this.dt.settings;
-        
-            var data = {
-                "created": new Date().getTime(),
-                "displayStart": oSettings._iDisplayStart,
-                "pageLength": oSettings._iDisplayLength,
-                "order": $.extend(true, [], oSettings.aaSorting),
-                "filter": $.extend(true, {}, oSettings.oPreviousSearch),
-                "searchCols": $.extend(true, [], oSettings.aoPreSearchCols),
-                "visCols": [],
-                "colReorder": [],
-                "colData": [],
-                "colNames": [],
-                "searchable": [],
-                "orderable": []
+
+            var searchToCamel = (obj) => {
+                return {
+                    search: obj.sSearch,
+                    smart: obj.bSmart,
+                    regex: obj.bRegex,
+                    caseInsensitive: obj.bCaseInsensitive
+                };
             };
 
-            for (i = 0, iLen = oSettings.aoColumns.length; i < iLen; i++) {
-                data.colData.push(oSettings.aoColumns[i].mData);
-                data.colNames.push(oSettings.aoColumns[i].sName);
-                data.visCols.push(oSettings.aoColumns[i].bVisible);
-                data.searchable.push(oSettings.aoColumns[i].bSearchable);
-                data.orderable.push(oSettings.aoColumns[i].bSortable);
-            }
+            var state = {
+                time: +new Date(),
+                start: settings._iDisplayStart,
+                length: settings._iDisplayLength,
+                order: $.extend(true, [], settings.aaSorting),
+                search: searchToCamel(settings.oPreviousSearch),
+                columns: $.map(columns, (col, j) => {
+                    return {
+                        visible: col.bVisible,
+                        search: searchToCamel(settings.aoPreSearchCols[j]),
+                        data: col.mData,
+                        name: col.sName,
+                        searchable: col.bSearchable,
+                        orderable: col.bSortable
+                    };
+                }),
+                ColReorder:[],
+
+            };
 
             if (api.colReorder != null) {
-                /* Sorting */
-                for (i = 0 ; i < data.order.length ; i++) {
-                    var origColIdx = oSettings.aoColumns[data.order[i][0]]._ColReorder_iOrigCol;
-                    data.order[i][0] = origColIdx != null ? origColIdx : i;
+                for (i = 0; i < state.order.length; i++) {
+                    state.order[i][0] = columns[state.order[i][0]]._ColReorder_iOrigCol;
                 }
 
-                var aSearchCopy = $.extend(true, [], data.searchCols);
-                data.colReorder = [];
+                var stateColumnsCopy = $.extend(true, [], state.columns);
 
-                for (i = 0, iLen = oSettings.aoColumns.length ; i < iLen ; i++) {
-                    var iOrigColumn = oSettings.aoColumns[i]._ColReorder_iOrigCol;
-                    if (iOrigColumn == null)
-                        iOrigColumn = i;
+                for (i = 0, iLen = columns.length; i < iLen; i++) {
+                    var origIdx = columns[i]._ColReorder_iOrigCol;
 
-                    /*Column orderable*/
-                    data.orderable[iOrigColumn] = oSettings.aoColumns[i].bSortable;
-
-                    /*Column searchable*/
-                    data.searchable[iOrigColumn] = oSettings.aoColumns[i].bSearchable;
-
-                    /*Column name*/
-                    data.colNames[iOrigColumn] = oSettings.aoColumns[i].sName;
-
-                    /*Column data*/
-                    data.colData[iOrigColumn] = oSettings.aoColumns[i].mData;
-
-                    /* Column filter */
-                    data.searchCols[iOrigColumn] = aSearchCopy[i];
-
-                    /* Visibility */
-                    data.visCols[iOrigColumn] = oSettings.aoColumns[i].bVisible;
+                    /* Columns */
+                    state.columns[origIdx] = stateColumnsCopy[i];
 
                     /* Column reordering */
-                    data.colReorder.push(iOrigColumn);
-
-                
+                    state.ColReorder.push(origIdx);
                 }
             }
 
-            return data;
+            return state;
         }
 
         private saveState(storeId, name, requestSettings, doneAction, failAction) {
@@ -549,72 +534,82 @@
             this.addState(this.settings.defaultTableState, this.generateStateData(initialSettings), true);
         }
 
-        private loadState(data, dtInitialized) {
-            var oSettings = this.dt.settings;
-            var i, ien;
-            var columns = oSettings.aoColumns;
-            var api = oSettings.oInstance.api();
+        private loadState(state, dtInitialized) {
+            var settings = this.dt.settings;
+            var i, ien, col;
+            var columns = settings.aoColumns;
+            var api = settings.oInstance.api();
 
-            oSettings.oApi._fnCallbackFire(oSettings, 'remoteStateLoadingParams', 'remoteStateLoadingParams', [oSettings, data, dtInitialized]);
-
-            // Number of columns have changed - reset filters
-            if (columns.length !== data.searchCols.length) {
-                data.searchCols = [];
-                data.visCols = [];
-                for (i = 0; i < columns.length; i++) {
-                    data.searchCols.push(null);
-                    data.visCols.push(true);
-                }
+            var searchToHung = (obj) => {
+                return {
+                    sSearch: obj.search,
+                    bSmart: obj.smart,
+                    bRegex: obj.regex,
+                    bCaseInsensitive: obj.caseInsensitive
+                };
             }
 
-            oSettings._iDisplayStart = data.displayStart;
-            oSettings.iInitDisplayStart = data.displayStart;
-            oSettings._iDisplayLength = data.pageLength;
+            settings.oApi._fnCallbackFire(settings, 'remoteStateLoadingParams', 'remoteStateLoadingParams', [settings, state, dtInitialized]);
+
+            // Number of columns have changed - reset filters
+            if (columns.length !== state.columns.length) {
+                throw 'The number of the columns in the state do not match with the number in the current table (current table: ' + columns.length + ', state: ' + state.columns.length;
+            }
+
+            settings._iDisplayStart = state.start;
+            settings.iInitDisplayStart = state.start;
+            settings._iDisplayLength = state.length;
+            settings.aaSorting = [];
     
             /*ColReorder*/
-            if ($.isArray(data.colReorder) && data.colReorder.length == columns.length) {
+            if ($.isArray(state.ColReorder) && state.ColReorder.length == columns.length) {
                 if (dtInitialized) {
                     api.colReorder.reset(); //We have to reset columns positions so that ordering will work as it should 
                 }
             }
 
-            /* Column visibility state */
-            for (i = 0, ien = data.visCols.length ; i < ien ; i++) {
+            // Columns
+            for (i = 0, ien = state.columns.length; i < ien; i++) {
+                col = state.columns[i];
+
+                // Visibility
                 if (dtInitialized)
-                    api.column(i).visible(data.visCols[i]);
+                    api.column(i).visible(col.visible);
                 else
-                    columns[i].bVisible = data.visCols[i];
+                    columns[i].bVisible = col.visible;
+
+                // Search
+                $.extend(settings.aoPreSearchCols[i], searchToHung(col.search));
             }
 
-            /*Order*/
-            var savedSort = data.order;
-            oSettings.aaSorting = [];
-            for (i = 0, ien = savedSort.length; i < ien; i++) {
-                oSettings.aaSorting.push(savedSort[i][0] >= columns.length ?
-                    [0, savedSort[i][1]] :
-                    savedSort[i]
-                );
+            // Order
+            for (i = 0; i < state.order.length; i++) {
+                col = state.order[i];
+                settings.aaSorting.push(col[0] >= columns.length ?
+                    [0, col[1]] :
+                    col
+                    );
             }
+
+            // Search
+            $.extend(settings.oPreviousSearch, searchToHung(state.search));
 
             /*ColReorder*/
-            if ($.isArray(data.colReorder) && data.colReorder.length == columns.length) {
+            if ($.isArray(state.ColReorder) && state.ColReorder.length == columns.length) {
                 if (dtInitialized) {
-                    api.colReorder.order(data.colReorder);
+                    api.colReorder.order(state.ColReorder);
                 } else { //This feature must be defined before R (ColReoder) in order to work properly
-                    oSettings.oInit.colReorder = oSettings.oInit.colReorder || {};
-                    oSettings.oInit.oColReorder = oSettings.oInit.oColReorder || {};
-                    oSettings.oInit.oColReorder.aiOrder =
-                        oSettings.oInit.colReorder.order = data.colReorder;
+                    settings.oInit.colReorder = settings.oInit.colReorder || {};
+                    settings.oInit.oColReorder = settings.oInit.oColReorder || {};
+                    settings.oInit.oColReorder.aiOrder =
+                    settings.oInit.colReorder.order = state.ColReorder;
                 }
             }
-    
-            /* Search filtering  */
-            $.extend(oSettings.oPreviousSearch, data.filter);
-            $.extend(true, oSettings.aoPreSearchCols, data.searchCols); //TODO: verify if we need to do something more if dt is initialized
+
             //Find the search input and set the value
             if (dtInitialized) {
-                var filterClass = oSettings.oClasses.sFilterInput;
-                var filterInput = $('input[type="search"]', oSettings.nTableWrapper);
+                var filterClass = settings.oClasses.sFilterInput;
+                var filterInput = $('input[type="search"]', settings.nTableWrapper);
                 if (filterClass != "") {
                     var clses = filterClass.split(' ');
                     filterInput = filterInput.filter((e, input) => {
@@ -626,10 +621,10 @@
                         return result;
                     });
                 }
-                filterInput.val(data.filter.sSearch.replace('"', '&quot;'));
+                filterInput.val(state.search.search.replace('"', '&quot;'));
             }
 
-            oSettings.oApi._fnCallbackFire(oSettings, 'remoteStateLoadedParams', 'remoteStateLoadedParams', [oSettings, data, dtInitialized]);
+            settings.oApi._fnCallbackFire(settings, 'remoteStateLoadedParams', 'remoteStateLoadedParams', [settings, state, dtInitialized]);
 
             if (dtInitialized) {
                 api.draw(false);

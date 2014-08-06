@@ -56,7 +56,19 @@
                 ],
                 columns: [
                     { iconColumn: true },
-                    { data: "engine", title: "Engine", className: "text-right", type: "string", editable: { validators: { required: true } } },
+                    {
+                        data: "engine", title: "Engine", className: "text-right", type: "string",
+                        editable: {
+                            validators: { required: true, minlength: 3 },
+                            template: {
+                                control: {
+                                    attrs: {
+                                        //'ng-model-options': "{ updateOn: 'blur' }"
+                                    }
+                                }
+                            }
+                        }
+                    },
                     { data: "browser", title: "Browser", type: "string", editable: true },
                     { data: "platform", title: "Platform", type: "string", editable: true },
                     {
@@ -75,6 +87,7 @@
                         //}
                         //Setting2 - with a placeholder and custom option model - using the vm property versions
                         //editable: {
+                        //    validators: { required: true },
                         //    type: 'select',
                         //    settings: {
                         //        allowClear: true,
@@ -145,31 +158,55 @@
                         },
                         expression: "data.date | date:'shortDate'"
                     },
-                    { template: "#options-tpl" }
+                    { template: "#options-tpl" },
+                    {
+                        commands: [
+                            "bs.icon.edit",
+                            "bs.icon.remove",
+
+                            //{
+                            //    name: "custom",
+                            //    template: '<button ng-click="$commands.custom.click()">Custom</button>',
+                            //    scope: {
+                            //        click: () => {
+                            //            alert('yeeey');
+                            //        }
+                            //    }
+                            //}
+                        ]
+                    }
                 ],
                 editable: {
-                    adapters: {
+                    services: {
                         data: {
+                            type: dt.editable.DefaultDataSerice,
                             settings: {
                                 createItem: this.getNewItem.bind(this),
-                                validate: (val, validator, row) => {
-                                    switch (validator.name) {
-                                        case 'required':
-                                            return !validator.options || (val != null && val != '');
-                                        default:
-                                            throw 'Unknown validator ' + validator.name;
-                                    }
-                                },
+                                //validate: (row, validator, val) => {
+                                //    switch (validator.name) {
+                                //        case 'required': //column validator
+                                //            return !validator.options || (val != null && val != '');
+                                //        case 'custom': //row validator
+                                //            return row.data().engine == 'test';
+                                //        default:
+                                //            throw 'Unknown validator ' + validator.name;
+                                //    }
+                                //},
+                                //validators: {
+                                //    custom: null
+                                //},
                             }
                         },
                         display: {
                         }
                     },
-
+                    editor: {
+                        type: dt.editable.BatchEditor
+                    },
                     language: {
-                        validators: {
-                            'required': 'The value is required'
-                        }
+                        'required': 'The value is required',
+                        'minlength': 'Minimum length is {{options}}',
+                        'custom': 'Custom row validator'
                     }
                 },
                 rowDetails: {

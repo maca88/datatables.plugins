@@ -1108,11 +1108,11 @@ KeyTable = function ( oInit )
 			/* Set the initial focus on the table */
 			if ( typeof oInit.focus.nodeName != "undefined" )
 			{
-				_fnSetFocus( oInit.focus, oInit.initScroll, e );
+				_fnSetFocus( oInit.focus, oInit.initScroll, null);
 			}
 			else
 			{
-			    _fnSetFocus(_fnCellFromCoords(oInit.focus[0], oInit.focus[1]), oInit.initScroll, e);
+			    _fnSetFocus(_fnCellFromCoords(oInit.focus[0], oInit.focus[1]), oInit.initScroll, null);
 			}
 			_fnCaptureKeys();
 		}
@@ -1122,7 +1122,7 @@ KeyTable = function ( oInit )
 
 		if ( _oDatatable )
 		{
-			$(_oDatatable.nTable).on( 'click', 'td', _fnClick );
+		    $(_oDatatable.nTable).on(oInit.focusEvent || 'click', 'td', _fnClick);
 		}
 		else
 		{

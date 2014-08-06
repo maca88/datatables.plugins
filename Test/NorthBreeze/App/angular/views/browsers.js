@@ -48,7 +48,17 @@
                     ],
                     columns: [
                         { iconColumn: true },
-                        { data: "engine", title: "Engine", className: "text-right", type: "string", editable: { validators: { required: true } } },
+                        {
+                            data: "engine", title: "Engine", className: "text-right", type: "string",
+                            editable: {
+                                validators: { required: true, minlength: 3 },
+                                template: {
+                                    control: {
+                                        attrs: {}
+                                    }
+                                }
+                            }
+                        },
                         { data: "browser", title: "Browser", type: "string", editable: true },
                         { data: "platform", title: "Platform", type: "string", editable: true },
                         {
@@ -66,6 +76,7 @@
                             //}
                             //Setting2 - with a placeholder and custom option model - using the vm property versions
                             //editable: {
+                            //    validators: { required: true },
                             //    type: 'select',
                             //    settings: {
                             //        allowClear: true,
@@ -133,29 +144,31 @@
                             },
                             expression: "data.date | date:'shortDate'"
                         },
-                        { template: "#options-tpl" }
+                        { template: "#options-tpl" },
+                        {
+                            commands: [
+                                "bs.icon.edit",
+                                "bs.icon.remove"
+                            ]
+                        }
                     ],
                     editable: {
-                        adapters: {
+                        services: {
                             data: {
+                                type: dt.editable.DefaultDataSerice,
                                 settings: {
-                                    createItem: this.getNewItem.bind(this),
-                                    validate: function (val, validator, row) {
-                                        switch (validator.name) {
-                                            case 'required':
-                                                return !validator.options || (val != null && val != '');
-                                            default:
-                                                throw 'Unknown validator ' + validator.name;
-                                        }
-                                    }
+                                    createItem: this.getNewItem.bind(this)
                                 }
                             },
                             display: {}
                         },
+                        editor: {
+                            type: dt.editable.BatchEditor
+                        },
                         language: {
-                            validators: {
-                                'required': 'The value is required'
-                            }
+                            'required': 'The value is required',
+                            'minlength': 'Minimum length is {{options}}',
+                            'custom': 'Custom row validator'
                         }
                     },
                     rowDetails: {

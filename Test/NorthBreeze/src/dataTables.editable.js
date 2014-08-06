@@ -1,4 +1,7 @@
-﻿var __extends = this.__extends || function (d, b) {
+﻿///<reference path='dataTables.editable.breeze.ts' />
+///<reference path='dataTables.editable.uiSelect2.ts' />
+///<reference path='dataTables.editable.angularStrap.ts' />
+var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     __.prototype = b.prototype;
@@ -6,7 +9,7 @@
 };
 var dt;
 (function (dt) {
-    (function (_editable) {
+    (function (editable) {
         
 
         //#endregion
@@ -20,34 +23,70 @@ var dt;
                 this.settings = $.extend(true, {}, Editable.defaultSettings, settings);
                 this.dt.settings = api.settings()[0];
                 this.dt.api = api;
-                this.$injector = angular.injector();
+                this.$injector = this.dt.settings.oInit.angular.$injector;
                 this.dt.settings.editable = this;
                 if (angular === undefined)
                     throw 'Angular must be included for Editable plugin to work';
-                this.registerCallbacks();
-                this.setupAdapters();
-                this.editorAdapterInstance.initialize();
+                this.setupServices();
+                this.setupEditor();
+                this.editor.initialize();
+                this.prepareColumnTemplates();
             }
             Editable.prototype.initialize = function () {
                 this.initialized = true;
                 this.dt.settings.oApi._fnCallbackFire(this.dt.settings, 'editableInitCompleted', 'editableInitCompleted', [this]);
             };
 
-            Editable.prototype.registerCallbacks = function () {
-                this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'cellCompiling', this.onCellCompiling.bind(this), "cellCompiling_Editable");
-                this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'rowCompiling', this.onRowCompiling.bind(this), "rowCompiling_Editable");
+            Editable.prototype.prepareColumnTemplates = function () {
+                var columns = this.dt.settings.aoColumns, col, i, editorSettings = this.getEditorSettings();
+                for (i = 0; i < columns.length; i++) {
+                    col = columns[i];
+                    if (!this.dataService.isColumnEditable(col))
+                        continue;
+
+                    //Options that can be modified by the display service
+                    var opts = {
+                        column: col,
+                        editCtrlWrapper: {
+                            contentBefore: [],
+                            contentAfter: [],
+                            attrs: {},
+                            ngClass: {}
+                        },
+                        editCtrl: {
+                            contentBefore: [],
+                            contentAfter: [],
+                            attrs: {},
+                            ngClass: {}
+                        }
+                    };
+                    opts.editCtrl.attrs.name = col.name || col.mData;
+
+                    this.displayService.setupColumnTemplate(opts);
+
+                    Editable.setNgClass(opts.editCtrlWrapper.ngClass, opts.editCtrlWrapper.attrs);
+                    Editable.setNgClass(opts.editCtrl.ngClass, opts.editCtrl.attrs);
+
+                    var columnModelPath = this.dataService.getColumnModelPath(col);
+
+                    var editControl = this.getColumnEditControlTemplate(col).replaceAll(Editable.MODEL_PATH, columnModelPath).replaceAll(Editable.EDIT_CONTROL_ATTRS, Editable.generateHtmlAttributes(opts.editCtrl.attrs)).replaceAll(Editable.EDIT_CONTROL_WRAPPER_ATTRS, Editable.generateHtmlAttributes(opts.editCtrlWrapper.attrs)).replaceAll(Editable.BEFORE_EDIT_CONTROL, opts.editCtrl.contentBefore.join("")).replaceAll(Editable.AFTER_EDIT_CONTROL, opts.editCtrl.contentAfter.join(""));
+
+                    editControl = opts.editCtrlWrapper.contentBefore.join("") + editControl + opts.editCtrlWrapper.contentAfter.join("");
+
+                    var displayControl = this.getColumnDisplayControlTemplate(col);
+
+                    var template = editorSettings.cellTemplate.replaceAll(Editable.EDIT_CONTROL, editControl).replaceAll(Editable.DISPLAY_CONTROL, displayControl);
+
+                    col.cellTemplate = template;
+                }
             };
 
-            Editable.prototype.onCellCompiling = function (cell) {
-                this.editorAdapterInstance.prepareCell(cell);
-            };
-
-            Editable.prototype.onRowCompiling = function (row) {
-                this.editorAdapterInstance.prepareRow(row);
-            };
-
-            Editable.prototype.formatMessage = function (msg, opts) {
-                return this.settings.formatMessage.call(this, msg, opts);
+            Editable.generateHtmlAttributes = function (obj) {
+                var attrs = '';
+                for (var key in obj) {
+                    attrs += key + '="' + obj[key] + '" ';
+                }
+                return attrs;
             };
 
             Editable.prototype.getColumnDisplayControlTemplate = function (col) {
@@ -56,7 +95,7 @@ var dt;
                 } else if (col.expression != null && angular.isString(col.expression)) {
                     return '<span ng-bind="' + col.expression + '"></span>';
                 } else if (col.data != null) {
-                    var modelPath = this.dataAdapterInstance.getColumnModelPath(col);
+                    var modelPath = this.dataService.getColumnModelPath(col);
                     return '<span ng-bind="' + modelPath + '"></span>';
                 } else if (col.defaultContent != "") {
                     return col.defaultContent;
@@ -66,11 +105,26 @@ var dt;
 
             Editable.prototype.getColumnEditControlTemplate = function (col) {
                 var type = Editable.getColumnType(col);
-                var displayAdapter = this.displayAdapterInstance;
+                var displayService = this.displayService;
                 if (!type)
                     throw 'Column type must be defined';
                 type = type.toLowerCase();
-                return displayAdapter.getEditTemplateForType(type, col);
+                return displayService.getEditTemplateForType(type, col);
+            };
+
+            Editable.setNgClass = function (obj, target) {
+                //build ngClass
+                if (Object.keys(obj).length) {
+                    var ngClassStr = '{ ';
+                    for (var key in obj) {
+                        ngClassStr += "'" + key + "': " + obj[key] + ', ';
+                    }
+                    ngClassStr += '}';
+                    if ($.isPlainObject(target))
+                        target["ng-class"] = ngClassStr;
+                    else
+                        $(target).attr('ng-class', ngClassStr);
+                }
             };
 
             Editable.getColumnType = function (col) {
@@ -95,82 +149,142 @@ var dt;
                 return $.isPlainObject(col.editable) ? col.editable : null;
             };
 
-            Editable.prototype.setupAdapters = function () {
-                this.setupDataAdapter();
-                this.setupDisplayAdapter();
-                this.setupEditorAdapter();
+            Editable.fillRowValidationErrors = function (row, errors) {
+                var columns = row.settings()[0].aoColumns;
+                var i, cellScope, rowScope;
+                var tr = row.node();
+                var cells = $('td', tr);
+                rowScope = angular.element(tr).scope();
+                rowScope.$rowErrors = rowScope.$rowErrors || [];
+                rowScope.$rowErrors.length = 0;
+                var visColIdx = -1;
+                var cellsByData = {};
+                for (i = 0; i < columns.length; i++) {
+                    if (columns[i].bVisible)
+                        visColIdx++;
+                    cellScope = angular.element(cells[visColIdx]).scope();
+                    cellsByData[columns[i].mData] = cellScope;
+                    cellScope.$cellErrors = cellScope.$cellErrors || [];
+                    cellScope.$cellErrors.length = 0;
+                }
+
+                for (i = 0; i < errors.length; i++) {
+                    if (!cellsByData.hasOwnProperty(errors[i].property)) {
+                        rowScope.$rowErrors.push(errors[i]);
+                    } else {
+                        cellScope = cellsByData[errors[i].property];
+                        cellScope.$cellErrors.push(errors[i]);
+                    }
+                }
             };
 
-            Editable.prototype.setupEditorAdapter = function () {
-                var editorAdapter = this.settings.adapters.editor;
-                var locals = {
-                    'settings': editorAdapter.settings,
-                    'api': this.dt.api,
-                    'editable': this
-                };
-                if (!editorAdapter.type) {
-                    editorAdapter.type = BatchEditorAdapter;
+            Editable.getCell = function (col, row) {
+                var columns = row.settings()[0].aoColumns, i;
+                var visColIdx = 0;
+                for (i = 0; i < columns.length; i++) {
+                    if (columns[i].bVisible)
+                        visColIdx++;
+                    if (columns[i] === col)
+                        break;
                 }
-                this.editorAdapterInstance = this.$injector.instantiate(editorAdapter.type, locals);
+                return $('td:nth(' + visColIdx + ')', row.node());
             };
 
-            Editable.prototype.setupDisplayAdapter = function () {
-                var displayAdapter = this.settings.adapters.display;
+            Editable.prototype.getEditorSettings = function () {
+                return this.settings.editor.settings;
+            };
+
+            Editable.prototype.setupServices = function () {
+                this.setupI18Nservice();
+                this.setupDisplayService();
+                this.setupDataService();
+            };
+
+            Editable.prototype.setupI18Nservice = function () {
+                var i18NService = this.settings.services.i18N;
                 var locals = {
-                    'settings': displayAdapter.settings,
-                    'api': this.dt.api,
-                    'editable': this,
-                    'plugins': displayAdapter.plugins
+                    'resources': this.settings.language
                 };
-                if (!displayAdapter.type)
-                    displayAdapter.type = DefaultDisplayAdapter;
-                if (Editable.checkAngularModulePresence('mgcrea.ngStrap')) {
-                    displayAdapter.plugins.editTypes.push(AngularStrapDisplayAdapterPlugin);
-                    displayAdapter.plugins.popover = AngularStrapDisplayAdapterPlugin;
+                if (!i18NService.type) {
+                    if (Editable.checkAngularModulePresence('pascalprecht.translate'))
+                        i18NService.type = AngularTranslateI18Service;
+                    else if (Editable.checkAngularModulePresence('gettext'))
+                        i18NService.type = GetTextI18NService;
+                    else
+                        i18NService.type = DefaultI18NService;
                 }
-                if (Editable.checkAngularModulePresence('ui.select2')) {
-                    displayAdapter.plugins.editTypes.push(UiSelect2DisplayAdapterPlugin);
+                this.i18NService = this.$injector.instantiate(i18NService.type, locals);
+            };
+
+            Editable.prototype.setupEditor = function () {
+                var editor = this.settings.editor;
+                var locals = {
+                    'settings': editor.settings,
+                    'api': this.dt.api,
+                    'displayService': this.displayService,
+                    'dataService': this.dataService
+                };
+                if (!editor.type) {
+                    editor.type = BatchEditor;
                 }
+                this.editor = this.$injector.instantiate(editor.type, locals);
+            };
+
+            Editable.prototype.setupDisplayService = function () {
+                var displayService = this.settings.services.display;
+                var locals = {
+                    'settings': displayService.settings,
+                    'api': this.dt.api,
+                    'plugins': displayService.plugins,
+                    'i18Service': this.i18NService
+                };
+                if (!displayService.type)
+                    displayService.type = DefaultDisplayAdapter;
 
                 //Instantiate the display adapter with the angular DI
-                this.displayAdapterInstance = this.$injector.instantiate(displayAdapter.type, locals);
+                this.displayService = this.$injector.instantiate(displayService.type, locals);
             };
 
-            Editable.prototype.setupDataAdapter = function () {
-                var dataAdapter = this.settings.adapters.data;
-                if (!dataAdapter.type) {
-                    if (breeze != null && $data != null)
-                        dataAdapter.type = DefaultDataAdapter;
-                    else if (breeze != null)
-                        dataAdapter.type = BreezeDataAdapter;
-                    else if ($data != null)
-                        dataAdapter.type = null; //TODO
-                    else
-                        dataAdapter.type = DefaultDataAdapter;
+            Editable.prototype.setupDataService = function () {
+                var dataService = this.settings.services.data;
+                var locals = {
+                    'settings': dataService.settings,
+                    'api': this.dt.api,
+                    'i18Service': this.i18NService
+                };
+                if (!dataService.type) {
+                    dataService.type = DefaultDataSerice;
                 }
-                if (dataAdapter.type == null)
+                if (dataService.type == null)
                     throw 'Editable plugins requires a data adapter to be set';
-                this.dataAdapterInstance = new dataAdapter.type(this, this.dt.api, dataAdapter.settings);
+
+                this.dataService = this.$injector.instantiate(dataService.type, locals);
             };
+            Editable.MODEL_PATH = "model_path";
+            Editable.EDIT_CONTROL_ATTRS = "edit_control_attrs";
+            Editable.EDIT_CONTROL_WRAPPER_ATTRS = "edit_control_wrapper_attrs";
+            Editable.EDIT_CONTROL = "edit_control";
+            Editable.BEFORE_EDIT_CONTROL = "<before-edit-control></before-edit-control>";
+            Editable.AFTER_EDIT_CONTROL = "<after-edit-control></after-edit-control>";
+            Editable.DISPLAY_CONTROL = "display_control";
+
             Editable.defaultEditTemplateWrapper = {
                 tagName: 'div',
-                className: 'form-group',
+                className: '',
                 attrs: {}
             };
 
-            Editable.defaultTemplate = {
-                wrapper: {
-                    tagName: 'div',
-                    className: 'form-group',
-                    attrs: {}
+            Editable.defaultEditTemplateControl = {
+                tagName: 'input',
+                attrs: {
+                    type: 'text'
                 },
-                control: {
-                    tagName: 'input',
-                    attrs: {
-                        type: 'text'
-                    },
-                    className: 'form-control'
-                }
+                className: ''
+            };
+
+            Editable.defaultTemplate = {
+                wrapper: Editable.defaultEditTemplateWrapper,
+                control: Editable.defaultEditTemplateControl
             };
 
             Editable.defaultSettings = {
@@ -181,12 +295,13 @@ var dt;
                 itemsRestored: null,
                 itemCreated: null,
                 startEditing: null,
-                adapters: {
+                services: {
                     data: {
                         type: null,
                         settings: {
                             createItem: null,
-                            validate: null
+                            validate: null,
+                            validators: {}
                         }
                     },
                     display: {
@@ -233,12 +348,20 @@ var dt;
                         },
                         plugins: {
                             editTypes: [],
-                            popover: null
+                            style: null,
+                            cellValidation: null,
+                            rowValidation: null
                         }
                     },
-                    editor: {
+                    i18N: {
                         type: null,
                         settings: {}
+                    }
+                },
+                editor: {
+                    type: null,
+                    settings: {
+                        cellTemplate: '<div ng-if="$isInEditMode()">' + Editable.EDIT_CONTROL + '</div>' + '<div ng-if="$isInEditMode() === false">' + Editable.DISPLAY_CONTROL + '</div>'
                     }
                 },
                 startCellEditing: null,
@@ -248,39 +371,96 @@ var dt;
                 },
                 language: {}
             };
-
-            Editable.MODEL_PATH = "MODEL_PATH";
-            Editable.EDIT_CONTROL_ATTRS = "EDIT_CONTROL_ATTRS";
-            Editable.EDIT_CONTROL_WRAPPER_ATTRS = "EDIT_CONTROL_WRAPPER_ATTRS";
-            Editable.EDIT_CONTROL = "EDIT_CONTROL";
-            Editable.DISPLAY_CONTROL = "DISPLAY_CONTROL";
             return Editable;
         })();
-        _editable.Editable = Editable;
+        editable.Editable = Editable;
+
+        //We have to use an object instead of a primitive value so that changes will be reflected to the child scopes
+        var DisplayMode = (function () {
+            function DisplayMode() {
+                this.name = DisplayMode.ReadOnly;
+            }
+            DisplayMode.prototype.setMode = function (modeName) {
+                this.name = modeName;
+            };
+
+            DisplayMode.ReadOnly = "ReadOnly";
+            DisplayMode.Edit = "Edit";
+            return DisplayMode;
+        })();
+        editable.DisplayMode = DisplayMode;
 
         var ValidationError = (function () {
             function ValidationError(message, validator, property) {
                 if (typeof property === "undefined") { property = null; }
                 this.message = message;
                 this.validator = validator;
-                this.property = property;
+                this.property = property ? property : null;
             }
             return ValidationError;
         })();
-        _editable.ValidationError = ValidationError;
+        editable.ValidationError = ValidationError;
 
         var Validator = (function () {
             function Validator(name, options, column) {
+                if (typeof column === "undefined") { column = null; }
                 this.name = name;
                 this.options = options;
                 this.column = column;
             }
             return Validator;
         })();
-        _editable.Validator = Validator;
+        editable.Validator = Validator;
 
-        var DefaultDataAdapter = (function () {
-            function DefaultDataAdapter(editable, api, settings) {
+        //#region I18N services
+        var DefaultI18NService = (function () {
+            function DefaultI18NService(resources, $interpolate) {
+                this.resources = resources;
+                this.$interpolate = $interpolate;
+            }
+            DefaultI18NService.prototype.translate = function (key, params) {
+                var exp = this.$interpolate(this.resources[key] || 'Missing resource');
+                return exp(params || {});
+            };
+            DefaultI18NService.$inject = ['resources', '$interpolate'];
+            return DefaultI18NService;
+        })();
+        editable.DefaultI18NService = DefaultI18NService;
+
+        var GetTextI18NService = (function () {
+            function GetTextI18NService(resources, $interpolate, gettextCatalog) {
+                this.resources = resources;
+                this.$interpolate = $interpolate;
+                this.gettextCatalog = gettextCatalog;
+            }
+            GetTextI18NService.prototype.translate = function (key, params) {
+                var exp = this.$interpolate(this.gettextCatalog.getString(this.resources[key]));
+                return exp(params || {});
+            };
+            GetTextI18NService.$inject = ['resources', '$interpolate', 'gettextCatalog'];
+            return GetTextI18NService;
+        })();
+        editable.GetTextI18NService = GetTextI18NService;
+
+        var AngularTranslateI18Service = (function () {
+            function AngularTranslateI18Service(resources, $interpolate, $translate) {
+                this.resources = resources;
+                this.$interpolate = $interpolate;
+                this.$translate = $translate;
+            }
+            AngularTranslateI18Service.prototype.translate = function (key, params) {
+                var exp = this.$interpolate(this.$translate(key));
+                return exp(params || {});
+            };
+            AngularTranslateI18Service.$inject = ['resources', '$interpolate', '$translate'];
+            return AngularTranslateI18Service;
+        })();
+        editable.AngularTranslateI18Service = AngularTranslateI18Service;
+
+        //#endregion
+        //#region Data services
+        var DefaultDataSerice = (function () {
+            function DefaultDataSerice(api, settings, i18Service) {
                 this.dt = {
                     settings: null,
                     api: null
@@ -288,14 +468,14 @@ var dt;
                 this.dt.api = api;
                 this.dt.settings = api.settings()[0];
                 this.settings = settings;
-                this.editable = editable;
+                this.i18Service = i18Service;
             }
-            DefaultDataAdapter.prototype.getColumnModelPath = function (col) {
+            DefaultDataSerice.prototype.getColumnModelPath = function (col) {
                 var rowDataPath = this.dt.settings.oInit.angular.rowDataPath;
                 return col.data ? rowDataPath + '.' + col.data : null;
             };
 
-            DefaultDataAdapter.prototype.removeItems = function (items) {
+            DefaultDataSerice.prototype.removeItems = function (items) {
                 var removed = [];
                 for (var i = 0; i < items.length; i++) {
                     items[i].remove();
@@ -304,15 +484,15 @@ var dt;
                 return removed;
             };
 
-            DefaultDataAdapter.prototype.rejectItems = function (items) {
-                throw 'Reject is not supported by DefaultDataAdapter';
+            DefaultDataSerice.prototype.rejectItems = function (items) {
+                throw 'Reject is not supported by DefaultDataSerice';
             };
 
-            DefaultDataAdapter.prototype.restoreRemovedItems = function () {
-                throw 'Restore removed items is not supported by DefaultDataAdapter';
+            DefaultDataSerice.prototype.restoreRemovedItems = function () {
+                throw 'Restore removed items is not supported by DefaultDataSerice';
             };
 
-            DefaultDataAdapter.prototype.createItem = function () {
+            DefaultDataSerice.prototype.createItem = function () {
                 if ($.isFunction(this.settings.createItem))
                     return this.settings.createItem();
                 var item = {};
@@ -323,42 +503,77 @@ var dt;
                 return item;
             };
 
-            DefaultDataAdapter.prototype.addItem = function (item) {
+            DefaultDataSerice.prototype.addItem = function (item) {
                 this.dt.api.row.add(item);
             };
 
-            DefaultDataAdapter.prototype.validateItem = function (row) {
+            DefaultDataSerice.prototype.validateItem = function (row) {
+                var _this = this;
                 var errors = [];
+
+                //Execute column validators
                 var columns = this.getEditableColumns();
                 for (var i = 0; i < columns.length; i++) {
                     errors = errors.concat(this.validateItemProperty(columns[i], row));
                 }
+
+                //Execute row validators
+                var validate = this.settings.validate;
+                var rowValidators = this.settings.validators;
+                $.each(rowValidators, function (key, val) {
+                    var validator = new Validator(key, val);
+                    var success = validate.call(_this, row, validator);
+                    if (success)
+                        return;
+                    var msg = _this.i18Service.translate(key, validator.options);
+                    errors.push(new ValidationError(msg, validator));
+                });
+
                 return errors;
             };
 
-            DefaultDataAdapter.prototype.validateItemProperty = function (column, row) {
+            DefaultDataSerice.prototype.validateItemProperty = function (column, row) {
                 var _this = this;
-                var validate = column.editable.validate || this.settings.validate;
                 var errors = [];
-                var colValue = this.getItemPropertyValue(column, row);
-                if (column.editable.validators != null && $.isFunction(validate)) {
-                    $.each(column.editable.validators, function (key, val) {
-                        var validator = new Validator(key, val, column);
-                        var success = validate.call(_this, colValue, validator, row);
-                        if (success)
-                            return;
-                        var msg = _this.editable.formatMessage(_this.editable.settings.language.validators[key] || "Validator message is missing", validator.options);
-                        errors.push(new ValidationError(msg, validator, column.mData));
+                var rowScope = angular.element(row.node()).scope();
+                var formController = rowScope.$getRowForm();
+                var inputCtrl = formController[column.name || column.mData];
+                var valMap = {};
+                var colSettings = Editable.getColumnEditableSettings(column) || {};
+                if (angular.isObject(colSettings.validators)) {
+                    angular.forEach(colSettings.validators, function (opts, valName) {
+                        valMap[valName] = opts;
                     });
                 }
+
+                angular.forEach(inputCtrl.$error, function (err, valName) {
+                    if (!err)
+                        return;
+                    var validator = new Validator(valName, valMap[valName] || null, column);
+                    var msg = _this.i18Service.translate(valName, validator);
+                    errors.push(new ValidationError(msg, validator, column.mData));
+                });
+
+                /*
+                var validate = column.editable.validate || this.settings.validate;
+                var colValue = this.getItemPropertyValue(column, row);
+                if (column.editable.validators != null && $.isFunction(validate)) {
+                $.each(column.editable.validators, (key, val) => {
+                var validator = new Validator(key, val, column);
+                var success = validate.call(this, row, validator, colValue);
+                if (success) return;
+                var msg = this.i18Service.translate(key, validator.options);
+                errors.push(new ValidationError(msg, validator, column.mData));
+                });
+                }*/
                 return errors;
             };
 
-            DefaultDataAdapter.prototype.isColumnEditable = function (column) {
+            DefaultDataSerice.prototype.isColumnEditable = function (column) {
                 return (column.editable !== false) && $.type(column.mData) === "string";
             };
 
-            DefaultDataAdapter.prototype.getItemPropertyValue = function (column, row) {
+            DefaultDataSerice.prototype.getItemPropertyValue = function (column, row) {
                 var mDataFn = this.dt.settings.oApi._fnGetObjectDataFn(column.mData);
                 var cIdx = this.getColumnCurrentIndex(column);
                 return mDataFn(row.data(), 'type', undefined, {
@@ -368,7 +583,7 @@ var dt;
                 });
             };
 
-            DefaultDataAdapter.prototype.getColumnCurrentIndex = function (column) {
+            DefaultDataSerice.prototype.getColumnCurrentIndex = function (column) {
                 var columns = this.dt.settings.aoColumns;
                 for (var i = 0; i < columns.length; i++) {
                     if (columns === columns[i])
@@ -377,7 +592,7 @@ var dt;
                 return -1;
             };
 
-            DefaultDataAdapter.prototype.getEditableColumns = function () {
+            DefaultDataSerice.prototype.getEditableColumns = function () {
                 var editableColumns = [];
                 var columns = this.dt.settings.aoColumns;
                 for (var i = 0; i < columns.length; i++) {
@@ -386,274 +601,14 @@ var dt;
                 }
                 return editableColumns;
             };
-            return DefaultDataAdapter;
+            DefaultDataSerice.$inject = ['api', 'settings', 'i18Service'];
+            return DefaultDataSerice;
         })();
-        _editable.DefaultDataAdapter = DefaultDataAdapter;
-
-        //#region Breeze data adapter
-        var BreezeDataAdapter = (function (_super) {
-            __extends(BreezeDataAdapter, _super);
-            function BreezeDataAdapter(editable, api, settings) {
-                _super.call(this, editable, api, settings);
-                this.deletedEntities = [];
-                if (!$.isFunction(this.settings.createItem))
-                    throw "'createItem' setting property must be provided in order to work with BreezeDataAdapter";
-            }
-            BreezeDataAdapter.prototype.removeItems = function (items) {
-                var removed = [];
-                for (var i = 0; i < items.length; i++) {
-                    var entity = items[i].data();
-                    entity.entityAspect.setDeleted();
-                    if (entity.entityAspect.entityState === breeze.EntityState.Detached)
-                        continue;
-
-                    //TODO: check if is an simple or breeze array if not simple we have to add to the deleted entities
-                    this.deletedEntities.push(entity);
-                    removed.push(items[i]);
-                }
-                return removed;
-            };
-
-            BreezeDataAdapter.prototype.restoreRemovedItems = function () {
-                var restored = [];
-                for (var i = 0; i < this.deletedEntities.length; i++) {
-                    var entity = this.deletedEntities[i];
-                    entity.entityAspect.rejectChanges();
-                    restored.push(entity);
-                }
-                return restored;
-            };
-
-            BreezeDataAdapter.prototype.rejectItems = function (items) {
-                var rejected = [];
-                for (var i = 0; i < items.length; i++) {
-                    var entity = items[i].data();
-                    entity.entityAspect.rejectChanges();
-                    rejected.push(items[i]);
-                }
-                return rejected;
-            };
-
-            BreezeDataAdapter.prototype.validateItemProperty = function (column, row) {
-                var errors = _super.prototype.validateItemProperty.call(this, column, row);
-                var entity = row.data();
-                if (entity.entityType == null || entity.entityAspect == null)
-                    throw 'Editing non breeze entities is not supported!';
-                return errors.concat(this.validateEntityProperty(column, entity));
-            };
-
-            //mData support: prop, prop.subProp.subSubProp, prop[1].subProp
-            BreezeDataAdapter.prototype.validateEntityProperty = function (column, entity) {
-                var errors = [];
-                var currentEntity = entity;
-                var arrRegex = /([\w\d]+)\[([\d]+)\]/i;
-                var paths = column.mData.split('.');
-                for (var i = 0; i < paths.length; i++) {
-                    var path = paths[i];
-                    if (i == (paths.length - 1)) {
-                        if (currentEntity.entityAspect.validateProperty(path))
-                            return errors;
-                        var entityErrors = currentEntity.entityAspect.getValidationErrors();
-                        $.each(entityErrors, function (idx, err) {
-                            if (err.propertyName != path)
-                                return;
-                            errors.push(new ValidationError(err.errorMessage, err.validator, err.propertyName));
-                        });
-                    }
-                    var matches = path.match(arrRegex);
-                    currentEntity = (matches) ? currentEntity[matches[1]][parseInt(matches[2])] : currentEntity[path];
-                }
-                return errors;
-            };
-            return BreezeDataAdapter;
-        })(DefaultDataAdapter);
-        _editable.BreezeDataAdapter = BreezeDataAdapter;
-
-        //#endregion
-        //#region AngularStrap display adapter plugin
-        var AngularStrapDisplayAdapterPlugin = (function () {
-            function AngularStrapDisplayAdapterPlugin(displayAdapter) {
-                this.displayAdapter = displayAdapter;
-            }
-            AngularStrapDisplayAdapterPlugin.prototype.selectControl = function (event, cell, col) {
-                return false;
-            };
-
-            AngularStrapDisplayAdapterPlugin.prototype.prepareCell = function (cell) {
-            };
-
-            AngularStrapDisplayAdapterPlugin.prototype.canBlurCell = function (event, cell, col) {
-                if (!event)
-                    return true;
-                if (event.type === 'click') {
-                    var picker = $(event.target).closest('div.datepicker,div.timepicker');
-
-                    //check if the picker element was clicked or if the target is not in the body (assume that the picker view changed)
-                    if (picker.length || !$(event.target).closest('body').length)
-                        return false;
-                }
-                var type = Editable.getColumnType(col);
-                if (type !== 'datetime')
-                    return true;
-
-                var $target = $(event.target);
-
-                /* Capture shift+tab to match the left arrow key */
-                var key = (event.keyCode == 9 && event.shiftKey) ? -1 : event.keyCode;
-
-                //Tab or right arrow
-                if ((key === 9 || key === 39) && $target.attr('bs-datepicker') !== undefined) {
-                    $target.trigger('blur').trigger('mouseleave');
-                    $('input[bs-timepicker]', $(event.target).parent().next()).focus().click();
-                    return false;
-                }
-
-                //Shit+tab or left arrow
-                if ((key === -1 || key === 37) && $target.attr('bs-timepicker') !== undefined) {
-                    $target.trigger('blur').trigger('mouseleave');
-                    $('input[bs-datepicker]', $(event.target).parent().prev()).focus().click();
-                    return false;
-                }
-                return true;
-            };
-
-            AngularStrapDisplayAdapterPlugin.prototype.getSupportedTypes = function () {
-                return ["date", "datetime", "time"];
-            };
-
-            AngularStrapDisplayAdapterPlugin.prototype.getEditTemplateForType = function (type, col) {
-                var opts = Editable.getColumnTemplateSettings(col) || {};
-                var $template;
-                var attrs = {
-                    'ng-model': Editable.MODEL_PATH,
-                    'type': 'text'
-                };
-                attrs[Editable.EDIT_CONTROL_ATTRS] = '';
-
-                switch (type) {
-                    case 'date':
-                        $template = this.getDateTemplate(attrs, opts);
-                        break;
-                    case 'time':
-                        $template = this.getTimeTemplate(attrs, opts);
-                        break;
-                    case 'datetime':
-                        $template = this.getDateTimeTemplate(attrs, opts);
-                        break;
-                    default:
-                        return null;
-                }
-
-                if ($.isFunction(opts.init))
-                    opts.init.call(this, $template, type, opts);
-
-                var template = type !== 'datetime' ? $template[0].outerHTML : $template.html();
-                return template;
-            };
-
-            AngularStrapDisplayAdapterPlugin.prototype.getDateTimeTemplate = function (attrs, opts) {
-                var date = this.getDateTemplate(attrs, opts.date || {});
-                var time = this.getTimeTemplate(attrs, opts.time || {});
-                return angular.element('<div />').append(angular.element('<div />').addClass('form-group').append(date), angular.element('<div />').addClass('form-group').append(time));
-            };
-
-            AngularStrapDisplayAdapterPlugin.prototype.getDateTemplate = function (attrs, opts) {
-                return angular.element('<input />').attr('size', 8).attr('data-container', 'body').attr(attrs).addClass('form-control').addClass(this.displayAdapter.getControlClass()).addClass(opts.className || '').attr('bs-datepicker', '').attr((opts.attrs || {}));
-            };
-
-            AngularStrapDisplayAdapterPlugin.prototype.getTimeTemplate = function (attrs, opts) {
-                return angular.element('<input />').attr('size', 5).attr('data-container', 'body').attr(attrs).addClass('form-control').addClass(this.displayAdapter.getControlClass()).addClass(opts.className || '').attr('bs-timepicker', '').attr((opts.attrs || {}));
-            };
-
-            AngularStrapDisplayAdapterPlugin.prototype.getPopoverAttributes = function (contentExpr, toggleExpr, placement) {
-                if (typeof placement === "undefined") { placement = 'bottom'; }
-                return {
-                    'bs-popover': '',
-                    'data-content': contentExpr,
-                    'bs-show': toggleExpr,
-                    'data-trigger': 'manual',
-                    'data-html': true,
-                    'data-placement': placement
-                };
-            };
-            AngularStrapDisplayAdapterPlugin.$inject = ['displayAdapter'];
-            return AngularStrapDisplayAdapterPlugin;
-        })();
-        _editable.AngularStrapDisplayAdapterPlugin = AngularStrapDisplayAdapterPlugin;
-
-        //#endregion
-        //#region ui-select2 display adapter plugin
-        var UiSelect2DisplayAdapterPlugin = (function () {
-            function UiSelect2DisplayAdapterPlugin(displayAdapter) {
-                this.displayAdapter = displayAdapter;
-            }
-            UiSelect2DisplayAdapterPlugin.prototype.getSupportedTypes = function () {
-                return ['select'];
-            };
-
-            UiSelect2DisplayAdapterPlugin.prototype.selectControl = function (event, cell, col) {
-                var select = $('select[ui-select2]', cell);
-                if (!select.length)
-                    return false;
-                setTimeout(function () {
-                    return select.select2('open');
-                }, 0);
-                return true;
-            };
-
-            UiSelect2DisplayAdapterPlugin.prototype.canBlurCell = function (event, cell, col) {
-                return true;
-            };
-
-            UiSelect2DisplayAdapterPlugin.prototype.prepareCell = function (cell) {
-                var editable = $.isPlainObject(cell.column.editable) ? cell.column.editable : null;
-                if (!editable)
-                    return;
-                var scope = cell.scope;
-                if (editable.options)
-                    scope.$options = editable.options;
-                if (editable.groups)
-                    scope.$groups = editable.groups;
-                scope.$settings = editable.settings || {};
-            };
-
-            /*
-            <select ui-select2 ng-model="select2" data-placeholder="Pick a number">
-            <option value=""></option>
-            <option ng-repeat="number in range" value="{{number.value}}">{{number.text}}</option>
-            </select>
-            */
-            UiSelect2DisplayAdapterPlugin.prototype.getEditTemplateForType = function (type, col) {
-                var opts = Editable.getColumnEditableSettings(col) || {};
-
-                var settings = opts.settings || {};
-                var template = opts.template || {};
-                template.select = template.select || {};
-                template.option = template.option || {};
-                template.optgroup = template.optgroup || {};
-
-                var select = $('<select />').attr('ui-select2', '$settings').attr('ng-model', Editable.MODEL_PATH).attr(Editable.EDIT_CONTROL_ATTRS, '').attr((template.select.attrs || {})).addClass(template.select.className || '').addClass(this.displayAdapter.getControlClass());
-
-                //we have to add an empty option
-                if (settings.allowClear === true) {
-                    select.append($('<option />'));
-                }
-
-                if (opts.groups) {
-                    select.append($('<optgroup />').attr('ng-repeat', 'group in $groups').attr('label', '{{group.name}}').attr((template.optgroup.attrs || {})).addClass(template.optgroup.className || '').append($('<option />').attr('ng-repeat', 'option in group.options').attr('ng-bind', 'option.text').attr('ng-value', 'option.value').attr((template.option.attrs || {})).addClass(template.option.className || '')));
-                } else {
-                    select.append($('<option />').attr('ng-repeat', 'option in $options').attr('ng-bind', 'option.text').attr('ng-value', 'option.value').attr((template.option.attrs || {})).addClass(template.option.className || ''));
-                }
-                return select[0].outerHTML;
-            };
-            UiSelect2DisplayAdapterPlugin.$inject = ['displayAdapter'];
-            return UiSelect2DisplayAdapterPlugin;
-        })();
-        _editable.UiSelect2DisplayAdapterPlugin = UiSelect2DisplayAdapterPlugin;
+        editable.DefaultDataSerice = DefaultDataSerice;
 
         //#endregion
         var DefaultDisplayAdapter = (function () {
-            function DefaultDisplayAdapter(editable, api, settings, plugins, $injector) {
+            function DefaultDisplayAdapter(api, settings, plugins, $injector) {
                 this.dt = {
                     settings: null,
                     api: null
@@ -662,14 +617,13 @@ var dt;
                 this.dt.api = api;
                 this.dt.settings = api.settings()[0];
                 this.settings = settings;
-                this.editable = editable;
                 this.$injector = $injector;
                 this.setupPlugins(plugins);
             }
             DefaultDisplayAdapter.prototype.setupPlugins = function (plugins) {
                 var _this = this;
                 var locals = {
-                    displayAdapter: this
+                    displayService: this
                 };
 
                 //Setup editType plugins
@@ -680,8 +634,14 @@ var dt;
                     });
                 });
 
-                //Setup popover plugin
-                this.popoverPlugin = this.$injector.instantiate(plugins.popover, locals);
+                //Style
+                if (plugins.style) {
+                    this.stylePlugin = this.$injector.instantiate(plugins.style, locals);
+                }
+
+                //Setup validation plugins
+                this.cellValidationPlugin = this.$injector.instantiate(plugins.cellValidation, locals);
+                this.rowValidationPlugin = this.$injector.instantiate(plugins.rowValidation, locals);
             };
 
             DefaultDisplayAdapter.prototype.canBlurCell = function (event, cell, col) {
@@ -691,10 +651,50 @@ var dt;
                 return true;
             };
 
-            DefaultDisplayAdapter.prototype.prepareCell = function (cell) {
-                var type = Editable.getColumnType(cell.column);
+            DefaultDisplayAdapter.prototype.cellCompiling = function (args) {
+                var type = Editable.getColumnType(args.column);
                 if (this.pluginTypes.hasOwnProperty(type))
-                    this.pluginTypes[type].prepareCell(cell);
+                    this.pluginTypes[type].cellCompiling(args);
+            };
+
+            DefaultDisplayAdapter.prototype.cellCompiled = function (args) {
+                var type = Editable.getColumnType(args.column);
+                if (this.pluginTypes.hasOwnProperty(type))
+                    this.pluginTypes[type].cellCompiled(args);
+            };
+
+            DefaultDisplayAdapter.prototype.rowCompiling = function (args) {
+                var formName = ('row' + args.hash + 'Form').replace(':', '');
+                var attrs = {
+                    'ng-form': formName
+                };
+                var rowSetup = {
+                    index: args.rowIndex,
+                    hash: args.hash,
+                    attrs: attrs,
+                    classes: [],
+                    ngClass: {},
+                    formName: formName,
+                    rowIndex: args.rowIndex,
+                    dataPath: args.dataPath
+                };
+
+                this.rowValidationPlugin.setupRowTemplate(rowSetup);
+                if (this.stylePlugin)
+                    this.stylePlugin.setupRowTemplate(rowSetup);
+
+                var $node = $(args.node);
+                $node.attr(rowSetup.attrs);
+                $node.addClass(rowSetup.classes.join(' '));
+                Editable.setNgClass(rowSetup.ngClass, args.node);
+            };
+
+            DefaultDisplayAdapter.prototype.rowCompiled = function (args) {
+                var formName = $(args.node).attr('ng-form');
+                var scope = args.scope;
+                scope.$getRowForm = function () {
+                    return scope[formName];
+                };
             };
 
             DefaultDisplayAdapter.prototype.selectControl = function (event, cell, col) {
@@ -732,14 +732,14 @@ var dt;
                 template = template || {};
                 var wrapperOpts = $.isPlainObject(template) ? (template.wrapper || Editable.defaultEditTemplateWrapper) : Editable.defaultEditTemplateWrapper;
                 var $wrapper = $('<' + wrapperOpts.tagName + ' />').addClass(this.getControlWrapperClass()).attr(Editable.EDIT_CONTROL_WRAPPER_ATTRS, '').attr((wrapperOpts.attrs || {})).addClass(wrapperOpts.className || '');
-
+                $wrapper.append(Editable.BEFORE_EDIT_CONTROL);
                 $wrapper.append(content);
-
+                $wrapper.append(Editable.AFTER_EDIT_CONTROL);
                 if ($.isFunction(template.init))
                     template.init.call(this, $wrapper, content, col);
 
                 //before retun we have to remove the ="" that setAttribute add after the edit attribute
-                return $wrapper[0].outerHTML.replaceAll(Editable.EDIT_CONTROL_ATTRS.toLowerCase() + '=""', Editable.EDIT_CONTROL_ATTRS).replaceAll(Editable.EDIT_CONTROL_WRAPPER_ATTRS.toLowerCase() + '=""', Editable.EDIT_CONTROL_WRAPPER_ATTRS);
+                return $wrapper[0].outerHTML.replaceAll(Editable.EDIT_CONTROL_ATTRS + '=""', Editable.EDIT_CONTROL_ATTRS).replaceAll(Editable.EDIT_CONTROL_WRAPPER_ATTRS + '=""', Editable.EDIT_CONTROL_WRAPPER_ATTRS);
             };
 
             DefaultDisplayAdapter.prototype.getEditTemplateForType = function (type, col) {
@@ -779,28 +779,106 @@ var dt;
                 }
             };
 
-            DefaultDisplayAdapter.prototype.mergeErrors = function (errors, type) {
-                if (!errors)
-                    return null;
-                var msg = ' ';
-                for (var i = 0; i < errors.length; i++) {
-                    msg += errors[i].message + '<br />';
-                }
-                return msg;
+            DefaultDisplayAdapter.prototype.mergeCellErrors = function (errors) {
+                return this.cellValidationPlugin.mergeErrors(errors);
             };
 
-            DefaultDisplayAdapter.prototype.getPopoverAttributes = function (contentExpr, toggleExpr, placement) {
-                if (typeof placement === "undefined") { placement = 'bottom'; }
-                return this.popoverPlugin.getPopoverAttributes(contentExpr, toggleExpr, placement);
+            DefaultDisplayAdapter.prototype.setupColumnTemplate = function (args) {
+                var settings = Editable.getColumnEditableSettings(args.column) || {};
+                var editCtrlAttrs = args.editCtrl.attrs;
+                if ($.isPlainObject(settings.validators)) {
+                    angular.forEach(settings.validators, function (val, valName) {
+                        editCtrlAttrs[valName] = val;
+                    });
+                }
+                editCtrlAttrs['ng-change'] = '$cellValidate()';
+                this.cellValidationPlugin.setupColumnTemplate(args);
+
+                if (this.stylePlugin)
+                    this.stylePlugin.setupColumnTemplate(args);
             };
-            DefaultDisplayAdapter.$inject = ['editable', 'api', 'settings', 'plugins', '$injector'];
+
+            DefaultDisplayAdapter.prototype.mergeRowErrors = function (errors) {
+                return this.rowValidationPlugin.mergeErrors(errors);
+            };
+            DefaultDisplayAdapter.$inject = ['api', 'settings', 'plugins', '$injector'];
             return DefaultDisplayAdapter;
         })();
-        _editable.DefaultDisplayAdapter = DefaultDisplayAdapter;
+        editable.DefaultDisplayAdapter = DefaultDisplayAdapter;
 
+        //#region Commands
+        //#region Edit
+        var BaseEditCommand = (function (_super) {
+            __extends(BaseEditCommand, _super);
+            function BaseEditCommand(defSettings, settings) {
+                _super.call(this, defSettings, settings);
+            }
+            BaseEditCommand.prototype.execute = function (scope) {
+                if (scope.$isInEditMode())
+                    scope.$row.save();
+                else
+                    scope.$row.edit();
+            };
+            return BaseEditCommand;
+        })(dt.BaseCommand);
+        editable.BaseEditCommand = BaseEditCommand;
+
+        var EditCommand = (function (_super) {
+            __extends(EditCommand, _super);
+            function EditCommand(settings) {
+                _super.call(this, {
+                    //html: 'Edit',
+                    attrs: {
+                        'ng-bind': "$isInEditMode() === false ? 'Edit' : 'Save'"
+                    }
+                }, settings);
+            }
+            EditCommand.alias = 'edit';
+
+            EditCommand.$inject = ['settings'];
+            return EditCommand;
+        })(BaseEditCommand);
+        editable.EditCommand = EditCommand;
+
+        //Register commands
+        dt.CommandTablePlugin.registerCommand(EditCommand);
+
+        //#endregion
+        //#region Remove
+        var BaseRemoveCommand = (function (_super) {
+            __extends(BaseRemoveCommand, _super);
+            function BaseRemoveCommand(defSettings, settings) {
+                _super.call(this, defSettings, settings);
+            }
+            BaseRemoveCommand.prototype.execute = function (scope) {
+                scope.$row.remove();
+            };
+            return BaseRemoveCommand;
+        })(dt.BaseCommand);
+        editable.BaseRemoveCommand = BaseRemoveCommand;
+
+        var RemoveCommand = (function (_super) {
+            __extends(RemoveCommand, _super);
+            function RemoveCommand(settings) {
+                _super.call(this, {
+                    html: 'Remove'
+                }, settings);
+            }
+            RemoveCommand.alias = 'remove';
+
+            RemoveCommand.$inject = ['settings'];
+            return RemoveCommand;
+        })(BaseRemoveCommand);
+        editable.RemoveCommand = RemoveCommand;
+
+        //Register commands
+        dt.CommandTablePlugin.registerCommand(RemoveCommand);
+
+        //#endregion
+        //#endregion
         //Abstract
-        var BaseEditorAdapter = (function () {
-            function BaseEditorAdapter(editable, api, settings) {
+        var BaseEditor = (function () {
+            function BaseEditor(api, settings, defaultSettings, displayService, dataService) {
                 this.dt = {
                     settings: null,
                     api: null
@@ -808,70 +886,173 @@ var dt;
                 this.type = null;
                 this.dt.api = api;
                 this.dt.settings = api.settings()[0];
-                this.settings = settings;
-                this.editable = editable;
+                this.dataService = dataService;
+                this.displayService = displayService;
+                this.settings = $.extend(true, {}, defaultSettings, settings);
+                this.registerCallbacks();
             }
-            Object.defineProperty(BaseEditorAdapter.prototype, "dataAdapter", {
-                get: function () {
-                    return this.editable.dataAdapterInstance;
-                },
-                enumerable: true,
-                configurable: true
-            });
-
-            Object.defineProperty(BaseEditorAdapter.prototype, "displayAdapter", {
-                get: function () {
-                    return this.editable.displayAdapterInstance;
-                },
-                enumerable: true,
-                configurable: true
-            });
-
-            BaseEditorAdapter.prototype.initialize = function () {
+            BaseEditor.prototype.registerCallbacks = function () {
+                this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'cellCompiling', this.onCellCompiling.bind(this), "cellCompiling_BaseEditor");
+                this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'cellCompiled', this.onCellCompiled.bind(this), "cellCompiled_BaseEditor");
+                this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'rowCompiling', this.onRowCompiling.bind(this), "rowCompiling_BaseEditor");
+                this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'rowCompiled', this.onRowCompiled.bind(this), "rowCompiled_BaseEditor");
             };
 
-            BaseEditorAdapter.prototype.prepareCell = function (cell) {
-                this.displayAdapter.prepareCell(cell);
+            BaseEditor.prototype.initialize = function () {
             };
 
-            BaseEditorAdapter.prototype.prepareRow = function (row) {
+            BaseEditor.prototype.onCellCompiling = function (args) {
+                if (!this.dataService.isColumnEditable(args.column))
+                    return;
+                args.html = args.column.cellTemplate;
+                delete args.attr['ng-bind'];
+                this.displayService.cellCompiling(args);
             };
 
-            BaseEditorAdapter.prototype.removeItems = function (items) {
-                return this.dataAdapter.removeItems(items);
+            BaseEditor.prototype.onCellCompiled = function (args) {
+                var _this = this;
+                if (!this.dataService.isColumnEditable(args.column))
+                    return;
+                var scope = args.scope;
+                scope.$cellDisplayMode = new DisplayMode();
+                scope.$cellErrors = [];
+                scope.$getCellErrorMessage = function () {
+                    return _this.displayService.mergeCellErrors(scope.$cellErrors);
+                };
+                scope.$isInEditMode = function () {
+                    return scope.$cellDisplayMode.name === DisplayMode.Edit || scope.$rowDisplayMode.name === DisplayMode.Edit;
+                };
+                scope.$getInputName = function () {
+                    return args.column.name || args.column.mData;
+                };
+                scope.$cellValidate = function () {
+                    var errors = _this.dataService.validateItemProperty(args.column, scope.$row);
+                    scope.$cellErrors.length = 0;
+                    for (var i = 0; i < errors.length; i++) {
+                        scope.$cellErrors.push(errors[i]);
+                    }
+                };
+
+                this.displayService.cellCompiled(args);
             };
 
-            BaseEditorAdapter.prototype.rejectItems = function (items) {
-                return this.dataAdapter.rejectItems(items);
+            BaseEditor.prototype.onRowCompiling = function (args) {
+                this.displayService.rowCompiling(args);
             };
 
-            BaseEditorAdapter.prototype.restoreRemovedItems = function () {
-                return this.dataAdapter.restoreRemovedItems();
+            BaseEditor.prototype.onRowCompiled = function (args) {
+                var _this = this;
+                var scope = args.scope;
+
+                scope.$rowDisplayMode = new DisplayMode();
+                scope.$rowErrors = [];
+                scope.$getRowErrorMessage = function () {
+                    return _this.displayService.mergeRowErrors(scope.$rowErrors);
+                };
+                scope.$isInEditMode = function () {
+                    return scope.$rowDisplayMode.name === DisplayMode.Edit;
+                };
+
+                scope.$rowValidate = function () {
+                    scope.$rowErrors.length = 0;
+                    var row = scope.$row;
+                    var errors = _this.dataService.validateItem(row);
+                    Editable.fillRowValidationErrors(row, errors);
+                    return errors;
+                };
+
+                this.displayService.rowCompiled(args);
             };
 
-            BaseEditorAdapter.prototype.createItem = function () {
-                return this.dataAdapter.createItem();
+            BaseEditor.prototype.getVisibleColumn = function (index) {
+                var columns = this.dt.settings.aoColumns;
+                var visIdx = -1;
+                for (var i = 0; i < columns.length; i++) {
+                    if (columns[i].bVisible)
+                        visIdx++;
+                    if (visIdx === index)
+                        return columns[i];
+                }
+                return null;
             };
 
-            BaseEditorAdapter.prototype.addItem = function (item) {
-                return this.dataAdapter.addItem(item);
+            BaseEditor.prototype.getFirstRowCell = function (row) {
+                var columns = this.dt.settings.aoColumns;
+                var colIdx = 0;
+                var column = null, $cell = null;
+
+                for (var i = 0; i < columns.length; i++) {
+                    if (columns[i].bVisible) {
+                        if (this.dataService.isColumnEditable(columns[i])) {
+                            $cell = $('td', row.node()).eq(colIdx);
+                            column = columns[i];
+                            break;
+                        }
+                        colIdx++;
+                    }
+                }
+                return {
+                    cellIndex: colIdx,
+                    column: column,
+                    cellNode: $cell
+                };
             };
-            return BaseEditorAdapter;
+
+            BaseEditor.prototype.removeItems = function (items) {
+                return this.dataService.removeItems(items);
+            };
+
+            BaseEditor.prototype.rejectItems = function (items) {
+                return this.dataService.rejectItems(items);
+            };
+
+            BaseEditor.prototype.restoreRemovedItems = function () {
+                return this.dataService.restoreRemovedItems();
+            };
+
+            BaseEditor.prototype.createItem = function () {
+                return this.dataService.createItem();
+            };
+
+            BaseEditor.prototype.addItem = function (item) {
+                return this.dataService.addItem(item);
+            };
+
+            BaseEditor.prototype.editRow = function (row) {
+            };
+
+            BaseEditor.prototype.saveRow = function (row) {
+            };
+            return BaseEditor;
         })();
-        _editable.BaseEditorAdapter = BaseEditorAdapter;
+        editable.BaseEditor = BaseEditor;
 
-        var BatchEditorAdapter = (function (_super) {
-            __extends(BatchEditorAdapter, _super);
-            function BatchEditorAdapter(editable, api, settings) {
-                _super.call(this, editable, api, settings);
-                this.lastEditedCellPos = null;
-                this.settings = $.extend(true, {}, BatchEditorAdapter.defaultSettings, this.settings);
+        var BatchEditor = (function (_super) {
+            __extends(BatchEditor, _super);
+            function BatchEditor(api, settings, displayService, dataService) {
+                _super.call(this, api, settings, BatchEditor.defaultSettings, displayService, dataService);
             }
-            BatchEditorAdapter.prototype.initialize = function () {
+            BatchEditor.prototype.editRow = function (row) {
+                var _this = this;
+                var dtRow = this.dt.api.row(row);
+                var $tr = angular.element(dtRow.node());
+                var rowScope = $tr.scope();
+                if (!rowScope)
+                    throw 'Row must have a scope';
+                var cell = this.getFirstRowCell(dtRow);
+
+                //delay in order if any click event triggered this function
+                setTimeout(function () {
+                    _this.keys.fnSetPosition(cell.cellNode[0]);
+                }, 100);
+            };
+
+            BatchEditor.prototype.initialize = function () {
                 var _this = this;
                 this.keys = new $.fn.dataTable.KeyTable({
                     datatable: this.dt.settings,
                     table: this.dt.settings.nTable,
+                    focusEvent: this.settings.editEvent,
                     form: true
                 });
                 var $table = $(this.dt.settings.nTable);
@@ -886,53 +1067,9 @@ var dt;
                 this.keys.event.focus(null, null, this.onCellFocus.bind(this));
                 this.keys.event.blur(null, null, this.onCellBlur.bind(this));
                 this.keys.event.bluring(null, null, this.onCellBluring.bind(this));
-                this.prepareCellTemplates();
             };
 
-            BatchEditorAdapter.prototype.prepareCellTemplates = function () {
-                var columns = this.dt.settings.aoColumns, col, i;
-                for (i = 0; i < columns.length; i++) {
-                    col = columns[i];
-                    if (!this.dataAdapter.isColumnEditable(col))
-                        continue;
-
-                    //prepare cell template
-                    var popoverAttrs = this.displayAdapter.getPopoverAttributes('{{getErrorMessage()}}', 'errors.length > 0');
-                    var wrapperAttrs = ' ';
-                    for (var key in popoverAttrs) {
-                        wrapperAttrs += key + '="' + popoverAttrs[key] + '" ';
-                    }
-                    var columnModelPath = this.dataAdapter.getColumnModelPath(col);
-
-                    var editControl = this.editable.getColumnEditControlTemplate(col).replaceAll(Editable.MODEL_PATH, columnModelPath).replaceAll(Editable.EDIT_CONTROL_ATTRS, '').replaceAll(Editable.EDIT_CONTROL_WRAPPER_ATTRS, wrapperAttrs);
-
-                    var displayControl = this.editable.getColumnDisplayControlTemplate(col);
-
-                    var template = this.settings.cellTemplate.replace(Editable.EDIT_CONTROL, editControl).replace(Editable.DISPLAY_CONTROL, displayControl);
-
-                    col.batchCellTemplate = template;
-                }
-            };
-
-            BatchEditorAdapter.prototype.prepareCell = function (cell) {
-                var _this = this;
-                if (!this.dataAdapter.isColumnEditable(cell.column))
-                    return;
-                var scope = cell.scope;
-                scope.editMode = false;
-                scope.errors = [];
-                scope.getErrorMessage = function () {
-                    return _this.displayAdapter.mergeErrors(scope.errors, 'popover');
-                };
-                cell.html = cell.column.batchCellTemplate;
-                delete cell.attr['ng-bind'];
-                this.displayAdapter.prepareCell(cell);
-            };
-
-            BatchEditorAdapter.prototype.prepareRow = function (row) {
-            };
-
-            BatchEditorAdapter.prototype.addItem = function (item) {
+            BatchEditor.prototype.addItem = function (item) {
                 var _this = this;
                 _super.prototype.addItem.call(this, item);
                 var rIdx = this.dt.settings.aoData.length - 1;
@@ -943,76 +1080,71 @@ var dt;
                 }, 100);
             };
 
-            BatchEditorAdapter.prototype.onCellBluring = function (cell, x, y, event) {
+            BatchEditor.prototype.onCellBluring = function (cell, x, y, event) {
                 if (!cell)
                     return true;
                 var $cell = angular.element(cell);
                 var cellScope = $cell.scope();
                 if (!cellScope)
                     throw 'Cell must have a scope';
-                if (!cellScope.editMode)
+                var col = this.getVisibleColumn(x);
+                if (this.dataService.isColumnEditable(col) && cellScope.$cellDisplayMode.name == DisplayMode.ReadOnly)
                     return true;
-                var displayAdapter = this.displayAdapter;
-                var col = this.dt.settings.aoColumns[x];
-                return displayAdapter.canBlurCell(event, cell, col);
+                var displayService = this.displayService;
+                return displayService.canBlurCell(event, cell, col);
             };
 
-            BatchEditorAdapter.prototype.onCellBlur = function (cell, x, y, event) {
+            BatchEditor.prototype.onCellBlur = function (cell, x, y, event) {
                 if (!cell)
                     return;
                 var $cell = angular.element(cell);
                 var cellScope = $cell.scope();
                 if (!cellScope)
                     throw 'Cell must have a scope';
-                if (!cellScope.editMode)
+                var col = this.getVisibleColumn(x);
+                var dataService = this.dataService;
+                var displayService = this.displayService;
+                if (dataService.isColumnEditable(col) && cellScope.$cellDisplayMode.name == DisplayMode.ReadOnly)
                     return;
 
-                var dataAdapter = this.dataAdapter;
-                var displayAdapter = this.displayAdapter;
-                var col = this.dt.settings.aoColumns[x];
-                var tr = $cell.parent('tr')[0];
-                var row = this.dt.api.row(tr);
-
-                if (!dataAdapter.isColumnEditable(col))
+                if (!dataService.isColumnEditable(col))
                     return;
 
-                var errors = cellScope.errors = dataAdapter.validateItemProperty(col, row);
-
-                if (errors.length) {
-                    displayAdapter.selectControl(event, cell, col);
+                if (cellScope.$cellErrors.length) {
+                    displayService.selectControl(event, cell, col);
                 } else {
-                    cellScope.editMode = false;
+                    cellScope.$cellDisplayMode.setMode(DisplayMode.ReadOnly);
                 }
                 cellScope.$digest();
             };
 
-            BatchEditorAdapter.prototype.onCellFocus = function (cell, x, y, event) {
+            BatchEditor.prototype.onCellFocus = function (cell, x, y, event) {
                 if (cell == null)
                     return;
-                var dataAdapter = this.dataAdapter;
-                var displayAdapter = this.displayAdapter;
+                var dataService = this.dataService;
+                var displayService = this.displayService;
                 var $cell = angular.element(cell);
                 var cellScope = $cell.scope();
                 if (!cellScope)
                     throw 'Cell must have a scope';
 
-                var col = this.dt.settings.aoColumns[x];
+                var col = this.getVisibleColumn(x);
 
-                if (cellScope.editMode) {
-                    displayAdapter.selectControl(event, $cell, col);
+                if (dataService.isColumnEditable(col) && cellScope.$cellDisplayMode.name == DisplayMode.Edit) {
+                    displayService.selectControl(event, $cell, col);
                     return;
                 }
 
                 //check if the previous cell has no errors
                 if (this.lastFocusedCell) {
                     var prevScope = this.lastFocusedCell.scope();
-                    if (prevScope.errors.length) {
-                        this.keys.fnSetPosition(this.lastFocusedCell[0], event);
+                    if (prevScope.$cellErrors.length) {
+                        this.keys.fnSetPosition(this.lastFocusedCell[0], null, event);
                         return;
                     }
                 }
 
-                if (!dataAdapter.isColumnEditable(col)) {
+                if (!dataService.isColumnEditable(col)) {
                     if (event != null && event.type == "click")
                         return;
                     var prev = event != null && ((event.keyCode == 9 && event.shiftKey) || event.keyCode == 37);
@@ -1023,25 +1155,76 @@ var dt;
 
                 this.lastFocusedCell = $cell;
 
-                cellScope.editMode = true;
+                cellScope.$cellDisplayMode.setMode(DisplayMode.Edit);
 
                 //We have to delay the digest in order to have the display template shown for a while
                 //so that KeyTable will not blur as the display template will not be in the dom anymore
                 setTimeout(function () {
                     cellScope.$digest();
-                    displayAdapter.selectControl(event, $cell, col);
+                    displayService.selectControl(event, $cell, col);
                     cellScope.$broadcast('dt.StartEditCell');
                     cellScope.$emit('dt.StartCellEdit');
                 }, 100);
             };
-            BatchEditorAdapter.defaultSettings = {
-                cellTemplate: '<div ng-if="editMode">' + Editable.EDIT_CONTROL + '</div><div ng-if="!editMode">' + Editable.DISPLAY_CONTROL + '</div>'
+            BatchEditor.defaultSettings = {
+                editEvent: 'click'
             };
 
-            BatchEditorAdapter.$inject = ['editable', 'api', 'settings'];
-            return BatchEditorAdapter;
-        })(BaseEditorAdapter);
-        _editable.BatchEditorAdapter = BatchEditorAdapter;
+            BatchEditor.$inject = ['api', 'settings', 'displayService', 'dataService'];
+            return BatchEditor;
+        })(BaseEditor);
+        editable.BatchEditor = BatchEditor;
+
+        var InlineEditor = (function (_super) {
+            __extends(InlineEditor, _super);
+            function InlineEditor(api, settings, displayService, dataService) {
+                _super.call(this, api, settings, InlineEditor.defaultSettings, displayService, dataService);
+            }
+            InlineEditor.prototype.initialize = function () {
+            };
+
+            InlineEditor.prototype.saveRow = function (row) {
+                var dtRow = this.dt.api.row(row);
+                var $tr = angular.element(dtRow.node());
+                var rowScope = $tr.scope();
+                if (!rowScope)
+                    throw 'Row must have a scope';
+                var dataService = this.dataService;
+                var errors = dataService.validateItem(dtRow);
+                if (errors.length) {
+                    Editable.fillRowValidationErrors(dtRow, errors);
+                } else
+                    rowScope.$rowDisplayMode.setMode(DisplayMode.ReadOnly);
+
+                if (!rowScope.$$phase)
+                    rowScope.$digest();
+            };
+
+            InlineEditor.prototype.editRow = function (row) {
+                var _this = this;
+                var dtRow = this.dt.api.row(row);
+                var $tr = angular.element(dtRow.node());
+                var rowScope = $tr.scope();
+                if (!rowScope)
+                    throw 'Row must have a scope';
+                rowScope.$rowDisplayMode.setMode(DisplayMode.Edit);
+
+                var cell = this.getFirstRowCell(dtRow);
+
+                if (!rowScope.$$phase)
+                    rowScope.$digest();
+
+                //We have to delay so that the controls are drawn
+                setTimeout(function () {
+                    _this.displayService.selectControl(null, cell.cellNode, cell.column);
+                }, 100);
+            };
+            InlineEditor.defaultSettings = {};
+
+            InlineEditor.$inject = ['api', 'settings', 'displayService', 'dataService'];
+            return InlineEditor;
+        })(BaseEditor);
+        editable.InlineEditor = InlineEditor;
 
         var Position = (function () {
             function Position(x, y) {
@@ -1067,20 +1250,21 @@ var dt;
 })(dt || (dt = {}));
 
 (function (window, document, undefined) {
-    function escapeRegExp(string) {
-        return string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
-    }
-
-    if (String.prototype.replaceAll === undefined) {
-        String.prototype.replaceAll = function (find, replace) {
-            return this.replace(new RegExp(escapeRegExp(find), 'g'), replace);
-        };
-    }
-
+    //angular.module('dt').constant('editable.Editable.defaultSettings', dt.editable.Editable.defaultSettings);
     //Register events
     $.fn.DataTable.models.oSettings.editableInitCompleted = [];
 
     //#region Extensions
+    $.fn.DataTable.Api.register('row().edit()', function () {
+        var ctx = this.settings()[0];
+        ctx.editable.editor.editRow(this.index());
+    });
+
+    $.fn.DataTable.Api.register('row().save()', function () {
+        var ctx = this.settings()[0];
+        ctx.editable.editor.saveRow(this.index());
+    });
+
     $.fn.DataTable.Api.register('row().cell()', function (column) {
         var rIdx = this.index();
         var cIdx;
@@ -1158,9 +1342,9 @@ var dt;
             if (!this.s.dt.editable)
                 throw 'Editable plugin must be initialized';
             var editable = this.s.dt.editable;
-            if (!editable.dataAdapterInstance)
-                throw 'Editable plugin must have a editorAdapter set';
-            var editorAdapter = editable.editorAdapterInstance;
+            if (!editable.dataService)
+                throw 'Editable plugin must have a editor set';
+            var editor = editable.editor;
             var settings = editable.settings;
             var api = this.s.dt.oInstance.api();
             var itemsToRemove = [];
@@ -1171,7 +1355,7 @@ var dt;
                     itemsToRemove.push(api.row(i));
                 }
             }
-            var itemsRemoved = editorAdapter.removeItems(itemsToRemove);
+            var itemsRemoved = editor.removeItems(itemsToRemove);
             if ($.isFunction(settings.itemsRemoved))
                 settings.itemsRemoved.call(editable, itemsRemoved);
 
@@ -1205,11 +1389,11 @@ var dt;
             if (!this.s.dt.editable)
                 throw 'Editable plugin must be initialized';
             var editable = this.s.dt.editable;
-            if (!editable.dataAdapterInstance)
-                throw 'Editable plugin must have a editorAdapter set';
-            var editorAdapter = editable.editorAdapterInstance;
+            if (!editable.dataService)
+                throw 'Editable plugin must have a editor set';
+            var editor = editable.editor;
             var settings = editable.settings;
-            var restoredItems = editorAdapter.restoreRemovedItems();
+            var restoredItems = editor.restoreRemovedItems();
             if ($.isFunction(settings.itemsRestored))
                 settings.itemsRestored.call(editable, restoredItems);
             $(nButton).addClass(this.classes.buttons.disabled);
@@ -1231,16 +1415,16 @@ var dt;
             if (!this.s.dt.editable)
                 throw 'Editable plugin must be initialized';
             var editable = this.s.dt.editable;
-            if (!editable.dataAdapterInstance)
-                throw 'Editable plugin must have a editorAdapter set';
-            var editorAdapter = editable.editorAdapterInstance;
+            if (!editable.dataService)
+                throw 'Editable plugin must have a editor set';
+            var editor = editable.editor;
             var settings = editable.settings;
 
-            var item = editorAdapter.createItem();
+            var item = editor.createItem();
             if ($.isFunction(settings.itemCreated))
                 settings.itemCreated.call(editable, item);
 
-            editorAdapter.addItem(item);
+            editor.addItem(item);
 
             if ($.isFunction(settings.itemAdded))
                 settings.itemAdded.call(editable, item);
@@ -1262,9 +1446,9 @@ var dt;
             if (!this.s.dt.editable)
                 throw 'Editable plugin must be initialized';
             var editable = this.s.dt.editable;
-            if (!editable.dataAdapterInstance)
-                throw 'Editable plugin must have a editorAdapter set';
-            var editorAdapter = editable.editorAdapterInstance;
+            if (!editable.dataService)
+                throw 'Editable plugin must have a editor set';
+            var editor = editable.editor;
             var settings = editable.settings;
             var api = this.s.dt.oInstance.api();
             var itemsToReject = [];
@@ -1274,7 +1458,7 @@ var dt;
                 if (data[i]._DTTT_selected)
                     itemsToReject.push(api.row(i));
             }
-            var itemsRejected = editorAdapter.rejectItems(itemsToReject);
+            var itemsRejected = editor.rejectItems(itemsToReject);
             if ($.isFunction(settings.itemsRejected))
                 settings.itemsRejected.call(editable, itemsRejected);
 

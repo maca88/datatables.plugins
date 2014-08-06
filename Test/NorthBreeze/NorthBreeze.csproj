@@ -389,6 +389,10 @@
     <TypeScriptCompile Include="Scripts\jaydata.d.ts" />
     <TypeScriptCompile Include="src\dataTables.advancedFilter.ts" />
     <Content Include="src\dataTables.advancedFilter.js" />
+    <TypeScriptCompile Include="src\dataTables.editable.angularStrap.ts" />
+    <TypeScriptCompile Include="src\dataTables.editable.bootstrap.ts" />
+    <TypeScriptCompile Include="src\dataTables.editable.breeze.ts" />
+    <TypeScriptCompile Include="src\dataTables.editable.uiSelect2.ts" />
     <TypeScriptCompile Include="src\dataTables.entityFilter.ts" />
     <TypeScriptCompile Include="src\dataTables.colPin.ts" />
     <TypeScriptCompile Include="src\dataTables.colResize.ts" />
@@ -397,7 +401,11 @@
     <Content Include="src\dataTables.colPin.js" />
     <Content Include="src\dataTables.colResize.css" />
     <Content Include="src\dataTables.colResize.js" />
+    <Content Include="src\dataTables.editable.angularStrap.js" />
+    <Content Include="src\dataTables.editable.bootstrap.js" />
+    <Content Include="src\dataTables.editable.breeze.js" />
     <Content Include="src\dataTables.editable.js" />
+    <Content Include="src\dataTables.editable.uiSelect2.js" />
     <Content Include="src\dataTables.entityFilter.js" />
     <Content Include="src\dataTables.formFilter.js" />
     <Content Include="src\dataTables.remoteFilter.js" />

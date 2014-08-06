@@ -49,3 +49,7 @@ table.dataTable tr td.checkbox:before {
 table.dataTable tr.selected td.checkbox:before {
     content: "\f046"; /* fa-check-square-o */
 }
+
+tr.ng-invalid {
+    border: solid red 2px;
+}

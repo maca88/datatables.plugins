@@ -4,7 +4,65 @@
 ///<reference path='../typings/breeze/breeze.d.ts' />
 module dt {
 
+    //#region Interfaces
+
+    export interface ICellCompilingArgs {
+        attr: any;
+        html: any;
+        column: any;
+        node: any;
+        cellIndex: number;
+        rowIndex: number;
+        dataFullPath: string;
+    }
+
+    export interface ICellCompiledArgs {
+        scope: any;
+        node: any;
+        column: any;
+        cellIndex: number;
+        rowIndex: number;
+    }
+
+    export interface IRowCompiledArgs {
+        scope: any;
+        node: any;
+        hash: string;
+        rowIndex: number;
+        dataPath: number;
+    }
+
+    export interface IRowCompilingArgs {
+        node: any;
+        hash: string;
+        rowIndex: number;
+        dataPath: number;
+    }
+
+    export interface IEventListener {
+        event: string;
+        fn: Function;
+        scope: any
+    }
+
+    export interface ITablePlugin {
+        isEnabled(): boolean;
+        tableCreating(): void;
+        tableCreated(api): void;
+        getEventListeners(): IEventListener[];
+    }
+
+    //#endregion
+
     export class Table {
+
+        //constant
+        public static events = {
+            cellCompiling: 'cellCompiling',
+            cellCompiled: 'cellCompiled',
+            rowCompiling: 'rowCompiling',
+            rowCompiled: 'rowCompiled'
+        };
 
         public static defaultSettings = {
             invalidateRows: 'none', //rendered
@@ -33,19 +91,26 @@ module dt {
         private $parse;
         private $templateCache;
         private $rootScope;
+        private $injector;
         private $compile;
         private $http;
         private $q;
         private lastBlockMap = {};
-        private templatesToLoad =[];
-
+        private templatesToLoad = [];
         private watchedProperties = [];
+        private eventListeners = {
+            'cellCompiling': [],
+            'cellCompiled': [],
+            'rowCompiling': [],
+            'rowCompiled': []
+        };
 
-        constructor($parse, $rootScope, $q, $http, $compile, $templateCache, settings) {
+        constructor($parse, $rootScope, $q, $http, $compile, $templateCache, $injector, settings) {
             this.settings = $.extend(true, {}, Table.defaultSettings, settings);
             this.$parse = $parse;
             this.$rootScope = $rootScope;
             this.$compile = $compile;
+            this.$injector = $injector;
             this.$templateCache = $templateCache;
             this.link = $.proxy(this.link, this);
         }
@@ -105,14 +170,24 @@ module dt {
             options.angular = { //Save some angular stuff in order to use them by plugins
                 $compile: this.$compile,
                 $templateCache: this.$templateCache,
+                $injector: this.$injector,
                 rowDataPath: this.settings.rowDataPath
             };
 
             var activePlugins = [];
+            var locals = {
+                'dtTable': this
+            };
             angular.forEach(this.settings.plugins, pluginType => {
-                var plugin: ITablePlugin = new pluginType(this);
+                var plugin: ITablePlugin = this.$injector.instantiate(pluginType, locals);
                 if (!plugin.isEnabled()) return;
                 activePlugins.push(plugin);
+                var eventListeners = plugin.getEventListeners();
+                if (angular.isArray(eventListeners)) {
+                    angular.forEach(eventListeners, (el: IEventListener) => {
+                        this.eventListeners[el.event].push(el);
+                    });
+                }
                 plugin.tableCreating();
             });
 
@@ -345,6 +420,7 @@ module dt {
             this.$q = null;
             this.$http = null;
             this.$compile = null;
+            this.$injector = null;
             this.$scope.$$dtTable = null;
             this.$scope = null;
             this.$element = null;
@@ -356,14 +432,16 @@ module dt {
             var that = this,
                 settings = this.settings,
                 $compile = this.$compile,
-                watchedProperties = this.watchedProperties,
                 debug = this.settings.debug,
                 tableScope = this.$scope,
                 rowDataPath = this.settings.rowDataPath,
                 options = this.settings.options,
+                eventListener: IEventListener,
+                rowCompilingListeners = this.eventListeners.rowCompiling,
+                cellCompilingListeners = this.eventListeners.cellCompiling,
                 origCreatedRow = options.createdRow,
                 origDrawCallback = options.drawCallback;
-            options.createdRow = function(rowNode, rowData, dataIndex) {
+            options.createdRow = function(rowNode, rowData, rowIndex) {
                 if (that.dt.api == null) {
                     that.dt.api = this.api();
                     that.dt.settings = that.dt.api.context[0];
@@ -374,93 +452,100 @@ module dt {
                     aoData = that.dt.settings.aoData,
                     dtRowData,
                     rowCells,
-                    rowScope,
-                    cellScope,
                     $rowNode,
+                    cellNode,
                     $cellNode,
-                    colOpt,
+                    rowScope,
+                    column,
                     modelPath,
+                    detachedCells= [],
                     hash,
-                    cell,
-                    row,
-                    i;
+                    rowMeta: IRowCompilingArgs,
+                    cellMeta: ICellCompilingArgs,
+                    i, j;
 
-                if (debug) console.time('createdRow' + dataIndex);
+                if (debug) console.time('createdRow' + rowIndex);
                 $rowNode = angular.element(rowNode);
+                $rowNode.attr('dt-row', ''); //a child scope will be created
+                $rowNode.data('$$dtTable', that);
                 hash = AngularHelper.hashKey(rowData);
-                rowScope = tableScope.$new();
-                rowScope[rowDataPath] = rowData;
-                that.defineRowScopeProperties(rowScope, rowNode);
 
-                dtRowData = aoData[dataIndex];
-                rowCells = dtRowData.anCells;
-
-                for (i = 0; i < rowCells.length; i++) {
-                    colOpt = columns[i];
-                    cellScope = rowScope.$new();
-                    $cellNode = angular.element(rowCells[i]);
-                    Object.defineProperty(cellScope, "$cellIndex", {
-                        get: () => {
-                            return columns.indexOf(colOpt);
-                        }
-                    });
-                    modelPath = colOpt.data ? rowDataPath + '.' + colOpt.data : null;
-                    cell = {
-                        attr: {},
-                        html: null,
-                        scope: cellScope,
-                        node: rowCells[i],
-                        column: colOpt,
-                        colIdx: i,
-                        rowIdx: dataIndex,
-                        modelPath: modelPath
-                    };
-                    if (colOpt.templateHtml != null) {
-                        cell.html = colOpt.templateHtml;
-                    } else if (colOpt.expression != null && angular.isString(colOpt.expression)) {
-                        cell.attr['ng-bind'] = colOpt.expression;
-                    } else if (colOpt.data != null) {
-                        cell.attr['ng-bind'] = modelPath;
-                    } else if (colOpt.defaultContent != "") {
-                        cell.html = colOpt.defaultContent;
-                    }
-                    dtSettings.oApi._fnCallbackFire(dtSettings, 'cellCompiling', null, [cell]);
-
-                    if (Object.keys(cell.attr).length)
-                        $cellNode.attr(cell.attr);
-                    if (cell.html)
-                        $cellNode.html(cell.html);
-
-                    $compile($cellNode)(cellScope); //We have to bind each td because of detached cells.
-                }
-
-                if (!that.lastBlockMap.hasOwnProperty(hash))
-                    that.lastBlockMap[hash] = { id: hash, index: dataIndex };
-                that.lastBlockMap[hash].scope = rowScope;
-
-                row = {
-                    scope: rowScope,
+                rowMeta = {
                     node: rowNode,
                     data: rowData,
-                    rowIdx: dataIndex,
-                    dataPath: rowDataPath
+                    rowIndex: rowIndex,
+                    hash: hash,
+                    dataPath: rowDataPath,
                 };
 
-                dtSettings.oApi._fnCallbackFire(dtSettings, 'rowCompiling', null, [row]);
+                dtRowData = aoData[rowIndex];
+                rowCells = dtRowData.anCells;
 
-                $compile($rowNode)(rowScope);
+                //#region Cell ompiling
 
-                //For serverside processing we dont have to invalidate rows (searching/ordering is done by the server) 
-                if (options.serverSide != true && settings.invalidateRows === "rendered") {
-                    if (!watchedProperties.length)
-                        that.fillWatchedProperties(rowData);
-                    that.createRowWatcher(rowScope, rowNode);
+                for (i = 0; i < rowCells.length; i++) {
+                    cellNode = rowCells[i];
+                    column = columns[i];
+                    //Detached cells must be manualy compiled 
+                    if (!column.bVisible)
+                        detachedCells.push(cellNode);
+
+                    modelPath = column.data ? rowDataPath + '.' + column.data : null,
+                    $cellNode = angular.element(cellNode);
+                    $cellNode.attr('dt-cell', ''); //a child scope will be created
+
+                    cellMeta = {
+                        attr: {},
+                        html: null,
+                        node: cellNode,
+                        column: column,
+                        cellIndex: i,
+                        rowIndex: rowIndex,
+                        dataFullPath: modelPath
+                    };
+                    if (column.templateHtml != null) {
+                        cellMeta.html = column.templateHtml;
+                    } else if (column.expression != null && angular.isString(column.expression)) {
+                        cellMeta.attr['ng-bind'] = column.expression;
+                    } else if (column.data != null) {
+                        cellMeta.attr['ng-bind'] = modelPath;
+                    } else if (column.defaultContent != "") {
+                        cellMeta.html = column.defaultContent;
+                    }
+
+                    dtSettings.oApi._fnCallbackFire(dtSettings, 'cellCompiling', null, [cellMeta]);
+
+                    for (j = 0; j < cellCompilingListeners.length; j++) {
+                        eventListener = cellCompilingListeners[j];
+                        eventListener.fn.call(eventListener.scope, cellMeta);
+                    }
+
+                    if (Object.keys(cellMeta.attr).length)
+                        $cellNode.attr(cellMeta.attr);
+                    if (cellMeta.html)
+                        $cellNode.html(cellMeta.html);
+                }
+
+                //#endregion
+
+                dtSettings.oApi._fnCallbackFire(dtSettings, 'rowCompiling', null, [rowMeta]);
+
+                for (j = 0; j < rowCompilingListeners.length; j++) {
+                    eventListener = rowCompilingListeners[j];
+                    eventListener.fn.call(eventListener.scope, rowMeta);
+                }
+
+                rowScope = $compile($rowNode)(tableScope).scope();
+
+                //Compile detached cells
+                for (j = 0; j < detachedCells.length; j++) {
+                    $compile(angular.element(detachedCells[j]))(rowScope);
                 }
 
                 if (angular.isFunction(origCreatedRow))
                     origCreatedRow.apply(this, arguments);
 
-                if (debug) console.timeEnd('createdRow' + dataIndex);
+                if (debug) console.timeEnd('createdRow' + rowIndex);
             };
 
             if (!settings.digestOnDraw) return;
@@ -472,6 +557,84 @@ module dt {
                 if (angular.isFunction(origDrawCallback))
                     origDrawCallback.apply(this, arguments);
                 if (debug) console.timeEnd('drawCallback');
+            }
+        }
+
+        public postCompileRow(scope, row, attrs) {
+            var rowNode = row[0],
+                i,
+                rowIndex = row[0]._DT_RowIndex,
+                rowData = this.dt.settings.aoData[rowIndex]._aData,
+                hash = AngularHelper.hashKey(rowData),
+                rowDataPath = this.settings.rowDataPath,
+                options = this.settings.options,
+                watchedProperties = this.watchedProperties,
+                settings = this.settings,
+                dtSettings = this.dt.settings,
+                eventListener: IEventListener,
+                rowCompiledListeners = this.eventListeners.rowCompiled;
+
+            var rowOpts: IRowCompiledArgs = {
+                scope: scope,
+                node: rowNode,
+                data: rowData,
+                rowIndex: rowIndex,
+                hash: hash,
+                dataPath: rowDataPath
+            };
+
+            scope[rowDataPath] = rowData;
+            this.defineRowScopeProperties(scope, rowNode);
+
+            dtSettings.oApi._fnCallbackFire(dtSettings, 'rowCompiled', null, [rowOpts]);
+
+            for (i = 0; i < rowCompiledListeners.length; i++) {
+                eventListener = rowCompiledListeners[i];
+                eventListener.fn.call(eventListener.scope, rowOpts);
+            }
+
+            if (!this.lastBlockMap.hasOwnProperty(hash))
+                this.lastBlockMap[hash] = { id: hash, index: rowIndex };
+            this.lastBlockMap[hash].scope = scope;
+
+            //For serverside processing we dont have to invalidate rows (searching/ordering is done by the server) 
+            if (options.serverSide != true && settings.invalidateRows === "rendered") {
+                if (!watchedProperties.length)
+                    this.fillWatchedProperties(rowData);
+                this.createRowWatcher(scope, rowNode);
+            }
+        }
+
+        public postCompileCell(scope, $cellNode, $rowNode, attrs) {
+            var cellNode = $cellNode[0],
+                i,
+                rowIndex = $rowNode[0]._DT_RowIndex,
+                rowData = this.dt.settings.aoData[rowIndex],
+                cellIndex = rowData.anCells.indexOf(cellNode),
+                columns = this.dt.settings.aoColumns,
+                column = columns[cellIndex],
+                dtSettings = this.dt.settings,
+                eventListener: IEventListener,
+                cellCompiledListeners = this.eventListeners.cellCompiled;
+
+            Object.defineProperty(scope, "$cellIndex", {
+                get: () => {
+                    return columns.indexOf(column);
+                }
+            });
+
+            var cell: ICellCompiledArgs = {
+                scope: scope,
+                node: cellNode,
+                column: column,
+                cellIndex: cellIndex,
+                rowIndex: rowIndex,
+            };
+            dtSettings.oApi._fnCallbackFire(dtSettings, 'cellCompiled', null, [cell]);
+
+            for (i = 0; i < cellCompiledListeners.length; i++) {
+                eventListener = cellCompiledListeners[i];
+                eventListener.fn.call(eventListener.scope, cell);
             }
         }
 
@@ -507,6 +670,12 @@ module dt {
         private defineRowScopeProperties(scope, element) {
             var api = this.dt.api;
             //Define property for index so we dont have to take care of modifying it each time a row is deleted
+            Object.defineProperty(scope, "$row", {
+                get: () => {
+                    var idx = element._DT_RowIndex;
+                    return api.row(idx);
+                }
+            });
             Object.defineProperty(scope, "$rowIndex", {
                 get: () => {
                     var idx = element._DT_RowIndex; // dataTable.row(node).index();
@@ -640,17 +809,9 @@ module dt {
 
     }
 
-    export interface ITablePlugin {
+    
 
-        isEnabled(): boolean;
-
-        tableCreating(): void;
-
-        tableCreated(api): void
-
-    }
-
-    //#region selectable plugin
+    //#region Selectable plugin
 
     export class SelectableTablePlugin implements ITablePlugin {
 
@@ -660,8 +821,13 @@ module dt {
             settings: null
         };
 
-        constructor(table: Table) {
-            this.table = table;
+        public static $inject = ['dtTable'];
+        constructor(dtTable: Table) {
+            this.table = dtTable;
+        }
+
+        public getEventListeners(): IEventListener[] {
+            return null;
         }
 
         public isEnabled(): boolean {
@@ -751,6 +917,181 @@ module dt {
 
     //#endregion
 
+    //#region Command plugin
+
+    export interface ICommand {
+        getTemplate(opts): string;
+        canExecute(scope): boolean;
+        execute(scope): void;
+    }
+
+    export class CommandTablePlugin implements ITablePlugin {
+        
+        private static registeredCommands= {};
+
+        public static registerCommand(command) {
+            CommandTablePlugin.registeredCommands[command.name] = command;
+            if (command.alias)
+                CommandTablePlugin.registeredCommands[command.alias] = command;
+        }
+
+        private table: Table;
+        private $injector: ng.auto.IInjectorService;
+        private dt = {
+            api: null,
+            settings: null
+        };
+
+        public static $inject = ['dtTable', '$injector'];
+        constructor(dtTable: Table, $injector: ng.auto.IInjectorService) {
+            this.table = dtTable;
+            this.$injector = $injector;
+        }
+
+        //check if there is any column that has the commands property set
+        public isEnabled(): boolean {
+            var opts = this.table.settings.options;
+            var enabled = false;
+            angular.forEach(opts.columns, col => {
+                if (col.commands === undefined) return;
+                if (!angular.isArray(col.commands))
+                    throw 'column "' + col.title + '" property commands must be an array';
+
+                var cmds = this.buildCommands(col.commands);
+
+                col.editable = col.orderable = col.searchable = false;
+                col.defaultContent = cmds.template;
+                col.$commandScopes = cmds.scopes;
+                col.$commandInstances = cmds.instances;
+                enabled = true;
+            });
+            return enabled;
+        }
+
+        private buildCommands(commands): any {
+            var template = '';
+            var scopes: any = {};
+            var cmdName;
+            var instances = [];
+            var settings;
+            angular.forEach(commands, command => {
+                if (angular.isString(command)) {
+                    if (!CommandTablePlugin.registeredCommands.hasOwnProperty(command))
+                        throw 'Unknown command name: ' + command;
+                    command = CommandTablePlugin.registeredCommands[command]; 
+                    cmdName = command.alias || command.name;
+                } else if ($.isPlainObject(command)) { //We can have cmd like: {name: 'edit', settings: {...}} - a registered cmd with custom settings
+                    cmdName = command.name;
+                    settings = command.settings || {};
+                    if (CommandTablePlugin.registeredCommands.hasOwnProperty(cmdName)) {
+                        command = CommandTablePlugin.registeredCommands[cmdName];
+                        cmdName = command.alias || command.name;
+                    }
+                }
+
+                //we have to convert all char to lowercase in order the bindings to work
+                cmdName = cmdName.toLowerCase();
+
+                //anonimus command like: {name: 'custom', template: '...', scope: {...}}
+                if (angular.isObject(command)) {
+                    template += command.template;
+                    scopes[cmdName] = command.scope;
+                } else {
+                    var locals = { settings: settings || {} };
+                    var cmd: ICommand = this.$injector.instantiate(command, locals);
+                    instances.push(cmd);
+                    var cmdScope: any = scopes[cmdName] = {};
+                    var opts = {
+                        canExecuteExp: "$commands['" + cmdName + "'].canExecute(this)",
+                        executeExp: "$commands['" + cmdName + "'].execute(this)",
+                    };
+                    template += cmd.getTemplate(opts);
+                    cmdScope.canExecute = $.proxy(cmd.canExecute, cmd);
+                    cmdScope.execute = $.proxy(cmd.execute, cmd);
+                }
+
+            });
+
+            return {
+                template: template,
+                scopes: scopes,
+                instances: instances
+            };
+        }
+
+        public getEventListeners(): IEventListener[] {
+            return [
+                {
+                    event: Table.events.cellCompiled,
+                    scope: this,
+                    fn: this.onCellCompiled
+                }
+            ];
+        }
+
+        private onCellCompiled(args: ICellCompiledArgs) {
+            var col = args.column;
+            args.scope.$commands = col.$commandScopes;
+        }
+
+        public tableCreating(): void {
+            
+        }
+
+        public tableCreated(api): void {
+            this.dt.api = api;
+            var dtSettings = this.dt.settings = api.settings()[0];
+        }
+    }
+
+    //Register plugin
+    Table.defaultSettings.plugins.push(CommandTablePlugin);
+
+
+    export class BaseCommand implements ICommand {
+
+        public static EXEC_EXPR = "exec_expr";
+        public static CAN_EXEC_EXPR = "can_exec_expr";
+
+        public static defaultSettings = {
+            tagName: 'button',
+            className: '',
+            attrs: {},
+            html: '',
+            canExecute: null
+        }
+
+        public settings;
+
+        constructor(defSettings, settings) {
+            this.settings = $.extend(true, {}, BaseCommand.defaultSettings, defSettings, settings);
+        }
+
+        public getTemplate(opts) {
+            var tmpl = $('<' + this.settings.tagName + '/>')
+                .addClass(this.settings.className || '')
+                .attr('ng-disabled', "" + opts.canExecuteExp + " === false")
+                .attr('ng-class', "{ disabled: " + opts.canExecuteExp + " === false }")
+                .attr('ng-click', opts.executeExp)
+                .attr(<Object>this.settings.attrs || {})
+                .append(this.settings.html);
+            var html: any = $('<div />').append(tmpl).html();
+            return html.replaceAll(BaseCommand.EXEC_EXPR, opts.executeExp)
+                .replaceAll(BaseCommand.CAN_EXEC_EXPR, opts.canExecuteExp);
+        }
+
+        public canExecute(scope) {
+            if (angular.isFunction(this.settings.canExecute))
+                return this.settings.canExecute.call(this);
+            return true;
+        }
+
+        public execute(scope) {
+        }
+    }
+
+    //#endregion
+
     export class AngularHelper {
         
         private static uid: number = 0;
@@ -806,6 +1147,16 @@ module dt {
 
 ((window, document, undefined) => {
     'use strict';
+
+    function escapeRegExp(string) {
+        return string.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
+    }
+
+    if ((<any>String).prototype.replaceAll === undefined) {
+        (<any>String).prototype.replaceAll = function (find, replace) {
+            return this.replace(new RegExp(escapeRegExp(find), 'g'), replace);
+        }
+    }
 
     //#region DataTables Extensions
     //We have to update the original collection if datatables api is used to manipulate dt collection 
@@ -939,7 +1290,9 @@ module dt {
     //#endregion
 
     $.fn.DataTable.models.oSettings.cellCompiling = [];
+    $.fn.DataTable.models.oSettings.cellCompiled = [];
     $.fn.DataTable.models.oSettings.rowCompiling = [];
+    $.fn.DataTable.models.oSettings.rowCompiled = [];
 
     angular.module("dt", [])
         .constant("dtSettings", {
@@ -951,16 +1304,51 @@ module dt {
             dtRowsAddedActions: [],
             dtRowsRemovedActions: []
         })
+
+        .service('dt.i18N')
+        .directive("dtRow", [() => {
+            return {
+                restrict: 'A',
+                scope: true, //whitin new scope
+                compile: (tElement, tAttrs) => {
+                    //console.log('row compile');
+                    var table: dt.Table = tElement.data('$$dtTable');
+
+                    //Post compile
+                    return (scope, iElement, iAttrs, controller) => {
+                        table.postCompileRow(scope, iElement, iAttrs);
+                        //console.log('post row compile');
+                    };
+                }
+            }
+        }])
+        .directive("dtCell", [() => {
+            return {
+                restrict: 'A',
+                scope: true, //whitin new scope
+                compile: (tElement, tAttrs) => {
+                    //console.log('cell compile');
+                    var row = tElement.parent();
+                    var table: dt.Table = row.data('$$dtTable');
+
+                    //Post compile
+                    return (scope, iElement, iAttrs, controller) => {
+                        //console.log('post cell compile');
+                        table.postCompileCell(scope, iElement, row, iAttrs);
+                    };
+                }
+            }
+        }])
         .directive("dtTable", [
-            "$compile", "$parse", "$q", "$http", "$rootScope", "$templateCache", "dtSettings",
-            ($compile, $parse, $q, $http, $rootScope, $templateCache, dtSettings) => {
+            "$compile", "$parse", "$q", "$http", "$rootScope", "$templateCache", "$injector", "dtSettings",
+            ($compile, $parse, $q, $http, $rootScope, $templateCache, $injector, dtSettings) => {
 
                 return {
                     restrict: 'A', // Restricted it to A only. Thead elements are only valid inside table tag
                     priority: 1000,
                     scope: true, //whitin new scope
                     link: (scope, element, attrs) => {
-                        var table = new dt.Table($parse, $rootScope, $q, $http, $compile, $templateCache, {});
+                        var table = new dt.Table($parse, $rootScope, $q, $http, $compile, $templateCache, $injector, {});
                         table.link(scope, element, attrs);
                     }
                 };
