@@ -7,13 +7,9 @@
     export class DisplayServicePopoverCellValidationPlugin implements IDisplayServiceCellValidationPlugin {
 
         public setupColumnTemplate(opts: IColumnTemplateSetupArgs): void {
+
             var cellValidationAttrs = {
-                'bs-popover': '',
-                'data-content': '{{$getCellErrorMessage()}}',
-                'bs-show': '$cellErrors.length > 0',
-                'data-trigger': 'manual',
-                'data-html': true,
-                'data-placement': 'bottom',
+                'as-popover-cell-errors': ''
             };
             $.extend(opts.editCtrlWrapper.attrs, cellValidationAttrs);
         }
@@ -27,6 +23,7 @@
     export class DisplayServicePopoverRowValidationPlugin implements IDisplayServiceRowValidationPlugin {
 
         public setupRowTemplate(args: IRowTemplateSetupArgs): void {
+
             var rowValidationAttrs = {
                 'bs-popover': '',
                 'data-content': '{{$getRowErrorMessage()}}',
@@ -57,10 +54,7 @@
             return false;
         }
 
-        public cellCompiling(args: dt.ICellCompilingArgs) {
-        }
-
-        public cellCompiled(args: dt.ICellCompiledArgs) {
+        public cellPostLink(args: dt.ICellPostLinkArgs) {
         }
 
         public canBlurCell(event: any, cell, col): boolean {
@@ -175,3 +169,86 @@
     //#endregion
 
 } 
+
+(function (window, document, undefined) {
+
+    angular.module('dt')
+        .factory('asPopoverFactory', ['$popover', '$sce', '$window', ($popover, $sce, $window) => {
+            var requestAnimationFrame = $window.requestAnimationFrame || $window.setTimeout;
+            
+            var createPopover = (iElement, scope, message) => {
+                var popover = null;
+                var popoverScope = scope.$new();
+                var options = {
+                    scope: popoverScope,
+                    html: true
+                };
+                popoverScope.content = $sce.trustAsHtml(message);
+                requestAnimationFrame(() => {
+                    popover && popover.$applyPlacement();
+                    popover.show();
+                });
+                popover = $popover(iElement, options);
+                // Garbage collection
+                popoverScope.$on('$destroy', () => {
+                    if (popover) popover.destroy();
+                    options = null;
+                    popover = null;
+                    popoverScope = null;
+                });
+                return {
+                    popover: popover,
+                    scope: popoverScope,
+                    options: options
+                };
+            }
+            return {
+                createPopover: createPopover
+            };
+        }])
+        .directive('asPopoverRowErrors', ['asPopoverFactory',
+            (asPopoverFactory) => {
+                return {
+                    restrict: 'A',
+                    compile: (tElement, tAttrs) => {
+                        var popover = null;
+
+                        //Post compile
+                        return (scope, iElement, iAttrs) => {
+                            scope.$watchCollection(scope.$rowFormName + "['" + scope.$getInputName() + "'].$error", (newVal) => {
+                                var errors = scope.$cellValidate();
+                                if (popover)
+                                    popover.scope.$destroy();
+                                if (errors.length) {
+                                    popover = asPopoverFactory.createPopover(iElement, scope, scope.$getCellErrorMessage());
+                                }
+                            });
+                        }
+                    }
+                };
+            }
+        ])
+        .directive('asPopoverCellErrors', ['asPopoverFactory', 
+            (asPopoverFactory) => {
+                return {
+                    restrict: 'A',
+                    compile: (tElement, tAttrs) => {
+                        var popover = null;
+
+                        //Post compile
+                        return (scope, iElement, iAttrs) => {
+                            scope.$watchCollection(scope.$rowFormName + "['" + scope.$getInputName() + "'].$error", (newVal) => {
+                                var errors = scope.$cellValidate();
+                                if (popover)
+                                    popover.scope.$destroy();
+                                if (errors.length) {
+                                    popover = asPopoverFactory.createPopover(iElement, scope, scope.$getCellErrorMessage());
+                                }    
+                            });
+                        }
+                    }
+                };
+            }
+        ]);
+
+} (window, document, undefined));

@@ -6,7 +6,7 @@ module dt {
 
     //#region Interfaces
 
-    export interface ICellCompilingArgs {
+    export interface ICellCompileArgs {
         attr: any;
         html: any;
         column: any;
@@ -16,7 +16,7 @@ module dt {
         dataFullPath: string;
     }
 
-    export interface ICellCompiledArgs {
+    export interface ICellPostLinkArgs {
         scope: any;
         node: any;
         column: any;
@@ -24,7 +24,11 @@ module dt {
         rowIndex: number;
     }
 
-    export interface IRowCompiledArgs {
+    export interface ICellPreLinkArgs extends ICellPostLinkArgs {
+
+    }
+
+    export interface IRowPostLinkArgs {
         scope: any;
         node: any;
         hash: string;
@@ -32,7 +36,11 @@ module dt {
         dataPath: number;
     }
 
-    export interface IRowCompilingArgs {
+    export interface IRowPreLinkArgs extends IRowPostLinkArgs {
+
+    }
+
+    export interface IRowCompileArgs {
         node: any;
         hash: string;
         rowIndex: number;
@@ -47,21 +55,25 @@ module dt {
 
     export interface ITablePlugin {
         isEnabled(): boolean;
-        tableCreating(): void;
-        tableCreated(api): void;
+        initialize(dtSettings): void
+        destroy(): void;
         getEventListeners(): IEventListener[];
     }
 
     //#endregion
 
-    export class Table {
+    export class TableController {
 
         //constant
         public static events = {
-            cellCompiling: 'cellCompiling',
-            cellCompiled: 'cellCompiled',
-            rowCompiling: 'rowCompiling',
-            rowCompiled: 'rowCompiled'
+            cellCompile: 'cellCompile',
+            cellPostLink: 'cellPostLink',
+            cellPreLink: 'cellPreLink',
+            rowCompile: 'rowCompile',
+            rowPostLink: 'rowPostLink',
+            rowPreLink: 'rowPreLink',
+            tableCreating: 'tableCreating',
+            tableCreated: 'tableCreated'
         };
 
         public static defaultSettings = {
@@ -98,29 +110,35 @@ module dt {
         private lastBlockMap = {};
         private templatesToLoad = [];
         private watchedProperties = [];
+        private activePlugins = [];
+        //Plugins event listeners
         private eventListeners = {
-            'cellCompiling': [],
-            'cellCompiled': [],
-            'rowCompiling': [],
-            'rowCompiled': []
+            'cellCompile': [],
+            'cellPostLink': [],
+            'cellPreLink': [],
+            'rowCompile': [],
+            'rowPostLink': [],
+            'rowPreLink': [],
+            'tableCreating': [],
+            'tableCreated': [],
         };
 
-        constructor($parse, $rootScope, $q, $http, $compile, $templateCache, $injector, settings) {
-            this.settings = $.extend(true, {}, Table.defaultSettings, settings);
+
+        public static $inject = ['$parse', '$scope', '$element', '$attrs', '$transclude', '$rootScope', '$q', '$http', '$compile', '$templateCache', '$injector']
+        constructor($parse, $scope, $element, $attrs, $transclude, $rootScope, $q, $http, $compile, $templateCache, $injector) {
+            this.settings = $.extend(true, {}, TableController.defaultSettings, {});
             this.$parse = $parse;
+            this.$scope = $scope;
+            this.$element = $element;
+            this.$attrs = $attrs;
             this.$rootScope = $rootScope;
             this.$compile = $compile;
             this.$injector = $injector;
             this.$templateCache = $templateCache;
-            this.link = $.proxy(this.link, this);
         }
 
-        public link(scope, element, attrs) { //postLink
-            this.$element = angular.element(element);
-            this.$scope = scope;
-            this.$attrs = attrs;
-            this.$scope.$$dtTable = this;
-            this.mergeDomAttributes(attrs, scope, this.$element);
+        public setupTable() { //postLink
+            this.mergeDomAttributes();
 
             // Store a list of elements from previous run. This is a hash where key is the item from the
             // iterator, and the value is objects with following properties.
@@ -158,6 +176,31 @@ module dt {
                 onSuccess();
         }
 
+        private triggerEventListeners(name, params) {
+            var arr = this.eventListeners[name] || [];
+            var eventListener: IEventListener;
+            for (var i = 0; i < arr.length; i++) {
+                eventListener = arr[i];
+                //lazy event listener
+                if (angular.isFunction(eventListener.scope)) {
+                    eventListener.scope = eventListener.scope();
+                    eventListener.fn = eventListener.fn();
+                }
+                eventListener.fn.apply(eventListener.scope, params);
+            }
+        }
+
+        private initializePlugins(dtSettings) {
+            this.dt.settings = dtSettings;
+            this.dt.api = dtSettings.oInstance.api();
+            //setup table scope properties
+            this.setupScope();
+
+            angular.forEach(this.activePlugins, (plugin: ITablePlugin) => {
+                plugin.initialize(dtSettings);
+            });
+        }
+
         private initialize() {
             this.templatesToLoad.length = 0; //reset
             //Initialize datatables
@@ -171,45 +214,37 @@ module dt {
                 $compile: this.$compile,
                 $templateCache: this.$templateCache,
                 $injector: this.$injector,
-                rowDataPath: this.settings.rowDataPath
+                rowDataPath: this.settings.rowDataPath,
+                initPlugins: $.proxy(this.initializePlugins, this)
             };
 
-            var activePlugins = [];
+            //Enable angular plugins
+            options.dom = options.dom ? 'E' + options.dom : 'E' + $.fn.dataTable.defaults.dom;
+
             var locals = {
                 'dtTable': this
             };
             angular.forEach(this.settings.plugins, pluginType => {
                 var plugin: ITablePlugin = this.$injector.instantiate(pluginType, locals);
                 if (!plugin.isEnabled()) return;
-                activePlugins.push(plugin);
+                this.activePlugins.push(plugin);
                 var eventListeners = plugin.getEventListeners();
                 if (angular.isArray(eventListeners)) {
                     angular.forEach(eventListeners, (el: IEventListener) => {
                         this.eventListeners[el.event].push(el);
                     });
                 }
-                plugin.tableCreating();
             });
 
-            angular.forEach(this.settings.tableCreating, fn => {
-                if (!angular.isFunction(fn)) return;
-                fn.call(this, this.$element, this.settings.options, scope, attrs);
-            });
+            this.triggerEventListeners(TableController.events.tableCreating, []);
 
             if (debug) console.time('initDataTable');
             var api = this.dt.api = this.$element.DataTable(options);
             if (debug) console.timeEnd('initDataTable');
-
-            angular.forEach(activePlugins, (plugin: ITablePlugin) => {
-                plugin.tableCreated(api);
-            });
-
-            angular.forEach(this.settings.tableCreated, fn => {
-                if (!angular.isFunction(fn)) return;
-                fn.call(this, api, this.$element, this.settings.options, scope, attrs);
-            });
-
             var dtSettings = this.dt.settings = api.settings()[0];
+
+            this.triggerEventListeners(TableController.events.tableCreated, [api]);
+
             dtSettings._rowsInserted = dtSettings._rowsInserted || {};
             dtSettings._rowsRemoved = dtSettings._rowsRemoved || {};
             dtSettings.oInit.data = options.data; //set init data to be the same as binding collection - this will be fixed in 1.10.1
@@ -412,10 +447,14 @@ module dt {
             var debug = this.settings.debug;
             if (debug) console.time("Destroying datatables with id: " + id);
             $(this.dt.settings.oInstance).off('column-reorder.angular');
+            angular.forEach(this.activePlugins, (plugin: ITablePlugin) => {
+                plugin.destroy();
+            });
             this.dt.api.destroy();
             this.dt = null;
             this.settings = null;
             this.$templateCache = null;
+            this.activePlugins = null;
             this.$attrs = null;
             this.$q = null;
             this.$http = null;
@@ -428,6 +467,12 @@ module dt {
             if (debug) console.timeEnd("Destroying datatables with id: " + id);
         }
 
+        private setupScope() {
+            this.$scope.$columns = this.dt.settings.aoColumns;
+            this.$scope.$rows = this.dt.settings.aoData;
+            this.$scope.$$tableController = this;
+        }
+
         private setupRowBinding() {
             var that = this,
                 settings = this.settings,
@@ -436,18 +481,10 @@ module dt {
                 tableScope = this.$scope,
                 rowDataPath = this.settings.rowDataPath,
                 options = this.settings.options,
-                eventListener: IEventListener,
-                rowCompilingListeners = this.eventListeners.rowCompiling,
-                cellCompilingListeners = this.eventListeners.cellCompiling,
                 origCreatedRow = options.createdRow,
                 origDrawCallback = options.drawCallback;
             options.createdRow = function(rowNode, rowData, rowIndex) {
-                if (that.dt.api == null) {
-                    that.dt.api = this.api();
-                    that.dt.settings = that.dt.api.context[0];
-                }
                 var
-                    dtSettings = that.dt.settings,
                     columns = that.dt.settings.aoColumns,
                     aoData = that.dt.settings.aoData,
                     dtRowData,
@@ -460,14 +497,14 @@ module dt {
                     modelPath,
                     detachedCells= [],
                     hash,
-                    rowMeta: IRowCompilingArgs,
-                    cellMeta: ICellCompilingArgs,
+                    rowMeta: IRowCompileArgs,
+                    cellMeta: ICellCompileArgs,
                     i, j;
 
                 if (debug) console.time('createdRow' + rowIndex);
                 $rowNode = angular.element(rowNode);
-                $rowNode.attr('dt-row', ''); //a child scope will be created
-                $rowNode.data('$$dtTable', that);
+                $rowNode.attr('dt-row', rowIndex); //a child scope will be created
+                //$rowNode.data('$$dtTable', that);
                 hash = AngularHelper.hashKey(rowData);
 
                 rowMeta = {
@@ -481,7 +518,7 @@ module dt {
                 dtRowData = aoData[rowIndex];
                 rowCells = dtRowData.anCells;
 
-                //#region Cell ompiling
+                //#region Cell compile
 
                 for (i = 0; i < rowCells.length; i++) {
                     cellNode = rowCells[i];
@@ -492,7 +529,7 @@ module dt {
 
                     modelPath = column.data ? rowDataPath + '.' + column.data : null,
                     $cellNode = angular.element(cellNode);
-                    $cellNode.attr('dt-cell', ''); //a child scope will be created
+                    $cellNode.attr('dt-cell', i); //a child scope will be created
 
                     cellMeta = {
                         attr: {},
@@ -513,12 +550,7 @@ module dt {
                         cellMeta.html = column.defaultContent;
                     }
 
-                    dtSettings.oApi._fnCallbackFire(dtSettings, 'cellCompiling', null, [cellMeta]);
-
-                    for (j = 0; j < cellCompilingListeners.length; j++) {
-                        eventListener = cellCompilingListeners[j];
-                        eventListener.fn.call(eventListener.scope, cellMeta);
-                    }
+                    that.triggerEventListeners(TableController.events.cellCompile, [cellMeta]);
 
                     if (Object.keys(cellMeta.attr).length)
                         $cellNode.attr(cellMeta.attr);
@@ -528,12 +560,7 @@ module dt {
 
                 //#endregion
 
-                dtSettings.oApi._fnCallbackFire(dtSettings, 'rowCompiling', null, [rowMeta]);
-
-                for (j = 0; j < rowCompilingListeners.length; j++) {
-                    eventListener = rowCompilingListeners[j];
-                    eventListener.fn.call(eventListener.scope, rowMeta);
-                }
+                that.triggerEventListeners(TableController.events.rowCompile, [rowMeta]);
 
                 rowScope = $compile($rowNode)(tableScope).scope();
 
@@ -560,38 +587,18 @@ module dt {
             }
         }
 
-        public postCompileRow(scope, row, attrs) {
+        public preLinkRow(scope, row, attrs) {
             var rowNode = row[0],
-                i,
                 rowIndex = row[0]._DT_RowIndex,
                 rowData = this.dt.settings.aoData[rowIndex]._aData,
                 hash = AngularHelper.hashKey(rowData),
                 rowDataPath = this.settings.rowDataPath,
                 options = this.settings.options,
                 watchedProperties = this.watchedProperties,
-                settings = this.settings,
-                dtSettings = this.dt.settings,
-                eventListener: IEventListener,
-                rowCompiledListeners = this.eventListeners.rowCompiled;
-
-            var rowOpts: IRowCompiledArgs = {
-                scope: scope,
-                node: rowNode,
-                data: rowData,
-                rowIndex: rowIndex,
-                hash: hash,
-                dataPath: rowDataPath
-            };
+                settings = this.settings;
 
             scope[rowDataPath] = rowData;
             this.defineRowScopeProperties(scope, rowNode);
-
-            dtSettings.oApi._fnCallbackFire(dtSettings, 'rowCompiled', null, [rowOpts]);
-
-            for (i = 0; i < rowCompiledListeners.length; i++) {
-                eventListener = rowCompiledListeners[i];
-                eventListener.fn.call(eventListener.scope, rowOpts);
-            }
 
             if (!this.lastBlockMap.hasOwnProperty(hash))
                 this.lastBlockMap[hash] = { id: hash, index: rowIndex };
@@ -603,39 +610,81 @@ module dt {
                     this.fillWatchedProperties(rowData);
                 this.createRowWatcher(scope, rowNode);
             }
+
+            var rowOpts: IRowPreLinkArgs = {
+                scope: scope,
+                node: rowNode,
+                data: rowData,
+                rowIndex: rowIndex,
+                hash: hash,
+                dataPath: rowDataPath
+            };
+
+            this.triggerEventListeners(TableController.events.rowPreLink, [rowOpts]);
         }
 
-        public postCompileCell(scope, $cellNode, $rowNode, attrs) {
+        public postLinkRow(scope, row, attrs) {
+            var rowNode = row[0],
+                rowIndex = row[0]._DT_RowIndex,
+                rowData = this.dt.settings.aoData[rowIndex]._aData,
+                hash = AngularHelper.hashKey(rowData),
+                rowDataPath = this.settings.rowDataPath;
+
+            var rowOpts: IRowPostLinkArgs = {
+                scope: scope,
+                node: rowNode,
+                data: rowData,
+                rowIndex: rowIndex,
+                hash: hash,
+                dataPath: rowDataPath
+            };
+
+            this.triggerEventListeners(TableController.events.rowPostLink, [rowOpts]);
+        }
+
+        public preLinkCell(scope, $cellNode, $rowNode, attrs) {
             var cellNode = $cellNode[0],
-                i,
                 rowIndex = $rowNode[0]._DT_RowIndex,
                 rowData = this.dt.settings.aoData[rowIndex],
                 cellIndex = rowData.anCells.indexOf(cellNode),
                 columns = this.dt.settings.aoColumns,
-                column = columns[cellIndex],
-                dtSettings = this.dt.settings,
-                eventListener: IEventListener,
-                cellCompiledListeners = this.eventListeners.cellCompiled;
+                column = columns[cellIndex];
 
+            scope.$column = column;
             Object.defineProperty(scope, "$cellIndex", {
                 get: () => {
                     return columns.indexOf(column);
                 }
             });
 
-            var cell: ICellCompiledArgs = {
+            var cell: ICellPostLinkArgs = {
                 scope: scope,
                 node: cellNode,
                 column: column,
                 cellIndex: cellIndex,
                 rowIndex: rowIndex,
             };
-            dtSettings.oApi._fnCallbackFire(dtSettings, 'cellCompiled', null, [cell]);
 
-            for (i = 0; i < cellCompiledListeners.length; i++) {
-                eventListener = cellCompiledListeners[i];
-                eventListener.fn.call(eventListener.scope, cell);
-            }
+            this.triggerEventListeners(TableController.events.cellPreLink, [cell]);
+        }
+
+        public postLinkCell(scope, $cellNode, $rowNode, attrs) {
+            var cellNode = $cellNode[0],
+                rowIndex = $rowNode[0]._DT_RowIndex,
+                rowData = this.dt.settings.aoData[rowIndex],
+                cellIndex = rowData.anCells.indexOf(cellNode),
+                columns = this.dt.settings.aoColumns,
+                column = columns[cellIndex];
+
+            var cell: ICellPostLinkArgs = {
+                scope: scope,
+                node: cellNode,
+                column: column,
+                cellIndex: cellIndex,
+                rowIndex: rowIndex,
+            };
+
+            this.triggerEventListeners(TableController.events.cellPostLink, [cell]);
         }
 
         private digestDisplayedPage(api = null) {
@@ -647,8 +696,11 @@ module dt {
         }
 
         //table attributes have the highest priority
-        private mergeDomAttributes(attrs, scope, $element) {
-            
+        private mergeDomAttributes() {
+            var attrs = this.$attrs;
+            var scope = this.$scope;
+            var $element = this.$element;
+
             this.settings.invalidateRows = attrs.dtInvalidateRows ? attrs.dtInvalidateRows : this.settings.invalidateRows;
             this.settings.digestOnDraw = attrs.dtDigestOnDraw ? (attrs.dtDigestOnDraw == "true") : this.settings.digestOnDraw;
             this.settings.debug = attrs.dtDebug ? (attrs.dtDebug == "true") : this.settings.debug;
@@ -681,6 +733,12 @@ module dt {
                 get: () => {
                     var idx = element._DT_RowIndex;
                     return api.row(idx);
+                }
+            });
+            Object.defineProperty(scope, "$rowData", {
+                get: () => {
+                    var idx = element._DT_RowIndex;
+                    return this.dt.settings.aoData[idx];
                 }
             });
             Object.defineProperty(scope, "$rowIndex", {
@@ -827,19 +885,25 @@ module dt {
 
     export class SelectableTablePlugin implements ITablePlugin {
 
-        private table: Table;
+        private table: TableController;
         private dt = {
             api: null,
             settings: null
         };
 
         public static $inject = ['dtTable'];
-        constructor(dtTable: Table) {
+        constructor(dtTable: TableController) {
             this.table = dtTable;
         }
 
         public getEventListeners(): IEventListener[] {
-            return null;
+            return [
+                {
+                    event: TableController.events.tableCreating,
+                    fn: this.tableCreating,
+                    scope: this
+                }
+            ];
         }
 
         public isEnabled(): boolean {
@@ -849,16 +913,21 @@ module dt {
             return (opts.dom && opts.dom.indexOf('T') >= 0 && settings.sRowSelect != null && settings.sRowSelect !== 'none') || selectable;
         }
 
-        public tableCreated(api): void {
-            this.dt.api = api;
-            var dtSettings = this.dt.settings = api.settings()[0];
+        public initialize(dtSettings): void {
+            this.dt.settings = dtSettings;
+            this.dt.api = dtSettings.oInstance.api();
             dtSettings._DT_SelectedRowsCached = [];
 
             //TODO: selectable columns
 
-            Object.defineProperty(api, "selectedRows", {
+            Object.defineProperty(this.dt.api, "selectedRows", {
                 get: () => dtSettings._DT_SelectedRowsCached || []
             });
+        }
+
+        public destroy(): void {
+            this.table = null;
+            this.dt = null;
         }
 
         public tableCreating(): void {
@@ -925,7 +994,7 @@ module dt {
     }
 
     //Register plugin
-    Table.defaultSettings.plugins.push(SelectableTablePlugin);
+    TableController.defaultSettings.plugins.push(SelectableTablePlugin);
 
     //#endregion
 
@@ -947,7 +1016,7 @@ module dt {
                 CommandTablePlugin.registeredCommands[command.alias] = command;
         }
 
-        private table: Table;
+        private table: TableController;
         private $injector: ng.auto.IInjectorService;
         private dt = {
             api: null,
@@ -955,7 +1024,7 @@ module dt {
         };
 
         public static $inject = ['dtTable', '$injector'];
-        constructor(dtTable: Table, $injector: ng.auto.IInjectorService) {
+        constructor(dtTable: TableController, $injector: ng.auto.IInjectorService) {
             this.table = dtTable;
             this.$injector = $injector;
         }
@@ -978,6 +1047,11 @@ module dt {
                 enabled = true;
             });
             return enabled;
+        }
+
+        public initialize(dtSettings): void {
+            this.dt.settings = dtSettings;
+            this.dt.api = dtSettings.oInstance.api();
         }
 
         private buildCommands(commands): any {
@@ -1034,30 +1108,26 @@ module dt {
         public getEventListeners(): IEventListener[] {
             return [
                 {
-                    event: Table.events.cellCompiled,
+                    event: TableController.events.cellPostLink,
                     scope: this,
-                    fn: this.onCellCompiled
+                    fn: this.onCellPostLink
                 }
             ];
         }
 
-        private onCellCompiled(args: ICellCompiledArgs) {
+        public destroy(): void {
+            this.table = null;
+            this.dt = null;
+        }
+
+        private onCellPostLink(args: ICellPostLinkArgs) {
             var col = args.column;
             args.scope.$commands = col.$commandScopes;
-        }
-
-        public tableCreating(): void {
-            
-        }
-
-        public tableCreated(api): void {
-            this.dt.api = api;
-            var dtSettings = this.dt.settings = api.settings()[0];
         }
     }
 
     //Register plugin
-    Table.defaultSettings.plugins.push(CommandTablePlugin);
+    TableController.defaultSettings.plugins.push(CommandTablePlugin);
 
 
     export class BaseCommand implements ICommand {
@@ -1301,10 +1371,15 @@ module dt {
     });
     //#endregion
 
-    $.fn.DataTable.models.oSettings.cellCompiling = [];
-    $.fn.DataTable.models.oSettings.cellCompiled = [];
-    $.fn.DataTable.models.oSettings.rowCompiling = [];
-    $.fn.DataTable.models.oSettings.rowCompiled = [];
+    $.fn.dataTable.ext.feature.push({
+        "fnInit": (oSettings) => {
+            var angular = oSettings.oInit.angular;
+            angular.initPlugins(oSettings);
+            return null;
+        },
+        "cFeature": "E",
+        "sFeature": "AngularPluginSystem"
+    });
 
     angular.module("dt", [])
         .constant("dtSettings", {
@@ -1318,53 +1393,68 @@ module dt {
         })
 
         .service('dt.i18N')
+        .controller('dtTableController', dt.TableController)
         .directive("dtRow", [() => {
             return {
                 restrict: 'A',
+                priority: 1000,
                 scope: true, //whitin new scope
                 compile: (tElement, tAttrs) => {
-                    //console.log('row compile');
-                    var table: dt.Table = tElement.data('$$dtTable');
+                    return {
+                        pre: (scope, iElement, iAttrs) => {
+                            scope.$$tableController.preLinkRow(scope, iElement, iAttrs);
+                            //console.log('post row compile');
+                        },
+                        post: (scope, iElement, iAttrs) => {
+                            scope.$$tableController.postLinkRow(scope, iElement, iAttrs);
+                            //console.log('post row compile');
+                        }
+                    }
 
-                    //Post compile
-                    return (scope, iElement, iAttrs, controller) => {
-                        table.postCompileRow(scope, iElement, iAttrs);
-                        //console.log('post row compile');
-                    };
+                    ////Post compile
+                    //return (scope, iElement, iAttrs, controller: dt.TableController) => {
+                    //    scope.$$tableController.postCompileRow(scope, iElement, iAttrs);
+                    //    //console.log('post row compile');
+                    //};
                 }
             }
         }])
         .directive("dtCell", [() => {
             return {
                 restrict: 'A',
+                priority: 1000,
                 scope: true, //whitin new scope
                 compile: (tElement, tAttrs) => {
                     //console.log('cell compile');
                     var row = tElement.parent();
-                    var table: dt.Table = row.data('$$dtTable');
+
+                    return {
+                        pre: (scope, iElement, iAttrs) => {
+                            scope.$$tableController.preLinkCell(scope, iElement, row, iAttrs);
+                        },
+                        post: (scope, iElement, iAttrs) => {
+                            scope.$$tableController.postLinkCell(scope, iElement, row, iAttrs);
+                        }
+                    }
 
                     //Post compile
-                    return (scope, iElement, iAttrs, controller) => {
-                        //console.log('post cell compile');
-                        table.postCompileCell(scope, iElement, row, iAttrs);
-                    };
+                    //return (scope, iElement, iAttrs) => {
+                    //    //console.log('post cell compile');
+                    //    scope.$$tableController.postLinkCell(scope, iElement, row, iAttrs);
+                    //};
                 }
             }
         }])
-        .directive("dtTable", [
-            "$compile", "$parse", "$q", "$http", "$rootScope", "$templateCache", "$injector", "dtSettings",
-            ($compile, $parse, $q, $http, $rootScope, $templateCache, $injector, dtSettings) => {
-
-                return {
-                    restrict: 'A', // Restricted it to A only. Thead elements are only valid inside table tag
-                    priority: 1000,
-                    scope: true, //whitin new scope
-                    link: (scope, element, attrs) => {
-                        var table = new dt.Table($parse, $rootScope, $q, $http, $compile, $templateCache, $injector, {});
-                        table.link(scope, element, attrs);
-                    }
-                };
-            }
-        ]);
+        .directive("dtTable", [() => {
+            return {
+                restrict: 'A', // Restricted it to A only. Thead elements are only valid inside table tag
+                priority: 1000,
+                controller: 'dtTableController',
+                scope: true, //whitin new scope
+                link: (scope, element, attrs, controller: dt.TableController) => {
+                    controller.setupTable();
+                }
+            };
+        }]);
 
 })(window, document, undefined);

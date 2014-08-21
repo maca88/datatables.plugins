@@ -28,10 +28,7 @@
             return true;
         }
 
-        public cellCompiling(args: dt.ICellCompilingArgs) {
-        }
-
-        public cellCompiled(args: dt.ICellCompiledArgs) {
+        public cellPostLink(args: dt.ICellPostLinkArgs) {
             var editable = $.isPlainObject(args.column.editable) ? args.column.editable : null;
             if (!editable) return;
             var scope = args.scope;
@@ -53,9 +50,20 @@
 
             var settings = opts.settings || {};
             var template = opts.template || {};
+            template.input = template.input || {};
             template.select = template.select || {};
             template.option = template.option || {};
             template.optgroup = template.optgroup || {};
+
+            if (opts.asInput) {
+                return $('<input />')
+                    .attr('ui-select2', '$settings')
+                    .attr('ng-model', Editable.MODEL_PATH)
+                    .attr(Editable.EDIT_CONTROL_ATTRS, '')
+                    .attr(<Object>(template.input.attrs || {}))
+                    .addClass(template.input.className || '')
+                    .addClass(this.displayService.getControlClass())[0].outerHTML;
+            }
 
             var select = $('<select />')
                 .attr('ui-select2', '$settings')

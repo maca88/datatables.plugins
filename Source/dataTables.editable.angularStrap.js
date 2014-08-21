@@ -10,12 +10,7 @@
                 }
                 DisplayServicePopoverCellValidationPlugin.prototype.setupColumnTemplate = function (opts) {
                     var cellValidationAttrs = {
-                        'bs-popover': '',
-                        'data-content': '{{$getCellErrorMessage()}}',
-                        'bs-show': '$cellErrors.length > 0',
-                        'data-trigger': 'manual',
-                        'data-html': true,
-                        'data-placement': 'bottom'
+                        'as-popover-cell-errors': ''
                     };
                     $.extend(opts.editCtrlWrapper.attrs, cellValidationAttrs);
                 };
@@ -57,10 +52,7 @@
                     return false;
                 };
 
-                DisplayServiceEditTypePlugin.prototype.cellCompiling = function (args) {
-                };
-
-                DisplayServiceEditTypePlugin.prototype.cellCompiled = function (args) {
+                DisplayServiceEditTypePlugin.prototype.cellPostLink = function (args) {
                 };
 
                 DisplayServiceEditTypePlugin.prototype.canBlurCell = function (event, cell, col) {
@@ -159,4 +151,87 @@
     })(dt.editable || (dt.editable = {}));
     var editable = dt.editable;
 })(dt || (dt = {}));
+
+(function (window, document, undefined) {
+    angular.module('dt').factory('asPopoverFactory', [
+        '$popover', '$sce', '$window', function ($popover, $sce, $window) {
+            var requestAnimationFrame = $window.requestAnimationFrame || $window.setTimeout;
+
+            var createPopover = function (iElement, scope, message) {
+                var popover = null;
+                var popoverScope = scope.$new();
+                var options = {
+                    scope: popoverScope,
+                    html: true
+                };
+                popoverScope.content = $sce.trustAsHtml(message);
+                requestAnimationFrame(function () {
+                    popover && popover.$applyPlacement();
+                    popover.show();
+                });
+                popover = $popover(iElement, options);
+
+                // Garbage collection
+                popoverScope.$on('$destroy', function () {
+                    if (popover)
+                        popover.destroy();
+                    options = null;
+                    popover = null;
+                    popoverScope = null;
+                });
+                return {
+                    popover: popover,
+                    scope: popoverScope,
+                    options: options
+                };
+            };
+            return {
+                createPopover: createPopover
+            };
+        }]).directive('asPopoverRowErrors', [
+        'asPopoverFactory',
+        function (asPopoverFactory) {
+            return {
+                restrict: 'A',
+                compile: function (tElement, tAttrs) {
+                    var popover = null;
+
+                    //Post compile
+                    return function (scope, iElement, iAttrs) {
+                        scope.$watchCollection(scope.$rowFormName + "['" + scope.$getInputName() + "'].$error", function (newVal) {
+                            var errors = scope.$cellValidate();
+                            if (popover)
+                                popover.scope.$destroy();
+                            if (errors.length) {
+                                popover = asPopoverFactory.createPopover(iElement, scope, scope.$getCellErrorMessage());
+                            }
+                        });
+                    };
+                }
+            };
+        }
+    ]).directive('asPopoverCellErrors', [
+        'asPopoverFactory',
+        function (asPopoverFactory) {
+            return {
+                restrict: 'A',
+                compile: function (tElement, tAttrs) {
+                    var popover = null;
+
+                    //Post compile
+                    return function (scope, iElement, iAttrs) {
+                        scope.$watchCollection(scope.$rowFormName + "['" + scope.$getInputName() + "'].$error", function (newVal) {
+                            var errors = scope.$cellValidate();
+                            if (popover)
+                                popover.scope.$destroy();
+                            if (errors.length) {
+                                popover = asPopoverFactory.createPopover(iElement, scope, scope.$getCellErrorMessage());
+                            }
+                        });
+                    };
+                }
+            };
+        }
+    ]);
+}(window, document, undefined));
 //# sourceMappingURL=dataTables.editable.angularStrap.js.map

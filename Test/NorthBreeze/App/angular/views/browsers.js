@@ -148,7 +148,16 @@
                         {
                             commands: [
                                 "bs.icon.edit",
-                                "bs.icon.remove"
+                                "bs.icon.remove",
+                                {
+                                    name: "custom",
+                                    template: '<button ng-click="$commands.custom.click()">Custom</button>',
+                                    scope: {
+                                        click: function () {
+                                            alert('yeeey');
+                                        }
+                                    }
+                                }
                             ]
                         }
                     ],
@@ -161,18 +170,20 @@
                                 }
                             },
                             display: {
-                                plugins: {
-                                    cellValidation: dt.editable.InlineDisplayServiceCellValidationPlugin
-                                }
+                                plugins: {}
                             }
                         },
                         editor: {
-                            type: dt.editable.BatchEditor
+                            type: dt.editable.InlineEditor
+                        },
+                        //row validators
+                        validators: {
+                            'dt-test': 'test'
                         },
                         language: {
                             'required': 'The value is required',
                             'minlength': 'Minimum length is {{options}}',
-                            'custom': 'Custom row validator'
+                            'dtTest': 'Custom row validator, type "test" in the engine column'
                         }
                     },
                     rowDetails: {
@@ -194,7 +205,7 @@
                         "sSwfPath": "libs/datatables/extensions/TableTools/swf/copy_csv_xls_pdf.swf",
                         "aButtons": ["select_all", "select_none", "editable_remove", "editable_add"]
                     },
-                    dom: "<'row'<'col-xs-6'l><'col-xs-6'f>r>" + "T" + "D" + "C" + "E" + "t" + "<'row'<'col-xs-6'i><'col-xs-6'p>>R"
+                    dom: "<'row'<'col-xs-6'l><'col-xs-6'f>r>" + "T" + "D" + "C" + "t" + "<'row'<'col-xs-6'i><'col-xs-6'p>>R"
                 };
             };
 

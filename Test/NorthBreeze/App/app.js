@@ -42,7 +42,12 @@ app.modules = [
         basePath: '/angular/',
         routes: [
             { path: 'browsers', name: 'Browsers', templateUrl: 'browsers.html', controller: 'AngularExamples.BrowsersController' },
-            { path: 'performance', name: 'Performance', templateUrl: 'performance.html', controller: 'AngularExamples.PerformanceController' }
+            { path: 'performance', name: 'Performance', templateUrl: 'performance.html', controller: 'AngularExamples.PerformanceController' },
+
+            //Editable plugin
+            { path: 'editable-ui-select2', name: 'Editable select2', templateUrl: 'editableUiSelect2.html', controller: 'AngularExamples.EditableUiSelect2Controller' }
+
+            
         ]
     },
     {

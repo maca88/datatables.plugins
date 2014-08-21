@@ -96,10 +96,17 @@
 
     //#endregion
 
-    //Setup editable plugins
-    dt.editable.InlineDisplayServiceCellValidationPlugin.settings.className = 'help-block error';
 }
 
-(function (window, document, undefined) {
 
-});
+
+(function(window, document, undefined) {
+
+    angular.module('dt').config([
+        'dtInlineRowErrorsSettings', 'dtInlineCellErrorsSettings', (dtInlineRowErrorsSettings, dtInlineCellErrorsSettings) => {
+            dtInlineRowErrorsSettings.error.className = 'text-danger';
+            dtInlineCellErrorsSettings.error.className = 'help-block error';
+        }
+    ]);
+
+} (window, document, undefined));

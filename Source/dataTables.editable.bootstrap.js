@@ -105,11 +105,6 @@ var dt;
             //Register commands
             dt.CommandTablePlugin.registerCommand(BootstrapRemoveCommand);
             dt.CommandTablePlugin.registerCommand(BootstrapIconRemoveCommand);
-
-            //#endregion
-            //#endregion
-            //Setup editable plugins
-            dt.editable.InlineDisplayServiceCellValidationPlugin.settings.className = 'help-block error';
         })(editable.bootstrap || (editable.bootstrap = {}));
         var bootstrap = editable.bootstrap;
     })(dt.editable || (dt.editable = {}));
@@ -117,5 +112,11 @@ var dt;
 })(dt || (dt = {}));
 
 (function (window, document, undefined) {
-});
+    angular.module('dt').config([
+        'dtInlineRowErrorsSettings', 'dtInlineCellErrorsSettings', function (dtInlineRowErrorsSettings, dtInlineCellErrorsSettings) {
+            dtInlineRowErrorsSettings.error.className = 'text-danger';
+            dtInlineCellErrorsSettings.error.className = 'help-block error';
+        }
+    ]);
+}(window, document, undefined));
 //# sourceMappingURL=dataTables.editable.bootstrap.js.map

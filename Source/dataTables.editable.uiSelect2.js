@@ -27,10 +27,7 @@
                     return true;
                 };
 
-                DisplayServiceEditTypePlugin.prototype.cellCompiling = function (args) {
-                };
-
-                DisplayServiceEditTypePlugin.prototype.cellCompiled = function (args) {
+                DisplayServiceEditTypePlugin.prototype.cellPostLink = function (args) {
                     var editable = $.isPlainObject(args.column.editable) ? args.column.editable : null;
                     if (!editable)
                         return;
@@ -53,9 +50,14 @@
 
                     var settings = opts.settings || {};
                     var template = opts.template || {};
+                    template.input = template.input || {};
                     template.select = template.select || {};
                     template.option = template.option || {};
                     template.optgroup = template.optgroup || {};
+
+                    if (opts.asInput) {
+                        return $('<input />').attr('ui-select2', '$settings').attr('ng-model', Editable.MODEL_PATH).attr(Editable.EDIT_CONTROL_ATTRS, '').attr((template.input.attrs || {})).addClass(template.input.className || '').addClass(this.displayService.getControlClass())[0].outerHTML;
+                    }
 
                     var select = $('<select />').attr('ui-select2', '$settings').attr('ng-model', Editable.MODEL_PATH).attr(Editable.EDIT_CONTROL_ATTRS, '').attr((template.select.attrs || {})).addClass(template.select.className || '').addClass(this.displayService.getControlClass());
 

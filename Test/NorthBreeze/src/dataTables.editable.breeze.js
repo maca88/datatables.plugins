@@ -79,7 +79,7 @@ var dt;
                         var validator = error.validator;
                         if (columnMap.hasOwnProperty(error.propertyName))
                             continue;
-                        errors.push(new dt.editable.ValidationError(error.errorMessage, new dt.editable.Validator(validator.name, validator.context), error.propertyName));
+                        errors.push(new editable.ValidationError(error.errorMessage, new editable.Validator(validator.name, validator.context), error.propertyName));
                     }
                     return errors;
                 };
@@ -103,7 +103,7 @@ var dt;
                         if (err.propertyName != propName)
                             return;
                         var validator = err.validator;
-                        errors.push(new dt.editable.ValidationError(err.errorMessage, new dt.editable.Validator(validator.name, validator.context, column), err.propertyName));
+                        errors.push(new editable.ValidationError(err.errorMessage, new editable.Validator(validator.name, validator.context, column), err.propertyName));
                     });
                     return errors;
                 };
@@ -125,7 +125,7 @@ var dt;
                 };
                 DataService.$inject = ['api', 'settings', 'i18Service'];
                 return DataService;
-            })(dt.editable.DefaultDataSerice);
+            })(editable.DefaultDataSerice);
             breeze.DataService = DataService;
 
             //Register plugins

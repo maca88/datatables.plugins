@@ -51,14 +51,12 @@ module dt.editable {
 
     export interface IDisplayService {
         
-        cellCompiling(args: dt.ICellCompilingArgs): void;
-        cellCompiled(args: dt.ICellCompiledArgs): void;
+        cellPostLink(args: dt.ICellPostLinkArgs): void;
         setupColumnTemplate(args: IColumnTemplateSetupArgs): void;
         mergeCellErrors(errors: ValidationError[]): string;
 
 
-        rowCompiling(args: dt.IRowCompilingArgs): void;
-        rowCompiled(args: dt.IRowCompiledArgs): void;
+        setupRowTemplate(args: IRowTemplateSetupArgs): void;
 
         mergeRowErrors(errors: ValidationError[]): string;
 
@@ -79,8 +77,7 @@ module dt.editable {
         getEditTemplateForType(type, col): string;
         selectControl(event, cell, col): boolean;
         canBlurCell(event, cell, col): boolean;
-        cellCompiling(args: dt.ICellCompilingArgs): void;
-        cellCompiled(args: dt.ICellCompiledArgs): void;
+        cellPostLink(args: dt.ICellPostLinkArgs): void;
     }
 
     export interface IDisplayServiceCellValidationPlugin {
@@ -110,11 +107,39 @@ module dt.editable {
 
         editRow(row: number): void;
         saveRow(row: number): void;
+
+        cellCompile(args: dt.ICellCompileArgs);
+        cellPostLink(args: dt.ICellPostLinkArgs);
+        cellPreLink(args: dt.ICellPreLinkArgs);
+
+        rowCompile(args: dt.IRowCompileArgs)
+        rowPostLink(args: dt.IRowPostLinkArgs);
+        rowPreLink(args: dt.IRowPreLinkArgs);
+    }
+
+    export interface ISettings {
+        tableFocused: Function;
+        itemAdded: Function;
+        itemsRemoved: Function;
+        itemsRejected: Function;
+        itemsRestored: Function;
+        itemCreated: Function;
+        startEditing: Function;
+        services: any;
+        editor: any;
+    }
+
+    export interface ISettingsService {
+    }
+
+    export interface ISettingsDataService {
+        type: any;
+        settings: any;
     }
 
     //#endregion
 
-    export class Editable {
+    export class Editable implements ITablePlugin {
 
         //constants
         public static MODEL_PATH = "model_path";
@@ -144,7 +169,7 @@ module dt.editable {
             control: Editable.defaultEditTemplateControl
         } 
 
-        public static defaultSettings = {
+        public static defaultSettings: ISettings = {
             tableFocused: null,
             itemAdded: null,
             itemsRemoved: null,
@@ -233,6 +258,8 @@ module dt.editable {
             endCellEditing: null,
             formatMessage: (msg, ctx) => msg,
             language: {
+                'required': 'The value is required',
+                'minlength': 'Minimum length is {{options}}'
             },
             
         }
@@ -244,29 +271,72 @@ module dt.editable {
             settings: null
         };
         private $injector: ng.auto.IInjectorService;
+        private table: dt.TableController;
 
         public editor: IEditor;
         public dataService: IDataService;
         public displayService: IDisplayService;
         public i18NService: I18NService;
 
-        constructor(api, settings) {
-            this.settings = $.extend(true, {}, Editable.defaultSettings, settings);
-            this.dt.settings = api.settings()[0];
-            this.dt.api = api;
-            this.$injector = this.dt.settings.oInit.angular.$injector;
+        public static $inject = ['dtTable', '$injector'];
+        constructor(dtTable: TableController, $injector: ng.auto.IInjectorService) {
+            this.table = dtTable;
+            this.$injector = $injector;
+        }
+
+        public getEventListeners(): IEventListener[] {
+            return [
+                {
+                    event: dt.TableController.events.cellCompile,
+                    scope: () => this.editor,
+                    fn: () => this.editor.cellCompile
+                },
+                {
+                    event: dt.TableController.events.cellPostLink,
+                    scope: () => this.editor,
+                    fn: () => this.editor.cellPostLink
+                },
+                {
+                    event: dt.TableController.events.cellPreLink,
+                    scope: () => this.editor,
+                    fn: () => this.editor.cellPreLink
+                },
+                {
+                    event: dt.TableController.events.rowCompile,
+                    scope: () => this.editor,
+                    fn: () => this.editor.rowCompile
+                },
+                {
+                    event: dt.TableController.events.rowPostLink,
+                    scope: () => this.editor,
+                    fn: () => this.editor.rowPostLink
+                },
+                {
+                    event: dt.TableController.events.rowPreLink,
+                    scope: () => this.editor,
+                    fn: () => this.editor.rowPreLink
+                }
+            ];
+        }
+
+        public isEnabled(): boolean {
+            return $.isPlainObject(this.table.settings.options.editable);
+        }
+
+        public destroy(): void {
+
+        }
+
+        public initialize(dtSettings) {
+            this.settings = $.extend(true, {}, Editable.defaultSettings, dtSettings.oInit.editable);
+            this.dt.settings = dtSettings;
+            this.dt.api = dtSettings.oInstance.api();
             this.dt.settings.editable = this;
-            if (angular === undefined)
-                throw 'Angular must be included for Editable plugin to work';
             this.setupServices();
             this.setupEditor();
             this.editor.initialize();
             this.prepareColumnTemplates();
-        }
-
-        public initialize() {
             this.initialized = true;
-            this.dt.settings.oApi._fnCallbackFire(this.dt.settings, 'editableInitCompleted', 'editableInitCompleted', [this]);
         }
 
         private prepareColumnTemplates() {
@@ -397,13 +467,16 @@ module dt.editable {
             return $.isPlainObject(col.editable) ? col.editable : null;
         }
 
+        public static getRowValidators(dtSettings) {
+            return (dtSettings.oInit.editable || {}).validators;
+        }
+
         public static fillRowValidationErrors(row, errors: ValidationError[]) {
             var columns = row.settings()[0].aoColumns;
             var i, cellScope: any, rowScope: any;
             var tr = row.node();
             var cells = $('td', tr);
             rowScope = angular.element(tr).scope();
-            rowScope.$rowErrors = rowScope.$rowErrors || [];
             rowScope.$rowErrors.length = 0;
             var visColIdx = -1;
             var cellsByData = {};
@@ -411,8 +484,8 @@ module dt.editable {
                 if (columns[i].bVisible)
                     visColIdx++;
                 cellScope = angular.element(cells[visColIdx]).scope();
+                if (!cellScope.$cellErrors) continue; //not editable
                 cellsByData[columns[i].mData] = cellScope;
-                cellScope.$cellErrors = cellScope.$cellErrors || [];
                 cellScope.$cellErrors.length = 0;
             }
 
@@ -510,6 +583,9 @@ module dt.editable {
         }
 
     }
+
+    //Register plugin
+    TableController.defaultSettings.plugins.push(Editable);
 
     //We have to use an object instead of a primitive value so that changes will be reflected to the child scopes
     export class DisplayMode {
@@ -671,22 +747,27 @@ module dt.editable {
 
         public validateItem(row): ValidationError[] {
             var errors: ValidationError[] = [];
-
             //Execute column validators
             var columns = this.getEditableColumns();
             for (var i = 0; i < columns.length; i++) {
                 errors = errors.concat(this.validateItemProperty(columns[i], row));
             }
 
+            var valMap = {};
+            angular.forEach(this.settings.validators || {}, (opts, valName) => {
+                valMap[valName] = opts;
+            });
+
             //Execute row validators
-            var validate = this.settings.validate;
-            var rowValidators = this.settings.validators;
-            $.each(rowValidators, (key, val) => {
-                var validator = new Validator(key, val);
-                var success = validate.call(this, row, validator);
-                if (success) return;
-                var msg = this.i18Service.translate(key, validator.options);
+            var rowScope: any = angular.element(row.node()).scope();
+            var formController = rowScope.$getRowForm();
+            angular.forEach(formController.$error, (valArr, valName) => {
+                angular.forEach(valArr, (val) => {
+                    if (val && val.$name) return; //column error
+                var validator = new Validator(valName, valMap[valName] || null);
+                var msg = this.i18Service.translate(valName, validator);
                 errors.push(new ValidationError(msg, validator));
+                });
             });
 
             return errors;
@@ -697,6 +778,7 @@ module dt.editable {
             var rowScope: any = angular.element(row.node()).scope();
             var formController = rowScope.$getRowForm();
             var inputCtrl = formController[column.name || column.mData];
+            if (!inputCtrl) return errors;
             var valMap = {};
             var colSettings = Editable.getColumnEditableSettings(column) || {};
             if (angular.isObject(colSettings.validators)) {
@@ -712,19 +794,6 @@ module dt.editable {
                 errors.push(new ValidationError(msg, validator, column.mData));
             });
 
-
-            /*
-            var validate = column.editable.validate || this.settings.validate;
-            var colValue = this.getItemPropertyValue(column, row);
-            if (column.editable.validators != null && $.isFunction(validate)) {
-                $.each(column.editable.validators, (key, val) => {
-                    var validator = new Validator(key, val, column);
-                    var success = validate.call(this, row, validator, colValue);
-                    if (success) return;
-                    var msg = this.i18Service.translate(key, validator.options);
-                    errors.push(new ValidationError(msg, validator, column.mData));
-                });
-            }*/
             return errors;
         }
 
@@ -766,24 +835,8 @@ module dt.editable {
 
     export class InlineDisplayServiceCellValidationPlugin implements IDisplayServiceCellValidationPlugin {
 
-        public static settings = {
-            tagName: 'p',
-            className: ''
-        };
-
         public setupColumnTemplate(args: IColumnTemplateSetupArgs): void {
-            var settings = InlineDisplayServiceCellValidationPlugin.settings;
-            var elem =
-                $('<div />')
-                    .append(
-                    $('<' + settings.tagName + '/>')
-                        .attr({
-                            'ng-repeat': 'error in $cellErrors',
-                            'ng-bind': 'error.message',
-                        })
-                        .addClass(settings.className)
-                    );
-            args.editCtrl.contentAfter.push(elem.html());
+            args.editCtrl.contentAfter.push('<div dt-inline-cell-errors=""></div>');
         }
 
         public mergeErrors(errors: ValidationError[]): string {
@@ -794,7 +847,7 @@ module dt.editable {
     export class InlineDisplayServiceRowValidationPlugin implements IDisplayServiceRowValidationPlugin {
 
         public setupRowTemplate(args: IRowTemplateSetupArgs): void {
-            //TODO
+            args.attrs['dt-inline-row-errors'] = "";
         }
 
         public mergeErrors(errors: ValidationError[]): string {
@@ -843,8 +896,6 @@ module dt.editable {
                 this.stylePlugin = this.$injector.instantiate(plugins.style, locals);
             }
 
-
-
             //Setup validation plugins
             this.cellValidationPlugin = this.$injector.instantiate(plugins.cellValidation, locals);
             this.rowValidationPlugin = this.$injector.instantiate(plugins.rowValidation, locals);
@@ -857,57 +908,24 @@ module dt.editable {
             return true;
         }
 
-        public cellCompiling(args: dt.ICellCompilingArgs): void {
-            var type = Editable.getColumnType(args.column);
-            if (this.pluginTypes.hasOwnProperty(type))
-                this.pluginTypes[type].cellCompiling(args);
-        }
-
-        public cellCompiled(args: dt.ICellCompiledArgs): void {
+        public cellPostLink(args: dt.ICellPostLinkArgs): void {
             var type = Editable.getColumnType(args.column);
 
-            var scope = args.scope;
-            scope.$getCellState = () => {
-                return scope.$getRowForm()[args.column.name || args.column.mData];
-            };
-
             if (this.pluginTypes.hasOwnProperty(type))
-                this.pluginTypes[type].cellCompiled(args);
-            
+                this.pluginTypes[type].cellPostLink(args);
         }
 
-        public rowCompiling(args: dt.IRowCompilingArgs): void {
-            var formName = ('row' + args.hash + 'Form').replace(':', '');
-            var attrs = {
-                'ng-form': formName,
-            };
-            var rowSetup: IRowTemplateSetupArgs = {
-                index: args.rowIndex,
-                hash: args.hash,
-                attrs: attrs,
-                classes: [],
-                ngClass: {},
-                formName: formName,
-                rowIndex: args.rowIndex,
-                dataPath: args.dataPath
-            };
-
-            this.rowValidationPlugin.setupRowTemplate(rowSetup);
-            if (this.stylePlugin)
-                this.stylePlugin.setupRowTemplate(rowSetup);
-
-            var $node = $(args.node);
-            $node.attr(<Object>rowSetup.attrs);
-            $node.addClass(rowSetup.classes.join(' '));
-            Editable.setNgClass(rowSetup.ngClass, args.node);
-        }
-
-        public rowCompiled(args: dt.IRowCompiledArgs): void {
-            var formName = $(args.node).attr('ng-form');
-            var scope = args.scope;
-            scope.$getRowForm = () => {
-                return scope[formName];
+        public setupRowTemplate(args: IRowTemplateSetupArgs): void {
+            var validators = Editable.getRowValidators(this.dt.settings) || {};
+            if ($.isPlainObject(validators)) {
+                angular.forEach(validators, (val, valName) => {
+                    args.attrs[valName] = val;
+                });
             }
+            args.attrs['ng-model'] = args.dataPath;
+            this.rowValidationPlugin.setupRowTemplate(args);
+            if (this.stylePlugin)
+                this.stylePlugin.setupRowTemplate(args);
         }
 
         public selectControl(event, cell, col): void {
@@ -1018,7 +1036,7 @@ module dt.editable {
                     editCtrlAttrs[valName] = val;
                 });
             }
-            editCtrlAttrs['ng-change'] = '$cellValidate()';
+
             this.cellValidationPlugin.setupColumnTemplate(args);
 
             if (this.stylePlugin)
@@ -1061,8 +1079,6 @@ module dt.editable {
             }, settings);
         }
     }
-
-   
 
     //Register commands
     dt.CommandTablePlugin.registerCommand(EditCommand);
@@ -1118,28 +1134,19 @@ module dt.editable {
             this.dataService = dataService;
             this.displayService = displayService;
             this.settings = $.extend(true, {}, defaultSettings, settings);
-            this.registerCallbacks();
-        }
-
-        private registerCallbacks() {
-            this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'cellCompiling', this.onCellCompiling.bind(this), "cellCompiling_BaseEditor");
-            this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'cellCompiled', this.onCellCompiled.bind(this), "cellCompiled_BaseEditor");
-            this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'rowCompiling', this.onRowCompiling.bind(this), "rowCompiling_BaseEditor");
-            this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'rowCompiled', this.onRowCompiled.bind(this), "rowCompiled_BaseEditor");
         }
 
         public initialize(): void {
 
         }
 
-        private onCellCompiling(args: dt.ICellCompilingArgs) {
+        public cellCompile(args: dt.ICellCompileArgs) {
             if (!this.dataService.isColumnEditable(args.column)) return;
             args.html = args.column.cellTemplate;
             delete args.attr['ng-bind'];
-            this.displayService.cellCompiling(args);
         }
 
-        private onCellCompiled(args: dt.ICellCompiledArgs) {
+        public cellPreLink(args: dt.ICellPreLinkArgs) {
             if (!this.dataService.isColumnEditable(args.column)) return;
             var scope = args.scope;
             scope.$cellDisplayMode = new DisplayMode();
@@ -1160,16 +1167,43 @@ module dt.editable {
                 for (var i = 0; i < errors.length; i++) {
                     scope.$cellErrors.push(errors[i]);
                 }
+                return errors;
+            };
+            scope.$getCellState = () => {
+                return scope.$getRowForm()[args.column.name || args.column.mData];
+            };
+        }
+
+        public cellPostLink(args: dt.ICellPostLinkArgs) {
+            if (!this.dataService.isColumnEditable(args.column)) return;
+            this.displayService.cellPostLink(args);
+        }
+
+        public rowCompile(args: dt.IRowCompileArgs) {
+            var formName = ('row' + args.hash + 'Form').replace(':', '');
+            var attrs = {
+                'ng-form': formName,
+            };
+            var rowSetup: IRowTemplateSetupArgs = {
+                index: args.rowIndex,
+                hash: args.hash,
+                attrs: attrs,
+                classes: [],
+                ngClass: {},
+                formName: formName,
+                rowIndex: args.rowIndex,
+                dataPath: args.dataPath
             };
 
-            this.displayService.cellCompiled(args);
+            this.displayService.setupRowTemplate(rowSetup);
+
+            var $node = $(args.node);
+            $node.attr(<Object>rowSetup.attrs);
+            $node.addClass(rowSetup.classes.join(' '));
+            Editable.setNgClass(rowSetup.ngClass, args.node);
         }
 
-        private onRowCompiling(args: dt.IRowCompilingArgs) {
-            this.displayService.rowCompiling(args);
-        }
-
-        private onRowCompiled(args: dt.IRowCompiledArgs) {
+        public rowPreLink(args: dt.IRowPreLinkArgs) {
             var scope = args.scope;
             
             scope.$rowDisplayMode = new DisplayMode();
@@ -1186,8 +1220,15 @@ module dt.editable {
                 Editable.fillRowValidationErrors(row, errors);
                 return errors;
             };
+            var formName = $(args.node).attr('ng-form');
+            scope.$rowFormName = formName;
+            scope.$getRowForm = () => {
+                return scope[formName];
+            }
+        }
 
-            this.displayService.rowCompiled(args);
+        public rowPostLink(args: dt.IRowPostLinkArgs) {
+            
         }
 
         public getVisibleColumn(index) {
@@ -1415,13 +1456,11 @@ module dt.editable {
             var rowScope: any = $tr.scope();
             if (!rowScope)
                 throw 'Row must have a scope';
-            var dataService = this.dataService;
-            var errors = dataService.validateItem(dtRow);
-            if (errors.length) {
-                Editable.fillRowValidationErrors(dtRow, errors);
-            } else
-                rowScope.$rowDisplayMode.setMode(DisplayMode.ReadOnly);
 
+            if (!rowScope.$rowValidate().length) {
+                rowScope.$rowDisplayMode.setMode(DisplayMode.ReadOnly);
+            }
+                
             if (!rowScope.$$phase)
                 rowScope.$digest();
         }
@@ -1470,10 +1509,131 @@ module dt.editable {
 
 (function (window, document, undefined) {
 
-    //angular.module('dt').constant('editable.Editable.defaultSettings', dt.editable.Editable.defaultSettings);
+    angular.module('dt')
+        .constant('dtInlineCellErrorsSettings', {
+            error: {
+                tagName: 'p',
+                className: ''
+            }
+        })
+        .directive('dtInlineCellErrors', ['dtInlineCellErrorsSettings',
+            (dtInlineCellErrorsSettings) => {
+                return {
+                    restrict: 'A',
+                    compile: (tElement, tAttrs) => {
+                        angular.element(tElement)
+                            .append(
+                                $('<' + dtInlineCellErrorsSettings.error.tagName + '/>')
+                                .attr({
+                                    'ng-repeat': 'error in $cellErrors',
+                                    'ng-bind': 'error.message',
+                                })
+                                .addClass(dtInlineCellErrorsSettings.error.className)
+                            );
+                        //Post compile
+                        return (scope, iElement, iAttrs) => {
+                            scope.$watchCollection(scope.$rowFormName + "['" + scope.$getInputName() + "'].$error", (newVal) => {
+                                scope.$cellValidate();
+                            });
+                        }
+                    }
+                };
+            }
+        ])
 
-    //Register events
-    $.fn.DataTable.models.oSettings.editableInitCompleted = [];
+        .constant('dtInlineRowErrorsSettings', {
+            row: {
+                attrs: {},
+                className: '',
+            },
+            cell: {
+                attrs: {},
+                className: ''
+            },
+            error: {
+                tagName: 'p',
+                className: ''
+            }
+        })
+        .directive('dtInlineRowErrors', ['$compile', 'dtInlineRowErrorsSettings',
+            ($compile, dtInlineRowErrorsSettings) => {
+                return {
+                    restrict: 'A',
+                    compile: (tElement, tAttrs) => {
+                        //Post compile
+                        return (scope, iElement, iAttrs) => {
+                            var colNode = $('<td/>')
+                                .attr('colspan', 100)
+                                .attr(<Object>dtInlineRowErrorsSettings.cell.attrs)
+                                .addClass(dtInlineRowErrorsSettings.cell.className)
+                                .append(
+                                $('<div />')
+                                    .append(
+                                    $('<' + dtInlineRowErrorsSettings.error.tagName + '/>')
+                                        .attr({
+                                            'ng-repeat': 'error in $rowErrors',
+                                            'ng-bind': 'error.message',
+                                        })
+                                        .addClass(dtInlineRowErrorsSettings.error.className)
+                                    )
+                                );
+                            var rowNode = $('<tr/>')
+                                .attr(<Object>dtInlineRowErrorsSettings.row.attrs)
+                                .addClass(dtInlineRowErrorsSettings.row.className)
+                                .append(colNode);
+                            var visible = false;
+
+                            $compile(rowNode)(scope);
+                            scope.$watchCollection('this[$rowFormName].$error', (newVal) => {
+                                var errors = scope.$rowValidate();
+                                var rowData = scope.$rowData;
+                                if (!rowData._details)
+                                    rowData._details = $([]);
+                                var details = rowData._details;
+                                if ((errors.length && visible) || (!errors.length && !visible)) return;
+                                //remove the node
+                                if (!errors.length && visible) {
+                                    angular.forEach(details, (tr, i) => {
+                                        if (tr === rowNode[0])
+                                            details.splice(i, 1);
+                                    });
+                                    visible = false;
+                                    rowNode.detach();
+                                }
+                                else if (errors.length && !visible) {
+                                    details.push(rowNode[0]);
+                                    visible = true;
+                                    scope.$row.child.show();
+                                }
+                            });
+                        };
+                    }
+                }
+            }
+        ])
+
+
+        .directive('dtTest', [() => {
+            return {
+                restrict: 'A',
+                require: 'ngModel',
+                link: (scope, elm, attr, ngModelCtrl) => {
+                    var name = attr.ngModel;
+                    var validator = (val) => {
+                        return val === 'test';
+                    };
+                    ngModelCtrl.$validators.dtTest = (modelValue) => {
+                        scope.$watch(name + '.engine', (newVai) => {
+                            ngModelCtrl.$setValidity('dtTest', validator(newVai));
+                        });
+                        return validator(modelValue.engine);
+                    };
+                }
+            };
+        }])
+
+    ;
+
 
     //#region Extensions
 
@@ -1702,20 +1862,5 @@ module dt.editable {
     //#endregion
 
     //#endregion
-
-    $.fn.dataTable.ext.feature.push({
-        "fnInit": (oSettings) => {
-            var api = oSettings.oInstance.api();
-            var editable = new dt.editable.Editable(api, oSettings.oInit.editable);
-            if (oSettings._bInitComplete)
-                editable.initialize();
-            else
-                api.one('init.dt', () => { editable.initialize(); });
-
-            return null;
-        },
-        "cFeature": "E",
-        "sFeature": "Editable"
-    });
 
 } (window, document, undefined));

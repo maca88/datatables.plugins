@@ -164,15 +164,15 @@
                             "bs.icon.edit",
                             "bs.icon.remove",
 
-                            //{
-                            //    name: "custom",
-                            //    template: '<button ng-click="$commands.custom.click()">Custom</button>',
-                            //    scope: {
-                            //        click: () => {
-                            //            alert('yeeey');
-                            //        }
-                            //    }
-                            //}
+                            {
+                                name: "custom",
+                                template: '<button ng-click="$commands.custom.click()">Custom</button>',
+                                scope: {
+                                    click: () => {
+                                        alert('yeeey');
+                                    }
+                                }
+                            }
                         ]
                     }
                 ],
@@ -181,35 +181,28 @@
                         data: {
                             type: dt.editable.DefaultDataSerice,
                             settings: {
-                                createItem: this.getNewItem.bind(this),
-                                //validate: (row, validator, val) => {
-                                //    switch (validator.name) {
-                                //        case 'required': //column validator
-                                //            return !validator.options || (val != null && val != '');
-                                //        case 'custom': //row validator
-                                //            return row.data().engine == 'test';
-                                //        default:
-                                //            throw 'Unknown validator ' + validator.name;
-                                //    }
-                                //},
-                                //validators: {
-                                //    custom: null
-                                //},
+                                createItem: this.getNewItem.bind(this), 
                             }
                         },
                         display: {
                             plugins: {
-                                cellValidation: dt.editable.InlineDisplayServiceCellValidationPlugin
+                                //cellValidation: dt.editable.InlineDisplayServiceCellValidationPlugin,
+                                //rowValidation: dt.editable.InlineDisplayServiceRowValidationPlugin
                             },
                         }
                     },
                     editor: {
-                        type: dt.editable.BatchEditor
+                        type: dt.editable.InlineEditor
                     },
+                    //row validators
+                    validators: {
+                        'dt-test': 'test'
+                    },
+
                     language: {
                         'required': 'The value is required',
                         'minlength': 'Minimum length is {{options}}',
-                        'custom': 'Custom row validator'
+                        'dtTest': 'Custom row validator, type "test" in the engine column'
                     }
                 },
                 rowDetails: {
@@ -235,7 +228,7 @@
                     "T" + //TableTools
                     "D" + //RowDetails
                     "C" + //ColVis
-                    "E" + //Editable
+                    //"E" + //Editable
                     "t" +
                     "<'row'<'col-xs-6'i><'col-xs-6'p>>R"
             };

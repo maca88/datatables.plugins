@@ -14,27 +14,92 @@ var dt;
 
         //#endregion
         var Editable = (function () {
-            function Editable(api, settings) {
+            function Editable(dtTable, $injector) {
                 this.initialized = false;
                 this.dt = {
                     api: null,
                     settings: null
                 };
-                this.settings = $.extend(true, {}, Editable.defaultSettings, settings);
-                this.dt.settings = api.settings()[0];
-                this.dt.api = api;
-                this.$injector = this.dt.settings.oInit.angular.$injector;
+                this.table = dtTable;
+                this.$injector = $injector;
+            }
+            Editable.prototype.getEventListeners = function () {
+                var _this = this;
+                return [
+                    {
+                        event: dt.TableController.events.cellCompile,
+                        scope: function () {
+                            return _this.editor;
+                        },
+                        fn: function () {
+                            return _this.editor.cellCompile;
+                        }
+                    },
+                    {
+                        event: dt.TableController.events.cellPostLink,
+                        scope: function () {
+                            return _this.editor;
+                        },
+                        fn: function () {
+                            return _this.editor.cellPostLink;
+                        }
+                    },
+                    {
+                        event: dt.TableController.events.cellPreLink,
+                        scope: function () {
+                            return _this.editor;
+                        },
+                        fn: function () {
+                            return _this.editor.cellPreLink;
+                        }
+                    },
+                    {
+                        event: dt.TableController.events.rowCompile,
+                        scope: function () {
+                            return _this.editor;
+                        },
+                        fn: function () {
+                            return _this.editor.rowCompile;
+                        }
+                    },
+                    {
+                        event: dt.TableController.events.rowPostLink,
+                        scope: function () {
+                            return _this.editor;
+                        },
+                        fn: function () {
+                            return _this.editor.rowPostLink;
+                        }
+                    },
+                    {
+                        event: dt.TableController.events.rowPreLink,
+                        scope: function () {
+                            return _this.editor;
+                        },
+                        fn: function () {
+                            return _this.editor.rowPreLink;
+                        }
+                    }
+                ];
+            };
+
+            Editable.prototype.isEnabled = function () {
+                return $.isPlainObject(this.table.settings.options.editable);
+            };
+
+            Editable.prototype.destroy = function () {
+            };
+
+            Editable.prototype.initialize = function (dtSettings) {
+                this.settings = $.extend(true, {}, Editable.defaultSettings, dtSettings.oInit.editable);
+                this.dt.settings = dtSettings;
+                this.dt.api = dtSettings.oInstance.api();
                 this.dt.settings.editable = this;
-                if (angular === undefined)
-                    throw 'Angular must be included for Editable plugin to work';
                 this.setupServices();
                 this.setupEditor();
                 this.editor.initialize();
                 this.prepareColumnTemplates();
-            }
-            Editable.prototype.initialize = function () {
                 this.initialized = true;
-                this.dt.settings.oApi._fnCallbackFire(this.dt.settings, 'editableInitCompleted', 'editableInitCompleted', [this]);
             };
 
             Editable.prototype.prepareColumnTemplates = function () {
@@ -159,13 +224,16 @@ var dt;
                 return $.isPlainObject(col.editable) ? col.editable : null;
             };
 
+            Editable.getRowValidators = function (dtSettings) {
+                return (dtSettings.oInit.editable || {}).validators;
+            };
+
             Editable.fillRowValidationErrors = function (row, errors) {
                 var columns = row.settings()[0].aoColumns;
                 var i, cellScope, rowScope;
                 var tr = row.node();
                 var cells = $('td', tr);
                 rowScope = angular.element(tr).scope();
-                rowScope.$rowErrors = rowScope.$rowErrors || [];
                 rowScope.$rowErrors.length = 0;
                 var visColIdx = -1;
                 var cellsByData = {};
@@ -173,8 +241,9 @@ var dt;
                     if (columns[i].bVisible)
                         visColIdx++;
                     cellScope = angular.element(cells[visColIdx]).scope();
+                    if (!cellScope.$cellErrors)
+                        continue;
                     cellsByData[columns[i].mData] = cellScope;
-                    cellScope.$cellErrors = cellScope.$cellErrors || [];
                     cellScope.$cellErrors.length = 0;
                 }
 
@@ -379,11 +448,19 @@ var dt;
                 formatMessage: function (msg, ctx) {
                     return msg;
                 },
-                language: {}
+                language: {
+                    'required': 'The value is required',
+                    'minlength': 'Minimum length is {{options}}'
+                }
             };
+
+            Editable.$inject = ['dtTable', '$injector'];
             return Editable;
         })();
         editable.Editable = Editable;
+
+        //Register plugin
+        dt.TableController.defaultSettings.plugins.push(Editable);
 
         //We have to use an object instead of a primitive value so that changes will be reflected to the child scopes
         var DisplayMode = (function () {
@@ -527,16 +604,22 @@ var dt;
                     errors = errors.concat(this.validateItemProperty(columns[i], row));
                 }
 
+                var valMap = {};
+                angular.forEach(this.settings.validators || {}, function (opts, valName) {
+                    valMap[valName] = opts;
+                });
+
                 //Execute row validators
-                var validate = this.settings.validate;
-                var rowValidators = this.settings.validators;
-                $.each(rowValidators, function (key, val) {
-                    var validator = new Validator(key, val);
-                    var success = validate.call(_this, row, validator);
-                    if (success)
-                        return;
-                    var msg = _this.i18Service.translate(key, validator.options);
-                    errors.push(new ValidationError(msg, validator));
+                var rowScope = angular.element(row.node()).scope();
+                var formController = rowScope.$getRowForm();
+                angular.forEach(formController.$error, function (valArr, valName) {
+                    angular.forEach(valArr, function (val) {
+                        if (val && val.$name)
+                            return;
+                        var validator = new Validator(valName, valMap[valName] || null);
+                        var msg = _this.i18Service.translate(valName, validator);
+                        errors.push(new ValidationError(msg, validator));
+                    });
                 });
 
                 return errors;
@@ -548,6 +631,8 @@ var dt;
                 var rowScope = angular.element(row.node()).scope();
                 var formController = rowScope.$getRowForm();
                 var inputCtrl = formController[column.name || column.mData];
+                if (!inputCtrl)
+                    return errors;
                 var valMap = {};
                 var colSettings = Editable.getColumnEditableSettings(column) || {};
                 if (angular.isObject(colSettings.validators)) {
@@ -564,18 +649,6 @@ var dt;
                     errors.push(new ValidationError(msg, validator, column.mData));
                 });
 
-                /*
-                var validate = column.editable.validate || this.settings.validate;
-                var colValue = this.getItemPropertyValue(column, row);
-                if (column.editable.validators != null && $.isFunction(validate)) {
-                $.each(column.editable.validators, (key, val) => {
-                var validator = new Validator(key, val, column);
-                var success = validate.call(this, row, validator, colValue);
-                if (success) return;
-                var msg = this.i18Service.translate(key, validator.options);
-                errors.push(new ValidationError(msg, validator, column.mData));
-                });
-                }*/
                 return errors;
             };
 
@@ -621,20 +694,11 @@ var dt;
             function InlineDisplayServiceCellValidationPlugin() {
             }
             InlineDisplayServiceCellValidationPlugin.prototype.setupColumnTemplate = function (args) {
-                var settings = InlineDisplayServiceCellValidationPlugin.settings;
-                var elem = $('<div />').append($('<' + settings.tagName + '/>').attr({
-                    'ng-repeat': 'error in $cellErrors',
-                    'ng-bind': 'error.message'
-                }).addClass(settings.className));
-                args.editCtrl.contentAfter.push(elem.html());
+                args.editCtrl.contentAfter.push('<div dt-inline-cell-errors=""></div>');
             };
 
             InlineDisplayServiceCellValidationPlugin.prototype.mergeErrors = function (errors) {
                 return Editable.mergeErrors(errors);
-            };
-            InlineDisplayServiceCellValidationPlugin.settings = {
-                tagName: 'p',
-                className: ''
             };
             return InlineDisplayServiceCellValidationPlugin;
         })();
@@ -644,7 +708,7 @@ var dt;
             function InlineDisplayServiceRowValidationPlugin() {
             }
             InlineDisplayServiceRowValidationPlugin.prototype.setupRowTemplate = function (args) {
-                //TODO
+                args.attrs['dt-inline-row-errors'] = "";
             };
 
             InlineDisplayServiceRowValidationPlugin.prototype.mergeErrors = function (errors) {
@@ -698,56 +762,24 @@ var dt;
                 return true;
             };
 
-            DefaultDisplayService.prototype.cellCompiling = function (args) {
-                var type = Editable.getColumnType(args.column);
-                if (this.pluginTypes.hasOwnProperty(type))
-                    this.pluginTypes[type].cellCompiling(args);
-            };
-
-            DefaultDisplayService.prototype.cellCompiled = function (args) {
+            DefaultDisplayService.prototype.cellPostLink = function (args) {
                 var type = Editable.getColumnType(args.column);
 
-                var scope = args.scope;
-                scope.$getCellState = function () {
-                    return scope.$getRowForm()[args.column.name || args.column.mData];
-                };
-
                 if (this.pluginTypes.hasOwnProperty(type))
-                    this.pluginTypes[type].cellCompiled(args);
+                    this.pluginTypes[type].cellPostLink(args);
             };
 
-            DefaultDisplayService.prototype.rowCompiling = function (args) {
-                var formName = ('row' + args.hash + 'Form').replace(':', '');
-                var attrs = {
-                    'ng-form': formName
-                };
-                var rowSetup = {
-                    index: args.rowIndex,
-                    hash: args.hash,
-                    attrs: attrs,
-                    classes: [],
-                    ngClass: {},
-                    formName: formName,
-                    rowIndex: args.rowIndex,
-                    dataPath: args.dataPath
-                };
-
-                this.rowValidationPlugin.setupRowTemplate(rowSetup);
+            DefaultDisplayService.prototype.setupRowTemplate = function (args) {
+                var validators = Editable.getRowValidators(this.dt.settings) || {};
+                if ($.isPlainObject(validators)) {
+                    angular.forEach(validators, function (val, valName) {
+                        args.attrs[valName] = val;
+                    });
+                }
+                args.attrs['ng-model'] = args.dataPath;
+                this.rowValidationPlugin.setupRowTemplate(args);
                 if (this.stylePlugin)
-                    this.stylePlugin.setupRowTemplate(rowSetup);
-
-                var $node = $(args.node);
-                $node.attr(rowSetup.attrs);
-                $node.addClass(rowSetup.classes.join(' '));
-                Editable.setNgClass(rowSetup.ngClass, args.node);
-            };
-
-            DefaultDisplayService.prototype.rowCompiled = function (args) {
-                var formName = $(args.node).attr('ng-form');
-                var scope = args.scope;
-                scope.$getRowForm = function () {
-                    return scope[formName];
-                };
+                    this.stylePlugin.setupRowTemplate(args);
             };
 
             DefaultDisplayService.prototype.selectControl = function (event, cell, col) {
@@ -844,7 +876,7 @@ var dt;
                         editCtrlAttrs[valName] = val;
                     });
                 }
-                editCtrlAttrs['ng-change'] = '$cellValidate()';
+
                 this.cellValidationPlugin.setupColumnTemplate(args);
 
                 if (this.stylePlugin)
@@ -942,27 +974,18 @@ var dt;
                 this.dataService = dataService;
                 this.displayService = displayService;
                 this.settings = $.extend(true, {}, defaultSettings, settings);
-                this.registerCallbacks();
             }
-            BaseEditor.prototype.registerCallbacks = function () {
-                this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'cellCompiling', this.onCellCompiling.bind(this), "cellCompiling_BaseEditor");
-                this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'cellCompiled', this.onCellCompiled.bind(this), "cellCompiled_BaseEditor");
-                this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'rowCompiling', this.onRowCompiling.bind(this), "rowCompiling_BaseEditor");
-                this.dt.settings.oApi._fnCallbackReg(this.dt.settings, 'rowCompiled', this.onRowCompiled.bind(this), "rowCompiled_BaseEditor");
-            };
-
             BaseEditor.prototype.initialize = function () {
             };
 
-            BaseEditor.prototype.onCellCompiling = function (args) {
+            BaseEditor.prototype.cellCompile = function (args) {
                 if (!this.dataService.isColumnEditable(args.column))
                     return;
                 args.html = args.column.cellTemplate;
                 delete args.attr['ng-bind'];
-                this.displayService.cellCompiling(args);
             };
 
-            BaseEditor.prototype.onCellCompiled = function (args) {
+            BaseEditor.prototype.cellPreLink = function (args) {
                 var _this = this;
                 if (!this.dataService.isColumnEditable(args.column))
                     return;
@@ -984,16 +1007,44 @@ var dt;
                     for (var i = 0; i < errors.length; i++) {
                         scope.$cellErrors.push(errors[i]);
                     }
+                    return errors;
+                };
+                scope.$getCellState = function () {
+                    return scope.$getRowForm()[args.column.name || args.column.mData];
+                };
+            };
+
+            BaseEditor.prototype.cellPostLink = function (args) {
+                if (!this.dataService.isColumnEditable(args.column))
+                    return;
+                this.displayService.cellPostLink(args);
+            };
+
+            BaseEditor.prototype.rowCompile = function (args) {
+                var formName = ('row' + args.hash + 'Form').replace(':', '');
+                var attrs = {
+                    'ng-form': formName
+                };
+                var rowSetup = {
+                    index: args.rowIndex,
+                    hash: args.hash,
+                    attrs: attrs,
+                    classes: [],
+                    ngClass: {},
+                    formName: formName,
+                    rowIndex: args.rowIndex,
+                    dataPath: args.dataPath
                 };
 
-                this.displayService.cellCompiled(args);
+                this.displayService.setupRowTemplate(rowSetup);
+
+                var $node = $(args.node);
+                $node.attr(rowSetup.attrs);
+                $node.addClass(rowSetup.classes.join(' '));
+                Editable.setNgClass(rowSetup.ngClass, args.node);
             };
 
-            BaseEditor.prototype.onRowCompiling = function (args) {
-                this.displayService.rowCompiling(args);
-            };
-
-            BaseEditor.prototype.onRowCompiled = function (args) {
+            BaseEditor.prototype.rowPreLink = function (args) {
                 var _this = this;
                 var scope = args.scope;
 
@@ -1013,8 +1064,14 @@ var dt;
                     Editable.fillRowValidationErrors(row, errors);
                     return errors;
                 };
+                var formName = $(args.node).attr('ng-form');
+                scope.$rowFormName = formName;
+                scope.$getRowForm = function () {
+                    return scope[formName];
+                };
+            };
 
-                this.displayService.rowCompiled(args);
+            BaseEditor.prototype.rowPostLink = function (args) {
             };
 
             BaseEditor.prototype.getVisibleColumn = function (index) {
@@ -1242,12 +1299,10 @@ var dt;
                 var rowScope = $tr.scope();
                 if (!rowScope)
                     throw 'Row must have a scope';
-                var dataService = this.dataService;
-                var errors = dataService.validateItem(dtRow);
-                if (errors.length) {
-                    Editable.fillRowValidationErrors(dtRow, errors);
-                } else
+
+                if (!rowScope.$rowValidate().length) {
                     rowScope.$rowDisplayMode.setMode(DisplayMode.ReadOnly);
+                }
 
                 if (!rowScope.$$phase)
                     rowScope.$digest();
@@ -1303,9 +1358,105 @@ var dt;
 })(dt || (dt = {}));
 
 (function (window, document, undefined) {
-    //angular.module('dt').constant('editable.Editable.defaultSettings', dt.editable.Editable.defaultSettings);
-    //Register events
-    $.fn.DataTable.models.oSettings.editableInitCompleted = [];
+    angular.module('dt').constant('dtInlineCellErrorsSettings', {
+        error: {
+            tagName: 'p',
+            className: ''
+        }
+    }).directive('dtInlineCellErrors', [
+        'dtInlineCellErrorsSettings',
+        function (dtInlineCellErrorsSettings) {
+            return {
+                restrict: 'A',
+                compile: function (tElement, tAttrs) {
+                    angular.element(tElement).append($('<' + dtInlineCellErrorsSettings.error.tagName + '/>').attr({
+                        'ng-repeat': 'error in $cellErrors',
+                        'ng-bind': 'error.message'
+                    }).addClass(dtInlineCellErrorsSettings.error.className));
+
+                    //Post compile
+                    return function (scope, iElement, iAttrs) {
+                        scope.$watchCollection(scope.$rowFormName + "['" + scope.$getInputName() + "'].$error", function (newVal) {
+                            scope.$cellValidate();
+                        });
+                    };
+                }
+            };
+        }
+    ]).constant('dtInlineRowErrorsSettings', {
+        row: {
+            attrs: {},
+            className: ''
+        },
+        cell: {
+            attrs: {},
+            className: ''
+        },
+        error: {
+            tagName: 'p',
+            className: ''
+        }
+    }).directive('dtInlineRowErrors', [
+        '$compile', 'dtInlineRowErrorsSettings',
+        function ($compile, dtInlineRowErrorsSettings) {
+            return {
+                restrict: 'A',
+                compile: function (tElement, tAttrs) {
+                    //Post compile
+                    return function (scope, iElement, iAttrs) {
+                        var colNode = $('<td/>').attr('colspan', 100).attr(dtInlineRowErrorsSettings.cell.attrs).addClass(dtInlineRowErrorsSettings.cell.className).append($('<div />').append($('<' + dtInlineRowErrorsSettings.error.tagName + '/>').attr({
+                            'ng-repeat': 'error in $rowErrors',
+                            'ng-bind': 'error.message'
+                        }).addClass(dtInlineRowErrorsSettings.error.className)));
+                        var rowNode = $('<tr/>').attr(dtInlineRowErrorsSettings.row.attrs).addClass(dtInlineRowErrorsSettings.row.className).append(colNode);
+                        var visible = false;
+
+                        $compile(rowNode)(scope);
+                        scope.$watchCollection('this[$rowFormName].$error', function (newVal) {
+                            var errors = scope.$rowValidate();
+                            var rowData = scope.$rowData;
+                            if (!rowData._details)
+                                rowData._details = $([]);
+                            var details = rowData._details;
+                            if ((errors.length && visible) || (!errors.length && !visible))
+                                return;
+
+                            //remove the node
+                            if (!errors.length && visible) {
+                                angular.forEach(details, function (tr, i) {
+                                    if (tr === rowNode[0])
+                                        details.splice(i, 1);
+                                });
+                                visible = false;
+                                rowNode.detach();
+                            } else if (errors.length && !visible) {
+                                details.push(rowNode[0]);
+                                visible = true;
+                                scope.$row.child.show();
+                            }
+                        });
+                    };
+                }
+            };
+        }
+    ]).directive('dtTest', [function () {
+            return {
+                restrict: 'A',
+                require: 'ngModel',
+                link: function (scope, elm, attr, ngModelCtrl) {
+                    var name = attr.ngModel;
+                    var validator = function (val) {
+                        return val === 'test';
+                    };
+                    ngModelCtrl.$validators.dtTest = function (modelValue) {
+                        scope.$watch(name + '.engine', function (newVai) {
+                            ngModelCtrl.$setValidity('dtTest', validator(newVai));
+                        });
+                        return validator(modelValue.engine);
+                    };
+                }
+            };
+        }]);
 
     //#region Extensions
     $.fn.DataTable.Api.register('row().edit()', function () {
@@ -1529,24 +1680,7 @@ var dt;
             $(nButton).addClass(this.classes.buttons.disabled);
         }
     });
-
     //#endregion
     //#endregion
-    $.fn.dataTable.ext.feature.push({
-        "fnInit": function (oSettings) {
-            var api = oSettings.oInstance.api();
-            var editable = new dt.editable.Editable(api, oSettings.oInit.editable);
-            if (oSettings._bInitComplete)
-                editable.initialize();
-            else
-                api.one('init.dt', function () {
-                    editable.initialize();
-                });
-
-            return null;
-        },
-        "cFeature": "E",
-        "sFeature": "Editable"
-    });
 }(window, document, undefined));
 //# sourceMappingURL=dataTables.editable.js.map
