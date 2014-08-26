@@ -27,12 +27,7 @@
                 }
                 DisplayServicePopoverRowValidationPlugin.prototype.setupRowTemplate = function (args) {
                     var rowValidationAttrs = {
-                        'bs-popover': '',
-                        'data-content': '{{$getRowErrorMessage()}}',
-                        'bs-show': '$rowErrors.length > 0',
-                        'data-trigger': 'manual',
-                        'data-html': true,
-                        'data-placement': 'bottom'
+                        'as-popover-row-errors': ''
                     };
                     $.extend(args.attrs, rowValidationAttrs);
                 };
@@ -157,13 +152,13 @@
         '$popover', '$sce', '$window', function ($popover, $sce, $window) {
             var requestAnimationFrame = $window.requestAnimationFrame || $window.setTimeout;
 
-            var createPopover = function (iElement, scope, message) {
+            var createPopover = function (iElement, scope, options, message) {
                 var popover = null;
                 var popoverScope = scope.$new();
-                var options = {
+                options = $.extend({
                     scope: popoverScope,
                     html: true
-                };
+                }, options);
                 popoverScope.content = $sce.trustAsHtml(message);
                 requestAnimationFrame(function () {
                     popover && popover.$applyPlacement();
@@ -188,9 +183,26 @@
             return {
                 createPopover: createPopover
             };
-        }]).directive('asPopoverRowErrors', [
-        'asPopoverFactory',
-        function (asPopoverFactory) {
+        }]).constant('asPopoverRowErrorsSettings', {
+        popoverOptions: {
+            placement: 'bottom',
+            trigger: 'manual'
+        },
+        row: {
+            attrs: {},
+            className: ''
+        },
+        cell: {
+            attrs: {},
+            className: ''
+        },
+        error: {
+            tagName: 'p',
+            className: ''
+        }
+    }).directive('asPopoverRowErrors', [
+        '$compile', '$timeout', 'asPopoverFactory', 'asPopoverRowErrorsSettings',
+        function ($compile, $timeout, asPopoverFactory, asPopoverRowErrorsSettings) {
             return {
                 restrict: 'A',
                 compile: function (tElement, tAttrs) {
@@ -198,21 +210,58 @@
 
                     //Post compile
                     return function (scope, iElement, iAttrs) {
-                        scope.$watchCollection(scope.$rowFormName + "['" + scope.$getInputName() + "'].$error", function (newVal) {
-                            var errors = scope.$cellValidate();
+                        var rowClass = scope.$rowFormName + 'popover';
+                        var popoverDiv = $('<div />').css('width', '100%').addClass(rowClass);
+                        var colNode = $('<td/>').attr('colspan', 100).css({
+                            'border-width': 0,
+                            'margin': 0,
+                            'padding': 0,
+                            'height': 0
+                        }).attr(asPopoverRowErrorsSettings.cell.attrs).addClass(asPopoverRowErrorsSettings.cell.className).append(popoverDiv);
+                        var rowNode = $('<tr/>').attr(asPopoverRowErrorsSettings.row.attrs).addClass(asPopoverRowErrorsSettings.row.className).append(colNode);
+                        var visible = false;
+                        var options = $.extend({}, asPopoverRowErrorsSettings.popoverOptions);
+                        $compile(rowNode)(scope);
+                        scope.$watchCollection("$rowData._details", function (newVal) {
+                            console.log('wwww');
                             if (popover)
-                                popover.scope.$destroy();
-                            if (errors.length) {
-                                popover = asPopoverFactory.createPopover(iElement, scope, scope.$getCellErrorMessage());
+                                $timeout(popover.popover.$applyPlacement, 500);
+                        });
+                        scope.$watchCollection(scope.$rowFormName + ".$error", function (newVal) {
+                            var errors = scope.$rowValidate();
+                            var rowData = scope.$rowData;
+                            if (!rowData._details)
+                                rowData._details = $([]);
+                            var details = rowData._details;
+                            if ((errors.length && visible) || (!errors.length && !visible))
+                                return;
+
+                            //remove the node
+                            if (!errors.length && visible) {
+                                angular.forEach(details, function (tr, i) {
+                                    if (tr === rowNode[0])
+                                        details.splice(i, 1);
+                                });
+                                visible = false;
+                                rowNode.detach();
+                            } else if (errors.length && !visible) {
+                                details.push(rowNode[0]);
+                                visible = true;
+                                scope.$row.child.show();
+                                if (!popover)
+                                    popover = asPopoverFactory.createPopover(popoverDiv, scope, options, scope.$getRowErrorMessage());
                             }
                         });
                     };
                 }
             };
         }
-    ]).directive('asPopoverCellErrors', [
-        'asPopoverFactory',
-        function (asPopoverFactory) {
+    ]).constant('asPopoverCellErrorsSettings', {
+        placement: 'bottom',
+        trigger: 'manual'
+    }).directive('asPopoverCellErrors', [
+        'asPopoverFactory', 'asPopoverCellErrorsSettings',
+        function (asPopoverFactory, asPopoverCellErrorsSettings) {
             return {
                 restrict: 'A',
                 compile: function (tElement, tAttrs) {
@@ -225,7 +274,7 @@
                             if (popover)
                                 popover.scope.$destroy();
                             if (errors.length) {
-                                popover = asPopoverFactory.createPopover(iElement, scope, scope.$getCellErrorMessage());
+                                popover = asPopoverFactory.createPopover(iElement, scope, asPopoverCellErrorsSettings, scope.$getCellErrorMessage());
                             }
                         });
                     };

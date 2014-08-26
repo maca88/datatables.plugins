@@ -1584,7 +1584,7 @@ module dt.editable {
                             var visible = false;
 
                             $compile(rowNode)(scope);
-                            scope.$watchCollection('this[$rowFormName].$error', (newVal) => {
+                            scope.$watchCollection(scope.$rowFormName + '.$error', (newVal) => {
                                 var errors = scope.$rowValidate();
                                 var rowData = scope.$rowData;
                                 if (!rowData._details)

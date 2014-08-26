@@ -1,8 +1,10 @@
 ﻿module dt {
     
     export interface IRowDetailsBindingAdapter {
-        rowExpanded(row, rowDetails): void;
-        rowCollapsed(row, iconCell): void;
+        rowCreated(row, rowDetails): void;
+        rowExpanded(row, rowDetails, iconCell): void;
+        rowCollapsed(row, rowDetails, iconCell): void;
+        destroyDetails(details): void;
         cacheTemplate(url: string, template: string): void;
         getTemplate(url: string): string;
     }
@@ -23,17 +25,25 @@
             this.$templateCache = this.dt.settings.oInit.angular.$templateCache;
         }
 
-        public rowExpanded(row, rowDetails): void {
+        public rowCreated(row, rowDetails): void {
             var rowScope = angular.element(row.node()).scope();
             if (!rowScope) return;
-            this.dt.settings.oInit.angular.$compile(row.child())(rowScope);
+            rowDetails.attr('dt-row-details', '');
+            this.dt.settings.oInit.angular.$compile(rowDetails)(rowScope);
             if (!rowScope.$$phase) rowScope.$digest();
         }
 
-        public rowCollapsed(row, iconCell): void {
-            var rowScope = angular.element(row.node()).scope();
-            if (!rowScope) return;
-            if (!rowScope.$$phase) rowScope.$digest();
+        public rowExpanded(row, rowDetails, iconCell): void {
+            //var rowScope = angular.element(rowDetails).scope();
+            //if (!rowScope) return;
+            //this.dt.settings.oInit.angular.$compile(row.child())(rowScope);
+            //if (!rowScope.$$phase) rowScope.$digest();
+        }
+
+        public rowCollapsed(row, rowDetails, iconCell): void {
+            //var rowScope = angular.element(row.node()).scope();
+            //if (!rowScope) return;
+            //if (!rowScope.$$phase) rowScope.$digest();
         }
 
         public cacheTemplate(url: string, template: string): void {
@@ -42,6 +52,12 @@
 
         public getTemplate(url: string): string {
             return this.$templateCache.get(url);
+        }
+
+        public destroyDetails(details): void {
+            var rowScope = angular.element(details).scope();
+            if (!rowScope) return;
+            rowScope.$destroy();
         }
     }
 
@@ -90,10 +106,10 @@
             }, 
             trClass: 'sub',
             tdClass: '',
-            created: null,
-            opened: null,
-            destroying: null,
-            closed: null,
+            rowCreated: null,
+            rowExpanded: null,
+            rowDestroying: null,
+            rowCollapsed: null,
             bindingAdapter: null,
             template: null,
             language: {
@@ -110,6 +126,7 @@
                 ajax: null
             }*/
         };
+
         public static templates = {};
         public settings: any;
         public dt:any = {
@@ -139,6 +156,18 @@
                 col.searchable = false;
                 col.type = "html";
             });
+        }
+
+        public static intergateWithBootstrap() {
+            dt.RowDetails.defaultSettings.icon.openHtml = '<span class="glyphicon glyphicon-plus row-detail-icon"></span>';
+            dt.RowDetails.defaultSettings.icon.closeHtml = '<span class="glyphicon glyphicon-minus row-detail-icon"></span>';
+            dt.RowDetails.defaultSettings.buttonPanel.classes.push('btn-group');
+            dt.RowDetails.defaultSettings.buttons.expandAll.tagName = 'div';
+            dt.RowDetails.defaultSettings.buttons.expandAll.classes.push('btn btn-default btn-sm');
+            dt.RowDetails.defaultSettings.buttons.expandAll.html = '<span class="glyphicon glyphicon-fullscreen"></span>';
+            dt.RowDetails.defaultSettings.buttons.collapseAll.tagName = 'div';
+            dt.RowDetails.defaultSettings.buttons.collapseAll.classes.push('btn btn-default btn-sm');
+            dt.RowDetails.defaultSettings.buttons.collapseAll.html = '<span class="glyphicon glyphicon-move"></span>';
         }
 
         public static animateElement(elem, animation, action, completeAction = null) {
@@ -183,10 +212,9 @@
                 e.preventDefault();
                 var row = this.dt.api.row($(e.target).closest('tr'));
                 if (row.length == 0) return; //happens when user click on header row
-                row.toggleDetails(this.settings);
+                row.details.toggle(this.settings);
                 return;
             });
-
 
             var columns = this.dt.api.settings()[0].oInit.columns;
             $.each(columns, (idx, column) => {
@@ -283,6 +311,24 @@
 
 (function(window, document, undefined) {
 
+    if (angular) {
+        angular.module('dt')
+            .directive('dtRowDetails', [
+                () => {
+                    return {
+                        restrict: 'A',
+                        scope: true, //whitin new scope
+                        compile: (tElement, tAttrs) => {
+                            //Post compile
+                            return (scope, iElement, iAttrs) => {
+                                //console.log('row details created!');
+                            };
+                        }
+                    }
+                }
+            ]);
+    }
+
     //Register events
     $.fn.DataTable.models.oSettings.rowDetailsInitCompleted = [];
 
@@ -290,11 +336,111 @@
     $.fn.DataTable.Api.register('hasRows()', function () {
         return this.rows().nodes()[0] instanceof HTMLElement;
     });
-    $.fn.DataTable.Api.register('row().isOpen()', function () {
+    $.fn.DataTable.Api.register('row().details()', function () {
+        var dtSettings = this.settings()[0];
+        var dtRow = dtSettings.aoData[this.index()];
+        if (dtRow._DT_RowDetails)
+            return dtRow._DT_RowDetails;
         var child = this.child();
-        return child != null && child.closest('html').length > 0 && child.is(':visible');
+        if (child == null) return null;
+        var details = child.filter('.dt-detail-row').first();
+        if (!details.length) return null;
+        return details;
     });
-    $.fn.DataTable.Api.register('row().fillDetails()', function (completeAction, settings) {
+    $.fn.DataTable.Api.register('row().details.hide()', function () {
+        var dtSettings = this.settings()[0];
+        var rowDetails: dt.RowDetails = dtSettings.rowDetails;
+        if (!rowDetails)
+            throw 'RowDetails plugin is not initialized';
+        var details = this.details();
+        if (details == null) return false;
+        details.hide().detach();
+        var dtRow = dtSettings.aoData[this.index()];
+        dtRow._details = dtRow._details.filter(':not(.dt-detail-row)');
+        if (!dtRow._details.length) {
+            dtRow._detailsShow = false;
+        }
+        return true;
+    });
+    $.fn.DataTable.Api.register('row().details.show()', function () {
+        var dtSettings = this.settings()[0];
+        var rowDetails: dt.RowDetails = dtSettings.rowDetails;
+        if (!rowDetails)
+            throw 'RowDetails plugin is not initialized';
+        var details = this.details();
+        if (details == null) return false;
+        var dtRow = dtSettings.aoData[this.index()];
+        if (dtRow._details) {
+            var arr = [details[0]]; //add as a first child
+            dtRow._details.filter(':not(.dt-detail-row)').each((i, tr) => {
+                arr.push(tr);
+            });
+            dtRow._details = $(arr);
+        }
+        dtRow._detailsShow = true;
+        $(dtRow.nTr).after(details);
+        return true;
+
+    });
+    $.fn.DataTable.Api.register('row().details.destroy()', function () {
+        var dtSettings = this.settings()[0];
+        var rowDetails: dt.RowDetails = dtSettings.rowDetails;
+        if (!rowDetails)
+            throw 'RowDetails plugin is not initialized';
+        var details = this.details();
+        if (details == null) return false;
+        if (rowDetails.bindingAdapterInstance)
+            rowDetails.bindingAdapterInstance.destroyDetails(details);
+        details.remove();
+        var dtRow = dtSettings.aoData[this.index()];
+        dtRow._DT_RowDetails = null;
+        var childs = dtRow._details.filter(':not(.dt-detail-row)');
+        if (childs.length) {
+            dtRow._details = childs;
+        } else {
+            dtRow._details = undefined;
+            dtRow._detailsShow = undefined;
+        }
+        return true;
+    });
+    $.fn.DataTable.Api.register('row().details.create()', function (content, settings) {
+        var dtSettings = this.settings()[0];
+        var rowDetails: dt.RowDetails = dtSettings.rowDetails;
+        if (!rowDetails)
+            throw 'RowDetails plugin is not initialized';
+        settings = $.extend(true, {}, rowDetails.settings, settings);
+        var ctx = this.settings()[0];
+        var created = $('<tr><td/></tr>')
+            .addClass('dt-detail-row')
+            .addClass(settings.trClass)
+            .hide();
+        $('td', created)
+            .addClass(settings.tdClass)
+            .html(content)
+            .attr('colspan', $.fn.DataTable.ext.internal._fnVisbleColumns(ctx));
+
+        var dtRow = dtSettings.aoData[this.index()];
+        dtRow._DT_RowDetails = created;
+        if (dtRow._details) {
+            var arr = [created[0]]; //add as a first child
+            dtRow._details.each((i, tr) => {
+                arr.push(tr);
+            });
+            dtRow._details = $(arr);
+        } else
+            dtRow._details = created;
+        // If the children were already shown, that state should be retained
+        if (dtRow._detailsShow) {
+            dtRow._details.insertAfter(dtRow.nTr);
+        }
+        return created;
+    });
+    $.fn.DataTable.Api.register('row().details.isOpen()', function () {
+        var child = this.details();
+        if (child == null) return false;
+        return child.length && child.closest('html').length > 0 && child.is(':visible');
+    });
+    $.fn.DataTable.Api.register('row().details.fill()', function (completeAction, settings) {
         if ($(this.node()).closest('html').length == 0) { //skip detached rows
             if ($.isFunction(completeAction))
                 completeAction(false);
@@ -306,33 +452,42 @@
             throw 'RowDetails plugin is not initialized';
         settings = $.extend(true, {}, rowDetails.settings, settings);
         var row = this;
-        var isOpen = row.isOpen();
+        var isOpen = row.details.isOpen();
 
-        if (row.child() != null) {
-            row.child.hide(); //destroy the old one
+        if (row.details() != null) {
+            row.details.destroy(); //destroy the old one
         }
         var innerDetails = $('<div />', {
             'class': 'innerDetails',
             'style': 'display:none',
         });
-        row.child(innerDetails, settings.tdClass); //create child
-        row.child().addClass(settings.trClass).css('display', 'none'); //add attributes
-        row.child.show(); //add to dom
-
+        var details = row.details.create(innerDetails, settings);
+        row.details.show(); //add to dom
+        var detailsTd = $('td', details);
+        //transfer padding, margin and border to the div so that animation will work as it should
+        innerDetails.css({
+            'padding': detailsTd.css('padding'),
+            'margin': detailsTd.css('margin'),
+            'border-color': detailsTd.css('border-color'),
+            'border-width': detailsTd.css('border-width'),
+            'border-style': detailsTd.css('border-style'),
+        });
+        detailsTd.css('padding', '0');
+        detailsTd.css('margin', '0');
+        detailsTd.css('border-width', '0');
+        
         var createdAction = (content?) => {
             if (content)
                 innerDetails.html(content);
 
             if (rowDetails.bindingAdapterInstance)
-                rowDetails.bindingAdapterInstance.rowExpanded(row, innerDetails);
+                rowDetails.bindingAdapterInstance.rowCreated(row, details);
 
-            if ($.isFunction(settings.created))
-                settings.created.call(rowDetails, row, innerDetails);
+            if ($.isFunction(settings.rowCreated))
+                settings.rowCreated.call(rowDetails, row, details);
 
-            $(row.node()).data('detailsFilled', true); //set 
-            row.child().trigger('detailsFilled.dt');
             if (isOpen) { //if row was open reopen it
-                row.openDetails({ animation: 'none' });
+                row.details.expand({ animation: 'none' });
             }
             if ($.isFunction(completeAction))
                 completeAction(true);
@@ -384,32 +539,31 @@
             }
         } 
     });
-    $.fn.DataTable.Api.register('row().openDetails()', function (settings) {
-        var rowDetails: dt.RowDetails = this.settings()[0].rowDetails;
+    $.fn.DataTable.Api.register('row().details.expand()', function (settings) {
+        var dtSettings = this.settings()[0];
+        var rowDetails: dt.RowDetails = dtSettings.rowDetails;
         if (!rowDetails)
             throw 'RowDetails plugin is not initialized';
         settings = $.extend(true, {}, rowDetails.settings, settings);
         var behavior = rowDetails.settings.behavior;
 
         var row = this;
+        var subRow = row.details();
+        //var dtRow = dtSettings.aoData[row.index()];
 
         var filledAction = () => {
-            if (row.child.isShown() && row.child().is(':visible')) return;
+            if (row.details.isOpen()) return;
 
             var td = $(row.node()).find('.' + settings.icon.className).closest('td'); //Icon td
-
-            var subRow = row.child();
+            subRow = row.details();
             if (!subRow) return; //fillDetails failed because of detached cell
-            var detailsRows = subRow.css('display', '');
-            $.each(detailsRows, (idx, item) => {
-                dt.RowDetails.animateElement($(item), settings.animation, 'open');
-                $(item).slideDown();
-            });
-            var details = $('div.innerDetails', detailsRows);
+            subRow.css('display', '');
+            dt.RowDetails.animateElement(subRow, settings.animation, 'open');
+            var details = $('div.innerDetails', subRow);
 
             if (behavior === 'accordion') {
-                if (rowDetails.lastOpenedRow)
-                    rowDetails.lastOpenedRow.closeDetails();
+                if (rowDetails.lastOpenedRow && rowDetails.lastOpenedRow.index() !== row.index())
+                    rowDetails.lastOpenedRow.details.collapse();
             }
             dt.RowDetails.animateElement(details, settings.animation, 'open');
 
@@ -418,41 +572,41 @@
 
             rowDetails.lastOpenedRow = row;
 
-            if ($.isFunction(settings.opened))
-                settings.opened.call(rowDetails, row, td);
+            if (rowDetails.bindingAdapterInstance)
+                rowDetails.bindingAdapterInstance.rowExpanded(row, subRow, td);
+
+            if ($.isFunction(settings.rowExpanded))
+                settings.rowExpanded.call(rowDetails, row, td);
         };
 
-        if ($(this.node()).data('detailsFilled') !== true) {
-            this.fillDetails(filledAction, settings);
+        if (!subRow) {
+            this.details.fill(filledAction, settings);
         } else {
+            row.details.show();
             filledAction();
         }
     });
-    $.fn.DataTable.Api.register('row().closeDetails()', function (settings) {
+    $.fn.DataTable.Api.register('row().details.collapse()', function (settings) {
         var rowDetails = this.settings()[0].rowDetails;
         if (!rowDetails)
             throw 'RowDetails plugin is not initialized';
         settings = $.extend(true, {}, rowDetails.settings, settings);
-        if (!this.child.isShown() || !this.child().is(':visible')) return;
+        if (!this.details.isOpen()) return;
 
         var td = $(this.node()).find('.' + settings.icon.className).closest('td'); //Icon td
         var row = this;
 
         var destroyOnClose = settings.destroyOnClose == true;
-        var detailsRows = row.child();
+        var detailsRows = row.details();
         var details = $('div.innerDetails', detailsRows);
 
         var afterHideAction = () => {
             if (destroyOnClose == true) { //When destroyOnClose is set to false the details tr element is never removed (remains hidden)
-                if ($.isFunction(settings.destroying))
-                    settings.destroying.call(rowDetails, row, td);
-                row.child.hide(); //this actually remove the children
-                $(row.node()).data('detailsFilled', false);
+                if ($.isFunction(settings.rowDestroying))
+                    settings.rowDestroying.call(rowDetails, row, td);
+                row.details.destroy();
             } else {
-                details.hide();
-                $.each(detailsRows, (idx, item) => {
-                    $(item).hide(); //this will hide the children
-                });
+                row.details.hide();
             }
         };
         dt.RowDetails.animateElement(details, settings.animation, 'close', afterHideAction);
@@ -461,21 +615,21 @@
         $('.dt-open-icon', td).show();
 
         if (rowDetails.bindingAdapterInstance)
-            rowDetails.bindingAdapterInstance.rowCollapsed(row, td);
+            rowDetails.bindingAdapterInstance.rowCollapsed(row, detailsRows, td);
 
-        if ($.isFunction(settings.closed))
-            settings.closed(rowDetails, row, td);
+        if ($.isFunction(settings.rowCollapsed))
+            settings.rowCollapsed(rowDetails, row, td);
     });
-    $.fn.DataTable.Api.register('row().toggleDetails()', function (settings) {
-        this.isOpen() ? this.closeDetails(settings) : this.openDetails(settings);
+    $.fn.DataTable.Api.register('row().details.toggle()', function (settings) {
+        this.details.isOpen() ? this.details.collapse(settings) : this.details.expand(settings);
     });
-    $.fn.DataTable.Api.register('rows().collapseAll()', function (settings) {
+    $.fn.DataTable.Api.register('rows().details.collapse()', function (settings) {
         var api = this;
         this.iterator('row', function (dtSettings, row, thatIdx) {
-            api.row(row).closeDetails();
+            api.row(row).details.collapse(settings);
         });
     });
-    $.fn.DataTable.Api.register('rows().expandAll()', function (settings) {
+    $.fn.DataTable.Api.register('rows().details.expand()', function (settings) {
         var rowDetails: dt.RowDetails = this.settings()[0].rowDetails;
         if (!rowDetails)
             throw 'RowDetails plugin is not initialized';
@@ -483,7 +637,7 @@
             throw 'expandAll is not supported when behavior is set to accordion';
         var api = this;
         this.iterator('row', function (dtSettings, row, thatIdx) {
-            api.row(row).openDetails();
+            api.row(row).details.expand(settings);
         });
     });
     $.fn.DataTable.Api.register('rowDetails.init()', function (settings) {
@@ -519,15 +673,7 @@
 
     //Integrate with boostrap 3 if present
     if ((typeof (<any>$)().emulateTransitionEnd == 'function') || checkAngularModulePresence("ui.bootstrap") || checkAngularModulePresence("mgcrea.ngStrap")) {
-        dt.RowDetails.defaultSettings.icon.openHtml = '<span class="glyphicon glyphicon-plus row-detail-icon"></span>';
-        dt.RowDetails.defaultSettings.icon.closeHtml = '<span class="glyphicon glyphicon-minus row-detail-icon"></span>';
-        dt.RowDetails.defaultSettings.buttonPanel.classes.push('btn-group');
-        dt.RowDetails.defaultSettings.buttons.expandAll.tagName = 'div';
-        dt.RowDetails.defaultSettings.buttons.expandAll.classes.push('btn btn-default btn-sm');
-        dt.RowDetails.defaultSettings.buttons.expandAll.html = '<span class="glyphicon glyphicon-fullscreen"></span>';
-        dt.RowDetails.defaultSettings.buttons.collapseAll.tagName = 'div';
-        dt.RowDetails.defaultSettings.buttons.collapseAll.classes.push('btn btn-default btn-sm');
-        dt.RowDetails.defaultSettings.buttons.collapseAll.html = '<span class="glyphicon glyphicon-move"></span>';
+        dt.RowDetails.intergateWithBootstrap();
     }
 
 } (window, document, undefined));

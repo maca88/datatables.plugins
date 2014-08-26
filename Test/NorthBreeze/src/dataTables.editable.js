@@ -1412,7 +1412,7 @@ var dt;
                         var visible = false;
 
                         $compile(rowNode)(scope);
-                        scope.$watchCollection('this[$rowFormName].$error', function (newVal) {
+                        scope.$watchCollection(scope.$rowFormName + '.$error', function (newVal) {
                             var errors = scope.$rowValidate();
                             var rowData = scope.$rowData;
                             if (!rowData._details)

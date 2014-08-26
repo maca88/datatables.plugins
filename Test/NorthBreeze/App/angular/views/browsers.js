@@ -188,6 +188,7 @@
                     },
                     rowDetails: {
                         behavior: 'accordion',
+                        destroyOnClose: true,
                         buttons: {
                             collapseAll: {
                                 visible: true

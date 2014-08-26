@@ -799,6 +799,11 @@ var dt;
                     event: TableController.events.tableCreating,
                     fn: this.tableCreating,
                     scope: this
+                },
+                {
+                    event: TableController.events.tableCreated,
+                    fn: this.tableCreated,
+                    scope: this
                 }
             ];
         };
@@ -814,18 +819,22 @@ var dt;
             this.dt.settings = dtSettings;
             this.dt.api = dtSettings.oInstance.api();
             dtSettings._DT_SelectedRowsCached = [];
-
             //TODO: selectable columns
-            Object.defineProperty(this.dt.api, "selectedRows", {
-                get: function () {
-                    return dtSettings._DT_SelectedRowsCached || [];
-                }
-            });
         };
 
         SelectableTablePlugin.prototype.destroy = function () {
             this.table = null;
             this.dt = null;
+        };
+
+        SelectableTablePlugin.prototype.tableCreated = function (api) {
+            var _this = this;
+            this.dt.api = api; //not the same instance???
+            Object.defineProperty(api, "selectedRows", {
+                get: function () {
+                    return _this.dt.settings._DT_SelectedRowsCached || [];
+                }
+            });
         };
 
         SelectableTablePlugin.prototype.tableCreating = function () {

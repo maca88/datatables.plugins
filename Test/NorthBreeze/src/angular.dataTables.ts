@@ -902,6 +902,11 @@ module dt {
                     event: TableController.events.tableCreating,
                     fn: this.tableCreating,
                     scope: this
+                },
+                {
+                    event: TableController.events.tableCreated,
+                    fn: this.tableCreated,
+                    scope: this
                 }
             ];
         }
@@ -920,14 +925,19 @@ module dt {
 
             //TODO: selectable columns
 
-            Object.defineProperty(this.dt.api, "selectedRows", {
-                get: () => dtSettings._DT_SelectedRowsCached || []
-            });
+            
         }
 
         public destroy(): void {
             this.table = null;
             this.dt = null;
+        }
+
+        public tableCreated(api): void {
+            this.dt.api = api; //not the same instance???
+            Object.defineProperty(api , "selectedRows", {
+                get: () => this.dt.settings._DT_SelectedRowsCached || []
+            });
         }
 
         public tableCreating(): void {

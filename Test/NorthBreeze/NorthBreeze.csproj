@@ -45,6 +45,9 @@
       <DependentUpon>browsers.html</DependentUpon>
     </Content>
     <Content Include="App\angular\views\editableUiSelect2.html" />
+    <Content Include="App\angular\views\editableUiSelect2.js">
+      <DependentUpon>editableUiSelect2.html</DependentUpon>
+    </Content>
     <Content Include="App\angular\views\performance.js">
       <DependentUpon>performance.html</DependentUpon>
     </Content>
@@ -362,7 +365,9 @@
     <TypeScriptCompile Include="App\angular\views\browsers.ts">
       <DependentUpon>browsers.html</DependentUpon>
     </TypeScriptCompile>
-    <TypeScriptCompile Include="App\angular\views\editableUiSelect2.ts" />
+    <TypeScriptCompile Include="App\angular\views\editableUiSelect2.ts">
+      <DependentUpon>editableUiSelect2.html</DependentUpon>
+    </TypeScriptCompile>
     <TypeScriptCompile Include="App\angular\views\performance.ts">
       <DependentUpon>performance.html</DependentUpon>
     </TypeScriptCompile>

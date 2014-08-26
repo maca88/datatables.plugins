@@ -1,0 +1,196 @@
+RELEASE POST - Angular intergation and new plugins:
+
+I am happy to announce my github repo that contains a smart integration with Angular and new plugins:
+	BreezeRemote
+	BreezeEditable (needs custom DataTables)
+	BreezeFilter
+	RemoteState
+	AdvancedFilter
+	RowDetails
+	ColResize
+	ColPin
+	FormFilter (needs custom DataTables)
+
+Here is a demonstration: LINK 
+
+Right now a custom DataTables and KeyTable libraries are needed in order to use all plugins. Below is a list of what has to be done to the offical libraries:
+
+DataTables:
+Addition: http://datatables.net/forums/discussion/21900/add-an-option-to-not-update-cell-innerhtml-on-row-invalidation
+Addition: http://datatables.net/forums/discussion/21901/trigger-an-event-before-filtering
+	
+KeyTable:
+Bug: http://datatables.net/forums/discussion/21137/bug-in-keytable-fnsetposition-with-defer-render-dt-1-10
+Addition: https://datatables.net/forums/discussion/21142/keytable-add-parameter-to-the-focus-event-so-we-can-decide-which-column-to-focus
+	
+FixedColumns:
+Suggestion: http://datatables.net/forums/discussion/21902/fixedcolumns-trigger-draw-dtfc-event-on-table-element
+
+
+
+
+ 
+
+
+
+
+Sugestion: Add an option to not update cell innerHtml on row invalidation
+When we integrate DataTables with an binding framework like Angular, Knockout the cell html will be automaticaly changed when the data will change. 
+When we bind only a value to the cell, innerHtml will not break the binding so everything is ok at this point.  
+The problem arise when we bind a template to a cell where we have nested html elements and each element has its own binding, then on setting innerHhtml will break all bindings as the dom elements will be recreated. 
+Problematic line: https://github.com/DataTables/DataTables/blob/master/media/js/jquery.dataTables.js#L1437
+
+Sugestion: Trigger an event before filtering
+It would be great if an event like 'preSearch' will be triggered before filtering take place (in _fnFilterComplete function) so that if we have a custom filter that needs cache something in order to filter each row.
+An example: in a preSearch event fetch all input values in a html form and save the values for row filtering.
+	
+	
+Sugestion: FixedColumns trigger 'draw.dtfc' event on table element
+In order to integrate FixedColumns with a binding framework like Angular it would be better to trigger 'draw.dtfc' event on the table node as FixedColumns can be initialized and recreated at any time.
+
+ 
+
+	
+	
+	
+	
+	
+	
+BUG:
+//RTL
+browser.bScrollbarLeft = test.offset().left !== 1;
+FIX: browser.bScrollbarLeft = Number((test.offset().left).toFixed(1)) !== 1;
+	
+	
+OPTIONAL:
+--missing callbacks for row insertion and deleting (i.e. deletedRow/postDeletedRow, deletingRow/preDeleteRow, insertedRow/postInsertedRow insertingRow/preInsertRow), createdRow in not enough because will not be always triggered (defer render!)
+	Workaround (by creating fn overrides): override the original functions: rows().remove, rows().remove(), rows.add() 
+	
+	
+	
+--Bug:  Title: TableTools selection with deferRender
+Url: http://live.datatables.net/delaroq/1/ 
+1. select one item on the first page
+2. switch to page 3
+3. shift select random item on current page (page 3)
+4. click on a random item on current page without shift 
+
+or 
+1. click on select all button
+2. click on random row on the first page
+http://datatables.net/forums/discussion/21134/tabletools-selection-with-deferrender-dt-1-10
+
+--Bug Tabletools buttons: csv/print/csv/xls with defer render will only process data that are rendered
+ http://datatables.net/forums/discussion/21135/tabletools-buttons-csv-print-csv-xls-with-deferrender-won-t-process-all-data-dt-1-10
+ 
+--Bug order in nested tables
+
+When having nested table the sorting is messed up (perhaps because of event bubbbling)
+
+Problems:
+1. when a row is expanded the root table column name looses its order
+2. if you change the order of the first column in the nested table the order in the parent table will also change even if order on that column is disabled
+
+Example:
+http://live.datatables.net/IroN/15/
+http://datatables.net/forums/discussion/21136/bug-order-in-nested-tables-dt-1-10
+
+
+--Sugestion KeyTable form option 
+
+It would be nice if we have an extra option that will focus the first cell of the table after pressing tab on the input above the table.
+Now in order to achieve that we have to move the special div as the first child of the table wrapper.
+
+An example of the behaviour we want:
+http://live.datatables.net/delaroq/3/
+
+it would be nice if we had another option like tableFocused callback that will be executed when the added "hidden" input will get focus.
+Now we have to manually find that "hidden" input and subscribe to the focus event (little hackish :)).
+An example:
+http://live.datatables.net/delaroq/4/
+https://datatables.net/forums/discussion/21141/suggestion-for-keytable-form-optionž
+
+
+--Bug KeyTable fnSetPosition with defer render
+
+When setting position to a cell that is not yet rendered an error will be thrown
+
+Problem in functions:
+_fnCellFromCoords - https://github.com/DataTables/KeyTable/blob/master/js/dataTables.keyTable.js#L871
+_fnFindDtCell - https://github.com/DataTables/KeyTable/blob/master/js/dataTables.keyTable.js#L978
+
+
+My fix for _fnCellFromCoords:
+var oData = _oDatatable.aoData[_oDatatable.aiDisplay[y]];
+if (oData != null) {
+	if (!oData.nTr) {
+		_oDatatable.oApi._fnCreateTr(_oDatatable, y); //Create tr if is not yet created
+	}
+	return _oDatatable.aoData[ _oDatatable.aiDisplay[ y ] ].nTr.getElementsByTagName('td')[x];
+}
+else
+{
+	return null;
+}
+
+Fix and optimization for _fnCellFromCoords (instead of looping through all rows and cells, get the cell parent tr and get its property _DT_RowIndex. We have a complexity of O(num_column) instead of O(num_column*num_rows)):
+var nTr = nTarget.parentNode;
+if (nTr != null) {
+	var nTds = nTr.getElementsByTagName('td');
+	for ( var j=0, jLen=nTds.length ; j<jLen ; j++ )
+	{
+		if ( nTds[j] == nTarget )
+		{
+			return [j, nTr._DT_RowIndex];
+		}
+	}
+}
+Example:
+http://live.datatables.net/delaroq/8/
+http://datatables.net/forums/discussion/21137/bug-in-keytable-fnsetposition-with-defer-render-dt-1-10
+
+
+--Sugetsion KeyTable add event to the focus event or an option to tell which columns can be focused
+
+It would be nice to add an extra parameter to the focus event that will represent the event that triggered that focus (click, tab, shift+tab, ...).
+I need this because I need to skip certain cells but in order to do that I need to know in which direction to go (left or right). 
+Example:
+Let suppose that we have 6 columns and we are current focused in the cell in the third column. When tab is pressed the cell in the fourth column is focused but we do not want the cells in the fourth column to be focused so we have to change position. In order to do that we have to know how we came to the cell in the fourth column. 
+
+The current solution I came with was to add the event parameter to focus callback in the source
+Example:
+keys.event.focus(null, null, function (td, x, y, event) 
+https://datatables.net/forums/discussion/21142/keytable-add-parameter-to-the-focus-event-so-we-can-decide-which-column-to-focus
+
+
+--Performance Bug - deep cloning the passed data on init!
+
+The following code is the key of the problems:
+https://github.com/DataTables/DataTables/blob/master/media/js/jquery.dataTables.js#L5930
+
+Optimization (skip the clonation of the data that is passed as parameter):
+delete oInit["data"];
+delete oInit["aaData"];
+/* Create the settings object for this table and set some of the default parameters */
+var oSettings = $.extend( true, {}, DataTable.models.oSettings, {
+	"nTable":        this,
+	"oApi":          _that.internal,
+	"oInit":         oInit,
+	"sDestroyWidth": $(this)[0].style.width,
+	"sInstance":     sId,
+	"sTableId":      sId
+});
+if (!!tmpData) {
+	oSettings.oInit.data = tmpData;
+	oInit.data = tmpData;
+}
+if (!!tmpaaData) {
+	oSettings.oInit.aaData = tmpaaData;
+	oInit.aaData = tmpaaData;
+}
+
+this will perform way faster that the original one when having thousand rows with nested data.
+
+Example on my machine it takes 5 second to render only because of the deep cloning: 
+http://live.datatables.net/vekawik/2/
+http://datatables.net/forums/discussion/21140/performance-bug-deep-cloning-the-data-passed-on-init-dt-1-10
