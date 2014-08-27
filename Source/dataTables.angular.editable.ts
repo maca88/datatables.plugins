@@ -1,6 +1,6 @@
-﻿///<reference path='dataTables.editable.breeze.ts' />
-///<reference path='dataTables.editable.uiSelect2.ts' />
-///<reference path='dataTables.editable.angularStrap.ts' />
+﻿///<reference path='dataTables.angular.editable.breeze.ts' />
+///<reference path='dataTables.angular.editable.uiSelect2.ts' />
+///<reference path='dataTables.angular.editable.angularStrap.ts' />
 
 module dt.editable {
 

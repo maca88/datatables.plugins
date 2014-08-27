@@ -1340,4 +1340,4 @@ var dt;
             };
         }]);
 })(window, document, undefined);
-//# sourceMappingURL=angular.dataTables.js.map
+//# sourceMappingURL=dataTables.angular.js.map

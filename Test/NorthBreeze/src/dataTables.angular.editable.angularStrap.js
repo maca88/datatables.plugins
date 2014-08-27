@@ -283,4 +283,4 @@
         }
     ]);
 }(window, document, undefined));
-//# sourceMappingURL=dataTables.editable.angularStrap.js.map
+//# sourceMappingURL=dataTables.angular.editable.angularStrap.js.map

@@ -1,6 +1,6 @@
-﻿///<reference path='dataTables.editable.breeze.ts' />
-///<reference path='dataTables.editable.uiSelect2.ts' />
-///<reference path='dataTables.editable.angularStrap.ts' />
+﻿///<reference path='dataTables.angular.editable.breeze.ts' />
+///<reference path='dataTables.angular.editable.uiSelect2.ts' />
+///<reference path='dataTables.angular.editable.angularStrap.ts' />
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
@@ -1683,4 +1683,4 @@ var dt;
     //#endregion
     //#endregion
 }(window, document, undefined));
-//# sourceMappingURL=dataTables.editable.js.map
+//# sourceMappingURL=dataTables.angular.editable.js.map

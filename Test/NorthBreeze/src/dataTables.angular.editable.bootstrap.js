@@ -119,4 +119,4 @@ var dt;
         }
     ]);
 }(window, document, undefined));
-//# sourceMappingURL=dataTables.editable.bootstrap.js.map
+//# sourceMappingURL=dataTables.angular.editable.bootstrap.js.map
