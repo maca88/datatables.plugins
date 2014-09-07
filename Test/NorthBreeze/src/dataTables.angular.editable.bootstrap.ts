@@ -48,15 +48,15 @@
             super({
                 className: 'btn btn-default',
                 html: '<span title="' + "{{$isInEditMode() === false ? 'Edit' : 'Save'}}" + '" ' +
-                'class="glyphicon" ng-class="{' + " 'disabled': " + dt.BaseCommand.CAN_EXEC_EXPR + " === false," +
+                'class="glyphicon" ng-class="{' + " 'disabled': " + dt.command.BaseCommand.CAN_EXEC_EXPR + " === false," +
                 " 'glyphicon-edit': $isInEditMode() === false, 'glyphicon-floppy-disk': $isInEditMode() }" + '"></span>'
             }, settings);
         }
     }
 
     //Register commands
-    dt.CommandTablePlugin.registerCommand(BootstrapEditCommand);
-    dt.CommandTablePlugin.registerCommand(BootstrapIconEditCommand);
+    dt.command.CommandTablePlugin.registerCommand(BootstrapEditCommand);
+    dt.command.CommandTablePlugin.registerCommand(BootstrapIconEditCommand);
 
     //#endregion
 
@@ -89,8 +89,42 @@
     }
 
     //Register commands
-    dt.CommandTablePlugin.registerCommand(BootstrapRemoveCommand);
-    dt.CommandTablePlugin.registerCommand(BootstrapIconRemoveCommand);
+    dt.command.CommandTablePlugin.registerCommand(BootstrapRemoveCommand);
+    dt.command.CommandTablePlugin.registerCommand(BootstrapIconRemoveCommand);
+
+    //#endregion
+
+    //#region Reject
+
+    export class BootstrapRejectCommand extends dt.editable.BaseRejectCommand {
+        public static alias = 'bs.reject';
+
+        public static $inject = ['settings']
+        constructor(settings) {
+            super({
+                className: 'btn btn-default',
+                html: 'Reject',
+            }, settings);
+        }
+
+    }
+
+    export class BootstrapIconRejectCommand extends dt.editable.BaseRejectCommand {
+        public static alias = 'bs.icon.reject';
+
+        public static $inject = ['settings']
+        constructor(settings) {
+            super({
+                className: 'btn btn-default',
+                html: '<span title="Reject" class="glyphicon glyphicon-repeat"></span>'
+            }, settings);
+        }
+
+    }
+
+    //Register commands
+    dt.command.CommandTablePlugin.registerCommand(BootstrapRejectCommand);
+    dt.command.CommandTablePlugin.registerCommand(BootstrapIconRejectCommand);
 
     //#endregion
 

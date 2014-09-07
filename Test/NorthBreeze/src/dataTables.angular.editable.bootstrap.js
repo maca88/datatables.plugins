@@ -56,7 +56,7 @@ var dt;
                 function BootstrapIconEditCommand(settings) {
                     _super.call(this, {
                         className: 'btn btn-default',
-                        html: '<span title="' + "{{$isInEditMode() === false ? 'Edit' : 'Save'}}" + '" ' + 'class="glyphicon" ng-class="{' + " 'disabled': " + dt.BaseCommand.CAN_EXEC_EXPR + " === false," + " 'glyphicon-edit': $isInEditMode() === false, 'glyphicon-floppy-disk': $isInEditMode() }" + '"></span>'
+                        html: '<span title="' + "{{$isInEditMode() === false ? 'Edit' : 'Save'}}" + '" ' + 'class="glyphicon" ng-class="{' + " 'disabled': " + dt.command.BaseCommand.CAN_EXEC_EXPR + " === false," + " 'glyphicon-edit': $isInEditMode() === false, 'glyphicon-floppy-disk': $isInEditMode() }" + '"></span>'
                     }, settings);
                 }
                 BootstrapIconEditCommand.alias = 'bs.icon.edit';
@@ -67,8 +67,8 @@ var dt;
             bootstrap.BootstrapIconEditCommand = BootstrapIconEditCommand;
 
             //Register commands
-            dt.CommandTablePlugin.registerCommand(BootstrapEditCommand);
-            dt.CommandTablePlugin.registerCommand(BootstrapIconEditCommand);
+            dt.command.CommandTablePlugin.registerCommand(BootstrapEditCommand);
+            dt.command.CommandTablePlugin.registerCommand(BootstrapIconEditCommand);
 
             //#endregion
             //#region Remove
@@ -103,8 +103,44 @@ var dt;
             bootstrap.BootstrapIconRemoveCommand = BootstrapIconRemoveCommand;
 
             //Register commands
-            dt.CommandTablePlugin.registerCommand(BootstrapRemoveCommand);
-            dt.CommandTablePlugin.registerCommand(BootstrapIconRemoveCommand);
+            dt.command.CommandTablePlugin.registerCommand(BootstrapRemoveCommand);
+            dt.command.CommandTablePlugin.registerCommand(BootstrapIconRemoveCommand);
+
+            //#endregion
+            //#region Reject
+            var BootstrapRejectCommand = (function (_super) {
+                __extends(BootstrapRejectCommand, _super);
+                function BootstrapRejectCommand(settings) {
+                    _super.call(this, {
+                        className: 'btn btn-default',
+                        html: 'Reject'
+                    }, settings);
+                }
+                BootstrapRejectCommand.alias = 'bs.reject';
+
+                BootstrapRejectCommand.$inject = ['settings'];
+                return BootstrapRejectCommand;
+            })(dt.editable.BaseRejectCommand);
+            bootstrap.BootstrapRejectCommand = BootstrapRejectCommand;
+
+            var BootstrapIconRejectCommand = (function (_super) {
+                __extends(BootstrapIconRejectCommand, _super);
+                function BootstrapIconRejectCommand(settings) {
+                    _super.call(this, {
+                        className: 'btn btn-default',
+                        html: '<span title="Reject" class="glyphicon glyphicon-repeat"></span>'
+                    }, settings);
+                }
+                BootstrapIconRejectCommand.alias = 'bs.icon.reject';
+
+                BootstrapIconRejectCommand.$inject = ['settings'];
+                return BootstrapIconRejectCommand;
+            })(dt.editable.BaseRejectCommand);
+            bootstrap.BootstrapIconRejectCommand = BootstrapIconRejectCommand;
+
+            //Register commands
+            dt.command.CommandTablePlugin.registerCommand(BootstrapRejectCommand);
+            dt.command.CommandTablePlugin.registerCommand(BootstrapIconRejectCommand);
         })(editable.bootstrap || (editable.bootstrap = {}));
         var bootstrap = editable.bootstrap;
     })(dt.editable || (dt.editable = {}));

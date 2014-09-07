@@ -163,7 +163,7 @@
                         commands: [
                             "bs.icon.edit",
                             "bs.icon.remove",
-
+                            "bs.icon.reject",
                             {
                                 name: "custom",
                                 template: '<button ng-click="$commands.custom.click()">Custom</button>',

@@ -41,7 +41,7 @@
                 },
                 rowDetails: {
                     template: '#row-details-tpl',
-                    opened: (row) => {
+                    rowExpanded: (row) => {
                         var scope: any = angular.element(row.node()).scope();
                         if (scope.ordersLoaded === true) return;
                         var customer = row.data();

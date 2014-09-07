@@ -1,0 +1,32 @@
+﻿<!DOCTYPE html >
+<html xmlns="http://www.w3.org/1999/xhtml" >
+<head>
+    <title>Datatables - AngularJs Example: Declarative definition</title>
+
+    <link href="../../../libs/datatables/css/jquery.dataTables.css" rel="stylesheet" type="text/css" />
+    <script src="../../../Scripts/jquery-1.9.1.js"></script>
+    <script src="../../../libs/datatables/js/jquery.dataTables.js"></script>
+    <script src="../../../libs/angular.js"></script>
+    <script src="../../../src/dataTables.angular.js"></script>
+    <script src="declarative.js"></script>
+</head>
+<body ng-app="app" >
+    
+    <h1>Declarative example</h1>
+
+    <table dt-table dt-ajax="../../../customers.txt" width="100%">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Position</th>
+                <th>Office</th>
+                <th>Age</th>
+                <th>Start date</th>
+                <th>Salary</th>
+                <th dt-expression="data[0] + ' ' + data[3]">Name + Age</th>
+            </tr>
+        </thead>
+    </table>
+    
+</body>
+</html>

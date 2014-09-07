@@ -40,16 +40,16 @@
                     storeId: 'OrderGrid',
                     getStatesFromServer: true,
                     ajax: {
-                        'getAll': {
+                        getAll: {
                             url: 'breeze/NorthBreeze/RemoteState'
                         },
-                        'save': {
+                        save: {
                             url: 'breeze/NorthBreeze/RemoteState'
                         },
-                        'delete': {
+                        remove: {
                             url: 'breeze/NorthBreeze/RemoteState'
                         },
-                        'setDefault': {
+                        setDefault: {
                             url: 'breeze/NorthBreeze/RemoteState'
                         }
                     }

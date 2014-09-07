@@ -6,7 +6,6 @@
     //#region Breeze data adapter
 
     export class DataService extends DefaultDataSerice {
-        private deletedEntities = [];
 
         public static $inject = ['api', 'settings', 'i18Service']
         constructor(api, settings, i18Service) {
@@ -22,7 +21,7 @@
                 entity.entityAspect.setDeleted();
                 if (entity.entityAspect.entityState === b.EntityState.Detached) continue;
                 //TODO: check if is an simple or breeze array if not simple we have to add to the deleted entities
-                this.deletedEntities.push(entity);
+                this.removedItems.push(entity);
                 removed.push(items[i]);
             }
             return removed;
@@ -30,11 +29,13 @@
 
         public restoreRemovedItems(): any[] {
             var restored = [];
-            for (var i = 0; i < this.deletedEntities.length; i++) {
-                var entity = this.deletedEntities[i];
+            for (var i = 0; i < this.removedItems.length; i++) {
+                var entity = this.removedItems[i];
                 entity.entityAspect.rejectChanges();
+                //TODO: check if is an simple or breeze array if not simple we have to add to the deleted entities
                 restored.push(entity);
             }
+            this.removedItems.length = 0;
             return restored;
         }
 

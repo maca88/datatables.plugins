@@ -34,16 +34,15 @@
         }
 
         public rowExpanded(row, rowDetails, iconCell): void {
-            //var rowScope = angular.element(rowDetails).scope();
-            //if (!rowScope) return;
-            //this.dt.settings.oInit.angular.$compile(row.child())(rowScope);
-            //if (!rowScope.$$phase) rowScope.$digest();
+            var rowScope = angular.element(rowDetails).scope();
+            if (!rowScope) return;
+            rowScope.$emit('dt.rowExpanded', row, rowDetails, iconCell);
         }
 
         public rowCollapsed(row, rowDetails, iconCell): void {
-            //var rowScope = angular.element(row.node()).scope();
-            //if (!rowScope) return;
-            //if (!rowScope.$$phase) rowScope.$digest();
+            var rowScope = angular.element(rowDetails).scope();
+            if (!rowScope) return;
+            rowScope.$emit('dt.rowCollapsed', row, rowDetails, iconCell);
         }
 
         public cacheTemplate(url: string, template: string): void {
@@ -558,25 +557,25 @@
             subRow = row.details();
             if (!subRow) return; //fillDetails failed because of detached cell
             subRow.css('display', '');
-            dt.RowDetails.animateElement(subRow, settings.animation, 'open');
             var details = $('div.innerDetails', subRow);
 
             if (behavior === 'accordion') {
                 if (rowDetails.lastOpenedRow && rowDetails.lastOpenedRow.index() !== row.index())
                     rowDetails.lastOpenedRow.details.collapse();
             }
-            dt.RowDetails.animateElement(details, settings.animation, 'open');
+            dt.RowDetails.animateElement(details, settings.animation, 'open', () => {
+                    if (rowDetails.bindingAdapterInstance)
+                        rowDetails.bindingAdapterInstance.rowExpanded(row, subRow, td);
+
+                    if ($.isFunction(settings.rowExpanded))
+                        settings.rowExpanded.call(rowDetails, row, td);
+                }
+            );
 
             $('.dt-open-icon', td).hide();
             $('.dt-close-icon', td).show();
 
             rowDetails.lastOpenedRow = row;
-
-            if (rowDetails.bindingAdapterInstance)
-                rowDetails.bindingAdapterInstance.rowExpanded(row, subRow, td);
-
-            if ($.isFunction(settings.rowExpanded))
-                settings.rowExpanded.call(rowDetails, row, td);
         };
 
         if (!subRow) {
@@ -601,6 +600,12 @@
         var details = $('div.innerDetails', detailsRows);
 
         var afterHideAction = () => {
+            if (rowDetails.bindingAdapterInstance)
+                rowDetails.bindingAdapterInstance.rowCollapsed(row, detailsRows, td);
+
+            if ($.isFunction(settings.rowCollapsed))
+                settings.rowCollapsed(rowDetails, row, td);
+
             if (destroyOnClose == true) { //When destroyOnClose is set to false the details tr element is never removed (remains hidden)
                 if ($.isFunction(settings.rowDestroying))
                     settings.rowDestroying.call(rowDetails, row, td);
@@ -614,11 +619,7 @@
         $('.dt-close-icon', td).hide();
         $('.dt-open-icon', td).show();
 
-        if (rowDetails.bindingAdapterInstance)
-            rowDetails.bindingAdapterInstance.rowCollapsed(row, detailsRows, td);
-
-        if ($.isFunction(settings.rowCollapsed))
-            settings.rowCollapsed(rowDetails, row, td);
+        
     });
     $.fn.DataTable.Api.register('row().details.toggle()', function (settings) {
         this.details.isOpen() ? this.details.collapse(settings) : this.details.expand(settings);

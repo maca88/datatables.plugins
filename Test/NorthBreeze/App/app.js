@@ -1,6 +1,6 @@
 ﻿'use strict';
 
-var app = angular.module('app', ['ngRoute', 'dt', 'breeze.angular', 'jaydata', 'ui.bootstrap', 'mgcrea.ngStrap', 'ui.select2']);
+var app = angular.module('app', ['ngRoute', 'dt', 'breeze.angular', 'jaydata', 'ui.bootstrap', /*'mgcrea.ngStrap',*/ 'ui.select2']);
 
 ////Workaround for manually trigger tooltips 
 ////http://stackoverflow.com/questions/20939754/good-way-to-dynamically-open-close-a-popover-or-tooltip-using-angular-based
@@ -41,6 +41,14 @@ app.modules = [
         isOpen: false,
         basePath: '/angular/',
         routes: [
+            { path: 'home', name: 'Home', templateUrl: 'home.html' },
+
+            { path: 'editable', name: 'Editable', templateUrl: 'editable.html' },
+            { path: 'i18n', name: 'i18n', templateUrl: 'i18n.html' },
+            { path: 'command', name: 'Command', templateUrl: 'command.html' },
+            { path: 'selectable', name: 'Selectable', templateUrl: 'selectable.html' },
+
+
             { path: 'browsers', name: 'Browsers', templateUrl: 'browsers.html', controller: 'AngularExamples.BrowsersController' },
             { path: 'performance', name: 'Performance', templateUrl: 'performance.html', controller: 'AngularExamples.PerformanceController' },
 
@@ -77,6 +85,8 @@ app.modules = [
     }
 ];
 
+
+
 app.factory('breezeDataServicePromise', ['$q', function ($q) {
     var serviceName = 'breeze/NorthBreeze'; // route to the (same origin) Web Api controller
 
@@ -99,6 +109,11 @@ app.factory('jayDataDataServicePromise', ['$q', '$data', function ($q, $data) {
           throw error;
       });
     return deferred.promise;
+}]);
+
+
+app.config(['$tooltipProvider', function ($tooltipProvider) {
+    $tooltipProvider.setTriggers({ 'open': 'close' });
 }]);
 
 // Configure the routeProvider, which displays a view in the ng-view div in index.html, based on the URI path (e.g. /customers)

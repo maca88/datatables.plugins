@@ -9,19 +9,21 @@ var __extends = this.__extends || function (d, b) {
 };
 var dt;
 (function (dt) {
-    (function (editable) {
+    (function (_editable) {
         
 
         //#endregion
         var Editable = (function () {
-            function Editable(dtTable, $injector) {
+            function Editable(dtTable, i18N, $injector) {
                 this.initialized = false;
                 this.dt = {
                     api: null,
                     settings: null
                 };
+                this.name = 'editable';
                 this.table = dtTable;
                 this.$injector = $injector;
+                this.i18NPlugin = i18N;
             }
             Editable.prototype.getEventListeners = function () {
                 var _this = this;
@@ -79,15 +81,45 @@ var dt;
                         fn: function () {
                             return _this.editor.rowPreLink;
                         }
+                    },
+                    {
+                        condition: function () {
+                            return (_this.dataService instanceof DefaultDataSerice);
+                        },
+                        event: dt.TableController.events.blocksCreated,
+                        scope: function () {
+                            return _this.dataService;
+                        },
+                        fn: function () {
+                            return _this.dataService.onBlocksCreated;
+                        }
                     }
                 ];
             };
 
             Editable.prototype.isEnabled = function () {
-                return $.isPlainObject(this.table.settings.options.editable);
+                var tableOpts = this.table.settings.options;
+
+                if ($.isPlainObject(tableOpts.editable) || tableOpts.editable === true)
+                    return true;
+
+                var cols = tableOpts.columns || [];
+
+                for (var i = 0; i < cols.length; i++) {
+                    if ($.isPlainObject(cols[i].editable) || cols[i].editable === true)
+                        return true;
+                }
+                return false;
             };
 
             Editable.prototype.destroy = function () {
+                this.i18NPlugin = null;
+                this.$injector = null;
+                this.table = null;
+                this.editor = null;
+                this.dataService = null;
+                this.displayService = null;
+                this.i18NService = null;
             };
 
             Editable.prototype.initialize = function (dtSettings) {
@@ -96,10 +128,21 @@ var dt;
                 this.dt.api = dtSettings.oInstance.api();
                 this.dt.settings.editable = this;
                 this.setupServices();
+                this.setupColumns();
                 this.setupEditor();
                 this.editor.initialize();
                 this.prepareColumnTemplates();
+
                 this.initialized = true;
+            };
+
+            Editable.prototype.setupColumns = function () {
+                var columns = this.dt.settings.aoColumns;
+                for (var i = 0; i < columns.length; i++) {
+                    var editable = this.dataService.isColumnEditable(columns[i]);
+                    if (!editable)
+                        columns[i].editable = false;
+                }
             };
 
             Editable.prototype.prepareColumnTemplates = function () {
@@ -197,23 +240,16 @@ var dt;
                     return null;
                 var msg = ' ';
                 for (var i = 0; i < errors.length; i++) {
-                    msg += errors[i].message + '<br />';
+                    msg += errors[i].message;
+                    if (i < (errors.length - 1))
+                        msg += '<br />';
                 }
                 return msg;
             };
 
             Editable.getColumnType = function (col) {
                 var editablOpts = col.editable || {};
-                return editablOpts.type || col._sManualType || col.sType;
-            };
-
-            Editable.checkAngularModulePresence = function (moduleName) {
-                try  {
-                    angular.module(moduleName);
-                    return true;
-                } catch (err) {
-                    return false;
-                }
+                return editablOpts.type || col._sManualType || col.sType || col.type;
             };
 
             Editable.getColumnTemplateSettings = function (col) {
@@ -274,25 +310,14 @@ var dt;
             };
 
             Editable.prototype.setupServices = function () {
-                this.setupI18Nservice();
+                this.setupI18NService();
                 this.setupDisplayService();
                 this.setupDataService();
             };
 
-            Editable.prototype.setupI18Nservice = function () {
-                var i18NService = this.settings.services.i18N;
-                var locals = {
-                    'resources': this.settings.language
-                };
-                if (!i18NService.type) {
-                    if (Editable.checkAngularModulePresence('pascalprecht.translate'))
-                        i18NService.type = AngularTranslateI18Service;
-                    else if (Editable.checkAngularModulePresence('gettext'))
-                        i18NService.type = GetTextI18NService;
-                    else
-                        i18NService.type = DefaultI18NService;
-                }
-                this.i18NService = this.$injector.instantiate(i18NService.type, locals);
+            Editable.prototype.setupI18NService = function () {
+                this.i18NService = this.i18NPlugin.getI18NService();
+                this.i18NService.mergeResources(this.settings.culture, this.settings.language);
             };
 
             Editable.prototype.setupEditor = function () {
@@ -315,7 +340,7 @@ var dt;
                     'settings': displayService.settings,
                     'api': this.dt.api,
                     'plugins': displayService.plugins,
-                    'i18Service': this.i18NService
+                    'i18NService': this.i18NService
                 };
                 if (!displayService.type)
                     displayService.type = DefaultDisplayService;
@@ -329,7 +354,7 @@ var dt;
                 var locals = {
                     'settings': dataService.settings,
                     'api': this.dt.api,
-                    'i18Service': this.i18NService
+                    'i18NService': this.i18NService
                 };
                 if (!dataService.type) {
                     dataService.type = DefaultDataSerice;
@@ -416,7 +441,7 @@ var dt;
                                         }
                                     }
                                 },
-                                'dateTime': {
+                                'datetime': {
                                     control: {
                                         attrs: {
                                             type: 'datetime-local'
@@ -428,13 +453,9 @@ var dt;
                         plugins: {
                             editTypes: [],
                             style: null,
-                            cellValidation: InlineDisplayServiceCellValidationPlugin,
-                            rowValidation: InlineDisplayServiceRowValidationPlugin
+                            cellValidation: null,
+                            rowValidation: null
                         }
-                    },
-                    i18N: {
-                        type: null,
-                        settings: {}
                     }
                 },
                 editor: {
@@ -448,19 +469,20 @@ var dt;
                 formatMessage: function (msg, ctx) {
                     return msg;
                 },
+                culture: 'en',
                 language: {
                     'required': 'The value is required',
                     'minlength': 'Minimum length is {{options}}'
                 }
             };
 
-            Editable.$inject = ['dtTable', '$injector'];
+            Editable.$inject = ['dtTable', 'i18N', '$injector'];
             return Editable;
         })();
-        editable.Editable = Editable;
+        _editable.Editable = Editable;
 
         //Register plugin
-        dt.TableController.defaultSettings.plugins.push(Editable);
+        dt.TableController.registerPlugin(Editable);
 
         //We have to use an object instead of a primitive value so that changes will be reflected to the child scopes
         var DisplayMode = (function () {
@@ -475,7 +497,7 @@ var dt;
             DisplayMode.Edit = "Edit";
             return DisplayMode;
         })();
-        editable.DisplayMode = DisplayMode;
+        _editable.DisplayMode = DisplayMode;
 
         var ValidationError = (function () {
             function ValidationError(message, validator, property) {
@@ -486,7 +508,7 @@ var dt;
             }
             return ValidationError;
         })();
-        editable.ValidationError = ValidationError;
+        _editable.ValidationError = ValidationError;
 
         var Validator = (function () {
             function Validator(name, options, column) {
@@ -497,57 +519,12 @@ var dt;
             }
             return Validator;
         })();
-        editable.Validator = Validator;
+        _editable.Validator = Validator;
 
-        //#region I18N services
-        var DefaultI18NService = (function () {
-            function DefaultI18NService(resources, $interpolate) {
-                this.resources = resources;
-                this.$interpolate = $interpolate;
-            }
-            DefaultI18NService.prototype.translate = function (key, params) {
-                var exp = this.$interpolate(this.resources[key] || 'Missing resource');
-                return exp(params || {});
-            };
-            DefaultI18NService.$inject = ['resources', '$interpolate'];
-            return DefaultI18NService;
-        })();
-        editable.DefaultI18NService = DefaultI18NService;
-
-        var GetTextI18NService = (function () {
-            function GetTextI18NService(resources, $interpolate, gettextCatalog) {
-                this.resources = resources;
-                this.$interpolate = $interpolate;
-                this.gettextCatalog = gettextCatalog;
-            }
-            GetTextI18NService.prototype.translate = function (key, params) {
-                var exp = this.$interpolate(this.gettextCatalog.getString(this.resources[key]));
-                return exp(params || {});
-            };
-            GetTextI18NService.$inject = ['resources', '$interpolate', 'gettextCatalog'];
-            return GetTextI18NService;
-        })();
-        editable.GetTextI18NService = GetTextI18NService;
-
-        var AngularTranslateI18Service = (function () {
-            function AngularTranslateI18Service(resources, $interpolate, $translate) {
-                this.resources = resources;
-                this.$interpolate = $interpolate;
-                this.$translate = $translate;
-            }
-            AngularTranslateI18Service.prototype.translate = function (key, params) {
-                var exp = this.$interpolate(this.$translate(key));
-                return exp(params || {});
-            };
-            AngularTranslateI18Service.$inject = ['resources', '$interpolate', '$translate'];
-            return AngularTranslateI18Service;
-        })();
-        editable.AngularTranslateI18Service = AngularTranslateI18Service;
-
-        //#endregion
         //#region Data services
         var DefaultDataSerice = (function () {
-            function DefaultDataSerice(api, settings, i18Service) {
+            function DefaultDataSerice(api, settings, i18NService) {
+                this.removedItems = [];
                 this.dt = {
                     settings: null,
                     api: null
@@ -555,7 +532,7 @@ var dt;
                 this.dt.api = api;
                 this.dt.settings = api.settings()[0];
                 this.settings = settings;
-                this.i18Service = i18Service;
+                this.i18NService = i18NService;
             }
             DefaultDataSerice.prototype.getColumnModelPath = function (col) {
                 var rowDataPath = this.dt.settings.oInit.angular.rowDataPath;
@@ -567,16 +544,29 @@ var dt;
                 for (var i = 0; i < items.length; i++) {
                     items[i].remove();
                     removed.push(items[i]);
+                    this.removedItems.push(items[i].data());
                 }
                 return removed;
             };
 
             DefaultDataSerice.prototype.rejectItems = function (items) {
-                throw 'Reject is not supported by DefaultDataSerice';
+                for (var i = 0; i < items.length; i++) {
+                    var idx = items[i].index();
+                    var row = this.dt.settings.aoData[idx];
+                    angular.copy(row._aDataOrig, row._aData);
+                }
+                return items;
             };
 
             DefaultDataSerice.prototype.restoreRemovedItems = function () {
-                throw 'Restore removed items is not supported by DefaultDataSerice';
+                var restored = [];
+                for (var i = 0; i < this.removedItems.length; i++) {
+                    var data = this.removedItems[i];
+                    this.dt.api.row.add(data);
+                    restored.push(data);
+                }
+                this.removedItems.length = 0;
+                return restored;
             };
 
             DefaultDataSerice.prototype.createItem = function () {
@@ -617,7 +607,7 @@ var dt;
                         if (val && val.$name)
                             return;
                         var validator = new Validator(valName, valMap[valName] || null);
-                        var msg = _this.i18Service.translate(valName, validator);
+                        var msg = _this.i18NService.translate(valName, validator);
                         errors.push(new ValidationError(msg, validator));
                     });
                 });
@@ -645,7 +635,7 @@ var dt;
                     if (!err)
                         return;
                     var validator = new Validator(valName, valMap[valName] || null, column);
-                    var msg = _this.i18Service.translate(valName, validator);
+                    var msg = _this.i18NService.translate(valName, validator);
                     errors.push(new ValidationError(msg, validator, column.mData));
                 });
 
@@ -653,7 +643,7 @@ var dt;
             };
 
             DefaultDataSerice.prototype.isColumnEditable = function (column) {
-                return (column.editable !== false) && $.type(column.mData) === "string";
+                return (column.editable !== false) && $.type(column.mData) === "string" && Editable.getColumnType(column);
             };
 
             DefaultDataSerice.prototype.getItemPropertyValue = function (column, row) {
@@ -684,10 +674,17 @@ var dt;
                 }
                 return editableColumns;
             };
-            DefaultDataSerice.$inject = ['api', 'settings', 'i18Service'];
+
+            DefaultDataSerice.prototype.onBlocksCreated = function (blocks) {
+                for (var i = 0; i < blocks.length; i++) {
+                    var item = this.dt.settings.aoData[blocks[i].index];
+                    item._aDataOrig = angular.copy(item._aData);
+                }
+            };
+            DefaultDataSerice.$inject = ['api', 'settings', 'i18NService'];
             return DefaultDataSerice;
         })();
-        editable.DefaultDataSerice = DefaultDataSerice;
+        _editable.DefaultDataSerice = DefaultDataSerice;
 
         //#endregion
         var InlineDisplayServiceCellValidationPlugin = (function () {
@@ -702,7 +699,7 @@ var dt;
             };
             return InlineDisplayServiceCellValidationPlugin;
         })();
-        editable.InlineDisplayServiceCellValidationPlugin = InlineDisplayServiceCellValidationPlugin;
+        _editable.InlineDisplayServiceCellValidationPlugin = InlineDisplayServiceCellValidationPlugin;
 
         var InlineDisplayServiceRowValidationPlugin = (function () {
             function InlineDisplayServiceRowValidationPlugin() {
@@ -716,7 +713,11 @@ var dt;
             };
             return InlineDisplayServiceRowValidationPlugin;
         })();
-        editable.InlineDisplayServiceRowValidationPlugin = InlineDisplayServiceRowValidationPlugin;
+        _editable.InlineDisplayServiceRowValidationPlugin = InlineDisplayServiceRowValidationPlugin;
+
+        //Register plugins
+        Editable.defaultSettings.services.display.plugins.cellValidation = InlineDisplayServiceCellValidationPlugin;
+        Editable.defaultSettings.services.display.plugins.rowValidation = InlineDisplayServiceRowValidationPlugin;
 
         var DefaultDisplayService = (function () {
             function DefaultDisplayService(api, settings, plugins, $injector) {
@@ -889,7 +890,7 @@ var dt;
             DefaultDisplayService.$inject = ['api', 'settings', 'plugins', '$injector'];
             return DefaultDisplayService;
         })();
-        editable.DefaultDisplayService = DefaultDisplayService;
+        _editable.DefaultDisplayService = DefaultDisplayService;
 
         //#region Commands
         //#region Edit
@@ -905,16 +906,15 @@ var dt;
                     scope.$row.edit();
             };
             return BaseEditCommand;
-        })(dt.BaseCommand);
-        editable.BaseEditCommand = BaseEditCommand;
+        })(dt.command.BaseCommand);
+        _editable.BaseEditCommand = BaseEditCommand;
 
         var EditCommand = (function (_super) {
             __extends(EditCommand, _super);
             function EditCommand(settings) {
                 _super.call(this, {
-                    //html: 'Edit',
                     attrs: {
-                        'ng-bind': "$isInEditMode() === false ? 'Edit' : 'Save'"
+                        'ng-bind': "$isInEditMode() === false ? ('Edit' | translate) : ('Save' | translate)"
                     }
                 }, settings);
             }
@@ -923,10 +923,10 @@ var dt;
             EditCommand.$inject = ['settings'];
             return EditCommand;
         })(BaseEditCommand);
-        editable.EditCommand = EditCommand;
+        _editable.EditCommand = EditCommand;
 
         //Register commands
-        dt.CommandTablePlugin.registerCommand(EditCommand);
+        dt.command.CommandTablePlugin.registerCommand(EditCommand);
 
         //#endregion
         //#region Remove
@@ -939,13 +939,16 @@ var dt;
                 scope.$row.remove();
             };
             return BaseRemoveCommand;
-        })(dt.BaseCommand);
-        editable.BaseRemoveCommand = BaseRemoveCommand;
+        })(dt.command.BaseCommand);
+        _editable.BaseRemoveCommand = BaseRemoveCommand;
 
         var RemoveCommand = (function (_super) {
             __extends(RemoveCommand, _super);
             function RemoveCommand(settings) {
                 _super.call(this, {
+                    attrs: {
+                        'translate': ''
+                    },
                     html: 'Remove'
                 }, settings);
             }
@@ -954,10 +957,44 @@ var dt;
             RemoveCommand.$inject = ['settings'];
             return RemoveCommand;
         })(BaseRemoveCommand);
-        editable.RemoveCommand = RemoveCommand;
+        _editable.RemoveCommand = RemoveCommand;
 
         //Register commands
-        dt.CommandTablePlugin.registerCommand(RemoveCommand);
+        dt.command.CommandTablePlugin.registerCommand(RemoveCommand);
+
+        //#endregion
+        //#region Reject
+        var BaseRejectCommand = (function (_super) {
+            __extends(BaseRejectCommand, _super);
+            function BaseRejectCommand(defSettings, settings) {
+                _super.call(this, defSettings, settings);
+            }
+            BaseRejectCommand.prototype.execute = function (scope) {
+                scope.$row.reject();
+            };
+            return BaseRejectCommand;
+        })(dt.command.BaseCommand);
+        _editable.BaseRejectCommand = BaseRejectCommand;
+
+        var RejectCommand = (function (_super) {
+            __extends(RejectCommand, _super);
+            function RejectCommand(settings) {
+                _super.call(this, {
+                    attrs: {
+                        'translate': ''
+                    },
+                    html: 'Reject'
+                }, settings);
+            }
+            RejectCommand.alias = 'reject';
+
+            RejectCommand.$inject = ['settings'];
+            return RejectCommand;
+        })(BaseRejectCommand);
+        _editable.RejectCommand = RejectCommand;
+
+        //Register commands
+        dt.command.CommandTablePlugin.registerCommand(RejectCommand);
 
         //#endregion
         //#endregion
@@ -1131,11 +1168,19 @@ var dt;
             BaseEditor.prototype.editRow = function (row) {
             };
 
+            BaseEditor.prototype.rejectRow = function (row) {
+                var dtRow = this.dt.api.row(row);
+                this.dataService.rejectItems([dtRow]);
+                var rowScope = angular.element(dtRow.node()).scope();
+                if (rowScope && !rowScope.$$phase)
+                    rowScope.$digest();
+            };
+
             BaseEditor.prototype.saveRow = function (row) {
             };
             return BaseEditor;
         })();
-        editable.BaseEditor = BaseEditor;
+        _editable.BaseEditor = BaseEditor;
 
         var BatchEditor = (function (_super) {
             __extends(BatchEditor, _super);
@@ -1283,7 +1328,7 @@ var dt;
             BatchEditor.$inject = ['api', 'settings', 'displayService', 'dataService'];
             return BatchEditor;
         })(BaseEditor);
-        editable.BatchEditor = BatchEditor;
+        _editable.BatchEditor = BatchEditor;
 
         var InlineEditor = (function (_super) {
             __extends(InlineEditor, _super);
@@ -1332,7 +1377,7 @@ var dt;
             InlineEditor.$inject = ['api', 'settings', 'displayService', 'dataService'];
             return InlineEditor;
         })(BaseEditor);
-        editable.InlineEditor = InlineEditor;
+        _editable.InlineEditor = InlineEditor;
 
         var Position = (function () {
             function Position(x, y) {
@@ -1463,6 +1508,10 @@ var dt;
         var ctx = this.settings()[0];
         ctx.editable.editor.editRow(this.index());
     });
+    $.fn.DataTable.Api.register('row().reject()', function () {
+        var ctx = this.settings()[0];
+        ctx.editable.editor.rejectRow(this.index());
+    });
     $.fn.DataTable.Api.register('row().save()', function () {
         var ctx = this.settings()[0];
         ctx.editable.editor.saveRow(this.index());
@@ -1537,6 +1586,9 @@ var dt;
     //#endregion
     //#region TableTools buttons
     var TableTools = $.fn.DataTable.TableTools;
+
+    if (!TableTools)
+        return;
 
     //#region editable_remove
     TableTools.buttons.editable_remove = $.extend({}, TableTools.buttonBase, {

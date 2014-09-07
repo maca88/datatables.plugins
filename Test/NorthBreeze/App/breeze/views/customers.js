@@ -31,7 +31,7 @@
                     colResize: {},
                     rowDetails: {
                         template: '#row-details-tpl',
-                        opened: function (row) {
+                        rowExpanded: function (row) {
                             var scope = angular.element(row.node()).scope();
                             if (scope.ordersLoaded === true)
                                 return;
