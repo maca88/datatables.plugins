@@ -16,7 +16,6 @@ var dt;
                 __extends(DataService, _super);
                 function DataService(api, settings, i18Service) {
                     _super.call(this, api, settings, i18Service);
-                    this.deletedEntities = [];
                     if (!$.isFunction(this.settings.createItem))
                         throw "'createItem' setting property must be provided in order to work with breeze DataAdapter";
                 }
@@ -29,7 +28,7 @@ var dt;
                             continue;
 
                         //TODO: check if is an simple or breeze array if not simple we have to add to the deleted entities
-                        this.deletedEntities.push(entity);
+                        this.removedItems.push(entity);
                         removed.push(items[i]);
                     }
                     return removed;
@@ -37,11 +36,14 @@ var dt;
 
                 DataService.prototype.restoreRemovedItems = function () {
                     var restored = [];
-                    for (var i = 0; i < this.deletedEntities.length; i++) {
-                        var entity = this.deletedEntities[i];
+                    for (var i = 0; i < this.removedItems.length; i++) {
+                        var entity = this.removedItems[i];
                         entity.entityAspect.rejectChanges();
+
+                        //TODO: check if is an simple or breeze array if not simple we have to add to the deleted entities
                         restored.push(entity);
                     }
+                    this.removedItems.length = 0;
                     return restored;
                 };
 

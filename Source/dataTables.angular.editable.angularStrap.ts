@@ -255,11 +255,12 @@
                             var visible = false;
                             var options = $.extend({}, asPopoverRowErrorsSettings.popoverOptions);
                             $compile(rowNode)(scope);
-                            scope.$watchCollection("$rowData._details", (newVal) => {
-                                console.log('wwww');
+                            var applyPlacement = () => {
                                 if (popover)
-                                    $timeout(popover.popover.$applyPlacement, 500);
-                            });
+                                    popover.popover.$applyPlacement();
+                            };
+                            scope.$parent.$on('dt.rowExpanded', applyPlacement);
+                            scope.$parent.$on('dt.rowCollapsed', applyPlacement);
                             scope.$watchCollection(scope.$rowFormName + ".$error", (newVal) => {
                                 var errors = scope.$rowValidate();
                                 var rowData = scope.$rowData;
@@ -283,8 +284,6 @@
                                     if (!popover)
                                         popover = asPopoverFactory.createPopover(popoverDiv, scope, options, scope.$getRowErrorMessage());
                                 }
-                                
-                                
                             });
                         }
                     }

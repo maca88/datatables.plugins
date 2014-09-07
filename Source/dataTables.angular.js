@@ -26,7 +26,8 @@ var dt;
                 'rowPostLink': [],
                 'rowPreLink': [],
                 'tableCreating': [],
-                'tableCreated': []
+                'tableCreated': [],
+                'blocksCreated': []
             };
             this.settings = $.extend(true, {}, TableController.defaultSettings, {});
             this.$parse = $parse;
@@ -84,6 +85,10 @@ var dt;
             for (var i = 0; i < arr.length; i++) {
                 eventListener = arr[i];
 
+                //skip listeners if the condition returns false
+                if (eventListener.condition && !eventListener.condition())
+                    continue;
+
                 //lazy event listener
                 if (angular.isFunction(eventListener.scope)) {
                     eventListener.scope = eventListener.scope();
@@ -134,6 +139,7 @@ var dt;
                 var plugin = _this.$injector.instantiate(pluginType, locals);
                 if (!plugin.isEnabled())
                     return;
+                locals[plugin.name] = plugin;
                 _this.activePlugins.push(plugin);
                 var eventListeners = plugin.getEventListeners();
                 if (angular.isArray(eventListeners)) {
@@ -183,20 +189,21 @@ var dt;
             if (attrs.dtTable)
                 scope.$parent[attrs.dtTable] = api;
 
-            angular.forEach(dtSettings.dtTableCreatedActions, function (fn) {
-                if (!angular.isFunction(fn))
-                    return;
-                fn(api, _this.$element, options, scope, attrs, _this.$compile);
-            });
-
             //We have to add the blocks to the lastBlockMap
             if (angular.isArray(dtSettings.aoData)) {
+                var addedBlocks = [];
                 for (var i = 0; i < dtSettings.aoData.length; i++) {
                     rData = dtSettings.aoData[i];
                     hash = hashKey(rData._aData);
-                    if (!this.lastBlockMap.hasOwnProperty(hash))
-                        this.lastBlockMap[hash] = { id: hash, index: i, scope: null };
+
+                    if (!this.lastBlockMap.hasOwnProperty(hash)) {
+                        var block = { id: hash, index: i, scope: null };
+                        this.lastBlockMap[hash] = block;
+                        addedBlocks.push(block);
+                    }
                 }
+                if (addedBlocks.length)
+                    this.triggerEventListeners(TableController.events.blocksCreated, [addedBlocks]);
             }
 
             scope.$on('$destroy', this.destroy.bind(this));
@@ -214,7 +221,7 @@ var dt;
                 dtSettings.oInit.data = newValue; //update init data
             if (!newValue)
                 return;
-            var key, value, nextBlockMap = {}, rowOrder = {}, rowsReordered = false, toAdd = [], toRemove = [], added = [], removed = [];
+            var key, value, nextBlockMap = {}, rowOrder = {}, rowsReordered = false, toAdd = [], toRemove = [], added = [], addedBlocks = [], removed = [];
 
             // locate existing items
             length = newValue.length;
@@ -233,6 +240,7 @@ var dt;
                 } else {
                     // new never before seen block
                     block = { id: hash, index: index, scope: null };
+                    addedBlocks.push(block);
                     nextBlockMap[hash] = block;
                     if (!dtSettings._rowsInserted.hasOwnProperty(hash)) {
                         toAdd.push(value);
@@ -332,6 +340,10 @@ var dt;
                 });
                 if (debug)
                     console.timeEnd('Executing rowsAdded callbacks. Added items: ' + added.length);
+            }
+
+            if (addedBlocks.length) {
+                this.triggerEventListeners(TableController.events.blocksCreated, [addedBlocks]);
             }
 
             if (removed.length || added.length || rowsReordered) {
@@ -653,6 +665,7 @@ var dt;
         };
 
         TableController.prototype.mergeNodeAttributesToObject = function (node, obj, ignoreAttrs) {
+            var _this = this;
             if (typeof ignoreAttrs === "undefined") { ignoreAttrs = []; }
             var $node = angular.element(node);
             angular.forEach(node.attributes, function (nodeAttr) {
@@ -667,10 +680,15 @@ var dt;
                         popName += w;
                 });
                 obj[popName] = $node.attr(nodeAttr.name);
-                if (obj[popName] && obj[popName].toUpperCase() == 'TRUE')
+                if (!obj[popName])
+                    return;
+
+                if (obj[popName].toUpperCase() == 'TRUE')
                     obj[popName] = true;
-                else if (obj[popName] && obj[popName].toUpperCase() == 'FALSE')
+                else if (obj[popName].toUpperCase() == 'FALSE')
                     obj[popName] = false;
+                else if (obj[popName].length && (obj[popName][0] == '{' || obj[popName][0] == '['))
+                    obj[popName] = _this.$scope.$eval(obj[popName]);
             });
         };
 
@@ -761,7 +779,12 @@ var dt;
             rowPostLink: 'rowPostLink',
             rowPreLink: 'rowPreLink',
             tableCreating: 'tableCreating',
-            tableCreated: 'tableCreated'
+            tableCreated: 'tableCreated',
+            blocksCreated: 'blocksCreated'
+        };
+
+        TableController.registerPlugin = function (plugin) {
+            TableController.defaultSettings.plugins.push(plugin);
         };
 
         TableController.defaultSettings = {
@@ -780,292 +803,19 @@ var dt;
         };
 
         TableController.$inject = ['$parse', '$scope', '$element', '$attrs', '$transclude', '$rootScope', '$q', '$http', '$compile', '$templateCache', '$injector'];
+
+        TableController.checkAngularModulePresence = function (moduleName) {
+            try  {
+                angular.module(moduleName);
+                return true;
+            } catch (err) {
+                return false;
+            }
+        };
         return TableController;
     })();
     dt.TableController = TableController;
 
-    //#region Selectable plugin
-    var SelectableTablePlugin = (function () {
-        function SelectableTablePlugin(dtTable) {
-            this.dt = {
-                api: null,
-                settings: null
-            };
-            this.table = dtTable;
-        }
-        SelectableTablePlugin.prototype.getEventListeners = function () {
-            return [
-                {
-                    event: TableController.events.tableCreating,
-                    fn: this.tableCreating,
-                    scope: this
-                },
-                {
-                    event: TableController.events.tableCreated,
-                    fn: this.tableCreated,
-                    scope: this
-                }
-            ];
-        };
-
-        SelectableTablePlugin.prototype.isEnabled = function () {
-            var opts = this.table.settings.options;
-            var settings = opts.tableTools = opts.tableTools || {};
-            var selectable = this.table.$attrs.dtSelectable;
-            return (opts.dom && opts.dom.indexOf('T') >= 0 && settings.sRowSelect != null && settings.sRowSelect !== 'none') || selectable;
-        };
-
-        SelectableTablePlugin.prototype.initialize = function (dtSettings) {
-            this.dt.settings = dtSettings;
-            this.dt.api = dtSettings.oInstance.api();
-            dtSettings._DT_SelectedRowsCached = [];
-            //TODO: selectable columns
-        };
-
-        SelectableTablePlugin.prototype.destroy = function () {
-            this.table = null;
-            this.dt = null;
-        };
-
-        SelectableTablePlugin.prototype.tableCreated = function (api) {
-            var _this = this;
-            this.dt.api = api; //not the same instance???
-            Object.defineProperty(api, "selectedRows", {
-                get: function () {
-                    return _this.dt.settings._DT_SelectedRowsCached || [];
-                }
-            });
-        };
-
-        SelectableTablePlugin.prototype.tableCreating = function () {
-            var _this = this;
-            var table = this.table;
-            var opts = table.settings.options;
-            var selectable = table.$attrs.dtSelectable;
-            var settings = opts.tableTools = opts.tableTools || {};
-            var tblScope = table.$scope;
-            if (!opts.dom)
-                opts.dom = 'T' + $.fn.dataTable.defaults;
-            else if (opts.dom.indexOf('T') < 0)
-                opts.dom = 'T' + opts;
-
-            if (selectable)
-                opts.tableTools.sRowSelect = selectable;
-
-            var origPostSelected = settings.fnRowSelected;
-            settings.fnRowSelected = function (nodes) {
-                _this.resetSelectableCache();
-
-                //We have to digest the parent table scope in order to refresh bindings that are related to datatable instance
-                if (!tblScope.$parent.$$phase)
-                    tblScope.$parent.$digest();
-
-                //Call the original fn
-                if (angular.isFunction(origPostSelected))
-                    origPostSelected(nodes);
-            };
-
-            var origPostDeselected = settings.fnRowDeselected;
-            settings.fnRowDeselected = function (nodes) {
-                _this.resetSelectableCache();
-
-                //We have to digest the parent table scope in order to refresh bindings that are related to datatable instance
-                if (!tblScope.$parent.$$phase)
-                    tblScope.$parent.$digest();
-
-                //Call the original fn
-                if (angular.isFunction(origPostDeselected))
-                    origPostDeselected(nodes);
-            };
-
-            table.settings.rowsRemoved.push(function () {
-                _this.resetSelectableCache();
-            });
-        };
-
-        SelectableTablePlugin.prototype.resetSelectableCache = function () {
-            var cache = [];
-            var settings = this.dt.settings;
-            var data = settings.aoData;
-            var i, iLen;
-            for (i = 0, iLen = data.length; i < iLen; i++) {
-                if (data[i]._DTTT_selected) {
-                    var dtRow = this.dt.api.row(i);
-                    cache.push({
-                        index: i,
-                        data: dtRow.data(),
-                        node: dtRow.node(),
-                        row: dtRow
-                    });
-                }
-            }
-            settings._DT_SelectedRowsCached = cache;
-        };
-        SelectableTablePlugin.$inject = ['dtTable'];
-        return SelectableTablePlugin;
-    })();
-    dt.SelectableTablePlugin = SelectableTablePlugin;
-
-    //Register plugin
-    TableController.defaultSettings.plugins.push(SelectableTablePlugin);
-
-    
-
-    var CommandTablePlugin = (function () {
-        function CommandTablePlugin(dtTable, $injector) {
-            this.dt = {
-                api: null,
-                settings: null
-            };
-            this.table = dtTable;
-            this.$injector = $injector;
-        }
-        CommandTablePlugin.registerCommand = function (command) {
-            CommandTablePlugin.registeredCommands[command.name] = command;
-            if (command.alias)
-                CommandTablePlugin.registeredCommands[command.alias] = command;
-        };
-
-        //check if there is any column that has the commands property set
-        CommandTablePlugin.prototype.isEnabled = function () {
-            var _this = this;
-            var opts = this.table.settings.options;
-            var enabled = false;
-            angular.forEach(opts.columns, function (col) {
-                if (col.commands === undefined)
-                    return;
-                if (!angular.isArray(col.commands))
-                    throw 'column "' + col.title + '" property commands must be an array';
-
-                var cmds = _this.buildCommands(col.commands);
-
-                col.editable = col.orderable = col.searchable = false;
-                col.defaultContent = cmds.template;
-                col.$commandScopes = cmds.scopes;
-                col.$commandInstances = cmds.instances;
-                enabled = true;
-            });
-            return enabled;
-        };
-
-        CommandTablePlugin.prototype.initialize = function (dtSettings) {
-            this.dt.settings = dtSettings;
-            this.dt.api = dtSettings.oInstance.api();
-        };
-
-        CommandTablePlugin.prototype.buildCommands = function (commands) {
-            var _this = this;
-            var template = '';
-            var scopes = {};
-            var cmdName;
-            var instances = [];
-            var settings;
-            angular.forEach(commands, function (command) {
-                if (angular.isString(command)) {
-                    if (!CommandTablePlugin.registeredCommands.hasOwnProperty(command))
-                        throw 'Unknown command name: ' + command;
-                    command = CommandTablePlugin.registeredCommands[command];
-                    cmdName = command.alias || command.name;
-                } else if ($.isPlainObject(command)) {
-                    cmdName = command.name;
-                    settings = command.settings || {};
-                    if (CommandTablePlugin.registeredCommands.hasOwnProperty(cmdName)) {
-                        command = CommandTablePlugin.registeredCommands[cmdName];
-                        cmdName = command.alias || command.name;
-                    }
-                }
-
-                //we have to convert all char to lowercase in order the bindings to work
-                cmdName = cmdName.toLowerCase();
-
-                //anonimus command like: {name: 'custom', template: '...', scope: {...}}
-                if (angular.isObject(command)) {
-                    template += command.template;
-                    scopes[cmdName] = command.scope;
-                } else {
-                    var locals = { settings: settings || {} };
-                    var cmd = _this.$injector.instantiate(command, locals);
-                    instances.push(cmd);
-                    var cmdScope = scopes[cmdName] = {};
-                    var opts = {
-                        canExecuteExp: "$commands['" + cmdName + "'].canExecute(this)",
-                        executeExp: "$commands['" + cmdName + "'].execute(this)"
-                    };
-                    template += cmd.getTemplate(opts);
-                    cmdScope.canExecute = $.proxy(cmd.canExecute, cmd);
-                    cmdScope.execute = $.proxy(cmd.execute, cmd);
-                }
-            });
-
-            return {
-                template: template,
-                scopes: scopes,
-                instances: instances
-            };
-        };
-
-        CommandTablePlugin.prototype.getEventListeners = function () {
-            return [
-                {
-                    event: TableController.events.cellPostLink,
-                    scope: this,
-                    fn: this.onCellPostLink
-                }
-            ];
-        };
-
-        CommandTablePlugin.prototype.destroy = function () {
-            this.table = null;
-            this.dt = null;
-        };
-
-        CommandTablePlugin.prototype.onCellPostLink = function (args) {
-            var col = args.column;
-            args.scope.$commands = col.$commandScopes;
-        };
-        CommandTablePlugin.registeredCommands = {};
-
-        CommandTablePlugin.$inject = ['dtTable', '$injector'];
-        return CommandTablePlugin;
-    })();
-    dt.CommandTablePlugin = CommandTablePlugin;
-
-    //Register plugin
-    TableController.defaultSettings.plugins.push(CommandTablePlugin);
-
-    var BaseCommand = (function () {
-        function BaseCommand(defSettings, settings) {
-            this.settings = $.extend(true, {}, BaseCommand.defaultSettings, defSettings, settings);
-        }
-        BaseCommand.prototype.getTemplate = function (opts) {
-            var tmpl = $('<' + this.settings.tagName + '/>').addClass(this.settings.className || '').attr('ng-disabled', "" + opts.canExecuteExp + " === false").attr('ng-class', "{ disabled: " + opts.canExecuteExp + " === false }").attr('ng-click', opts.executeExp).attr(this.settings.attrs || {}).append(this.settings.html);
-            var html = $('<div />').append(tmpl).html();
-            return html.replaceAll(BaseCommand.EXEC_EXPR, opts.executeExp).replaceAll(BaseCommand.CAN_EXEC_EXPR, opts.canExecuteExp);
-        };
-
-        BaseCommand.prototype.canExecute = function (scope) {
-            if (angular.isFunction(this.settings.canExecute))
-                return this.settings.canExecute.call(this);
-            return true;
-        };
-
-        BaseCommand.prototype.execute = function (scope) {
-        };
-        BaseCommand.EXEC_EXPR = "exec_expr";
-        BaseCommand.CAN_EXEC_EXPR = "can_exec_expr";
-
-        BaseCommand.defaultSettings = {
-            tagName: 'button',
-            className: '',
-            attrs: {},
-            html: '',
-            canExecute: null
-        };
-        return BaseCommand;
-    })();
-    dt.BaseCommand = BaseCommand;
-
-    //#endregion
     var AngularHelper = (function () {
         function AngularHelper() {
         }
@@ -1273,15 +1023,7 @@ var dt;
         "sFeature": "AngularPluginSystem"
     });
 
-    angular.module("dt", []).constant("dtSettings", {
-        defaultDtOptions: {},
-        dtFillWatchedPropertiesActions: [],
-        dtTableCreatingActions: [],
-        dtTableCreatedActions: [],
-        dtColumnParsingActions: [],
-        dtRowsAddedActions: [],
-        dtRowsRemovedActions: []
-    }).service('dt.i18N').controller('dtTableController', dt.TableController).directive("dtRow", [function () {
+    angular.module("dt", []).service('dt.i18N').controller('dtTableController', dt.TableController).directive("dtRow", [function () {
             return {
                 restrict: 'A',
                 priority: 1000,

@@ -68,10 +68,6 @@ module dt.editable {
         canBlurCell(event, cell, col): boolean;
     }
 
-    export interface I18NService {
-        translate(key: string, params: any): string;
-    }
-
     export interface IDisplayServiceEditTypePlugin {
         getSupportedTypes(): string[];
         getEditTemplateForType(type, col): string;
@@ -90,7 +86,6 @@ module dt.editable {
         mergeErrors(errors: ValidationError[]): string;
     }
 
-
     export interface IDisplayServiceStylePlugin {
         setupColumnTemplate(args: IColumnTemplateSetupArgs): void;
         setupRowTemplate(args: IRowTemplateSetupArgs): void;
@@ -107,6 +102,7 @@ module dt.editable {
 
         editRow(row: number): void;
         saveRow(row: number): void;
+        rejectRow(row: number): void;
 
         cellCompile(args: dt.ICellCompileArgs);
         cellPostLink(args: dt.ICellPostLinkArgs);
@@ -222,7 +218,7 @@ module dt.editable {
                                     }
                                 }
                             },
-                            'dateTime': {
+                            'datetime': {
                                 control: {
                                     attrs: {
                                         type: 'datetime-local',
@@ -234,15 +230,10 @@ module dt.editable {
                     plugins: {
                         editTypes: [],
                         style: null,
-                        cellValidation: InlineDisplayServiceCellValidationPlugin,
-                        rowValidation: InlineDisplayServiceRowValidationPlugin,
+                        cellValidation: null,
+                        rowValidation: null,
                     },
-                },
-                i18N: {
-                    type: null,
-                    settings: {}
                 }
-                
             },
             
             editor: {
@@ -257,6 +248,7 @@ module dt.editable {
             startCellEditing: null,
             endCellEditing: null,
             formatMessage: (msg, ctx) => msg,
+            culture: 'en',
             language: {
                 'required': 'The value is required',
                 'minlength': 'Minimum length is {{options}}'
@@ -272,16 +264,18 @@ module dt.editable {
         };
         private $injector: ng.auto.IInjectorService;
         private table: dt.TableController;
+        private i18NPlugin: dt.i18N.I18NPlugin;
 
         public editor: IEditor;
         public dataService: IDataService;
         public displayService: IDisplayService;
-        public i18NService: I18NService;
+        public i18NService: dt.i18N.I18NService;
 
-        public static $inject = ['dtTable', '$injector'];
-        constructor(dtTable: TableController, $injector: ng.auto.IInjectorService) {
+        public static $inject = ['dtTable', 'i18N', '$injector'];
+        constructor(dtTable: TableController, i18N: dt.i18N.I18NPlugin, $injector: ng.auto.IInjectorService) {
             this.table = dtTable;
             this.$injector = $injector;
+            this.i18NPlugin = i18N;
         }
 
         public getEventListeners(): IEventListener[] {
@@ -308,23 +302,49 @@ module dt.editable {
                 },
                 {
                     event: dt.TableController.events.rowPostLink,
-                    scope: () => this.editor,
+                    scope: () => this.editor,                   
                     fn: () => this.editor.rowPostLink
                 },
                 {
                     event: dt.TableController.events.rowPreLink,
                     scope: () => this.editor,
                     fn: () => this.editor.rowPreLink
+                },
+                {
+                    condition: () => { return (this.dataService instanceof DefaultDataSerice); },
+                    event: dt.TableController.events.blocksCreated,
+                    scope: () => this.dataService,
+                    fn: () => (<DefaultDataSerice>this.dataService).onBlocksCreated
                 }
             ];
         }
 
+        public name: string = 'editable';
+
         public isEnabled(): boolean {
-            return $.isPlainObject(this.table.settings.options.editable);
+
+            var tableOpts = this.table.settings.options;
+
+            if ($.isPlainObject(tableOpts.editable) || tableOpts.editable === true)
+                return true;
+
+            var cols = tableOpts.columns || [];
+
+            for (var i = 0; i < cols.length; i++) {
+                if ($.isPlainObject(cols[i].editable) || cols[i].editable === true)
+                    return true;
+            }
+            return false;
         }
 
         public destroy(): void {
-
+            this.i18NPlugin = null;
+            this.$injector = null;
+            this.table = null;
+            this.editor = null;
+            this.dataService = null;
+            this.displayService = null;
+            this.i18NService = null;
         }
 
         public initialize(dtSettings) {
@@ -333,10 +353,21 @@ module dt.editable {
             this.dt.api = dtSettings.oInstance.api();
             this.dt.settings.editable = this;
             this.setupServices();
+            this.setupColumns();
             this.setupEditor();
             this.editor.initialize();
             this.prepareColumnTemplates();
+            
             this.initialized = true;
+        }
+
+        private setupColumns() {
+            var columns = this.dt.settings.aoColumns;
+            for (var i = 0; i < columns.length; i++) {
+                var editable = this.dataService.isColumnEditable(columns[i]);
+                if (!editable)
+                    columns[i].editable = false;
+            }
         }
 
         private prepareColumnTemplates() {
@@ -440,23 +471,16 @@ module dt.editable {
             if (!errors) return null;
             var msg = ' '; //the default mesasge must be evaluated to true as the angularstrap check it at init
             for (var i = 0; i < errors.length; i++) {
-                msg += errors[i].message + '<br />';
+                msg += errors[i].message;
+                if (i < (errors.length - 1))
+                    msg += '<br />';
             }
             return msg;
         }
 
         public static getColumnType(col) {
             var editablOpts = col.editable || {};
-            return editablOpts.type || col._sManualType || col.sType;
-        }
-
-        public static checkAngularModulePresence(moduleName) {
-            try {
-                angular.module(moduleName);
-                return true;
-            } catch (err) {
-                return false;
-            }
+            return editablOpts.type || col._sManualType || col.sType || col.type;
         }
 
         public static getColumnTemplateSettings(col): any {
@@ -516,25 +540,14 @@ module dt.editable {
         }
 
         private setupServices() {
-            this.setupI18Nservice();
+            this.setupI18NService();
             this.setupDisplayService();
             this.setupDataService();
         }
 
-        private setupI18Nservice() {
-            var i18NService = this.settings.services.i18N;
-            var locals = {
-                'resources': this.settings.language
-            };
-            if (!i18NService.type) {
-                if (Editable.checkAngularModulePresence('pascalprecht.translate'))
-                    i18NService.type = AngularTranslateI18Service;
-                else if (Editable.checkAngularModulePresence('gettext'))
-                    i18NService.type = GetTextI18NService;
-                else
-                    i18NService.type = DefaultI18NService;
-            }
-            this.i18NService = this.$injector.instantiate(i18NService.type, locals);
+        private setupI18NService() {
+            this.i18NService = this.i18NPlugin.getI18NService();
+            this.i18NService.mergeResources(this.settings.culture, this.settings.language);
         }
 
         private setupEditor() {
@@ -557,7 +570,7 @@ module dt.editable {
                 'settings': displayService.settings,
                 'api': this.dt.api,
                 'plugins': displayService.plugins,
-                'i18Service': this.i18NService
+                'i18NService': this.i18NService
             };
             if (!displayService.type) 
                 displayService.type = DefaultDisplayService;
@@ -570,7 +583,7 @@ module dt.editable {
             var locals = {
                 'settings': dataService.settings,
                 'api': this.dt.api,
-                'i18Service': this.i18NService,
+                'i18NService': this.i18NService,
                 //'displayService': this.displayService
             };
             if (!dataService.type) {
@@ -585,7 +598,7 @@ module dt.editable {
     }
 
     //Register plugin
-    TableController.defaultSettings.plugins.push(Editable);
+    TableController.registerPlugin(Editable);
 
     //We have to use an object instead of a primitive value so that changes will be reflected to the child scopes
     export class DisplayMode {
@@ -630,82 +643,24 @@ module dt.editable {
 
     }
 
-    //#region I18N services
-
-    export class DefaultI18NService implements I18NService {
-
-        private resources;
-        private $interpolate;
-
-        public static $inject = ['resources', '$interpolate'];
-        constructor(resources, $interpolate) {
-            this.resources = resources;
-            this.$interpolate = $interpolate;
-        }
-
-        public translate(key: string, params: any): string {
-            var exp = this.$interpolate(this.resources[key] || 'Missing resource');
-            return exp(params || {});
-        }
-    }
-
-    export class GetTextI18NService implements I18NService {
-
-        private resources;
-        private $interpolate;
-        private gettextCatalog;
-
-        public static $inject = ['resources', '$interpolate', 'gettextCatalog'];
-        constructor(resources, $interpolate, gettextCatalog) {
-            this.resources = resources;
-            this.$interpolate = $interpolate;
-            this.gettextCatalog = gettextCatalog;
-        }
-
-        public translate(key: string, params: any): string {
-            var exp = this.$interpolate(this.gettextCatalog.getString(this.resources[key]));
-            return exp(params || {});
-        }
-    }
-
-    export class AngularTranslateI18Service implements I18NService {
-
-        private resources;
-        private $interpolate;
-        private $translate;
-
-        public static $inject = ['resources', '$interpolate', '$translate'];
-        constructor(resources, $interpolate, $translate) {
-            this.resources = resources;
-            this.$interpolate = $interpolate;
-            this.$translate = $translate;
-        }
-
-        public translate(key: string, params: any): string {
-            var exp = this.$interpolate(this.$translate(key));
-            return exp(params || {});
-        }
-    }
-
-    //#endregion
-
     //#region Data services
 
     export class DefaultDataSerice implements IDataService {
-         
+        public removedItems = []; 
+
         public dt = {
             settings: null,
             api: null
         }
         public settings;
-        public i18Service: I18NService;
+        public i18NService: dt.i18N.I18NService;
 
-        public static $inject = ['api', 'settings', 'i18Service']
-        constructor(api, settings, i18Service) {
+        public static $inject = ['api', 'settings', 'i18NService']
+        constructor(api, settings, i18NService) {
             this.dt.api = api;
             this.dt.settings = api.settings()[0];
             this.settings = settings;
-            this.i18Service = i18Service;
+            this.i18NService = i18NService;
         }
 
         public getColumnModelPath(col): string {
@@ -718,16 +673,29 @@ module dt.editable {
             for (var i = 0; i < items.length; i++) {
                 items[i].remove();
                 removed.push(items[i]);
+                this.removedItems.push(items[i].data());
             }
             return removed;
         }
 
-        public rejectItems(items: any[]): any[] {
-            throw 'Reject is not supported by DefaultDataSerice';
+        public rejectItems(items: any[]): any[]{
+            for (var i = 0; i < items.length; i++) {
+                var idx = items[i].index();
+                var row = this.dt.settings.aoData[idx];
+                angular.copy(row._aDataOrig, row._aData);
+            }
+            return items;
         }
 
         public restoreRemovedItems(): any[] {
-            throw 'Restore removed items is not supported by DefaultDataSerice';
+            var restored = [];
+            for (var i = 0; i < this.removedItems.length; i++) {
+                var data = this.removedItems[i];
+                this.dt.api.row.add(data);
+                restored.push(data);
+            }
+            this.removedItems.length = 0;
+            return restored;
         }
 
         public createItem(): any {
@@ -765,7 +733,7 @@ module dt.editable {
                 angular.forEach(valArr, (val) => {
                     if (val && val.$name) return; //column error
                 var validator = new Validator(valName, valMap[valName] || null);
-                var msg = this.i18Service.translate(valName, validator);
+                var msg = this.i18NService.translate(valName, validator);
                 errors.push(new ValidationError(msg, validator));
                 });
             });
@@ -790,7 +758,7 @@ module dt.editable {
             angular.forEach(inputCtrl.$error, (err, valName) => {
                 if (!err) return; //no errors
                 var validator = new Validator(valName, valMap[valName] || null, column);
-                var msg = this.i18Service.translate(valName, validator);
+                var msg = this.i18NService.translate(valName, validator);
                 errors.push(new ValidationError(msg, validator, column.mData));
             });
 
@@ -798,7 +766,7 @@ module dt.editable {
         }
 
         public isColumnEditable(column): boolean {
-            return (column.editable !== false) && $.type(column.mData) === "string";
+            return (column.editable !== false) && $.type(column.mData) === "string" && Editable.getColumnType(column);
         }
 
         public getItemPropertyValue(column, row): any {
@@ -828,10 +796,16 @@ module dt.editable {
             }
             return editableColumns;
         }
+
+        public onBlocksCreated(blocks: IBlock[]): void {
+            for (var i = 0; i < blocks.length; i++) {
+                var item = this.dt.settings.aoData[blocks[i].index];
+                item._aDataOrig = angular.copy(item._aData);
+            }
+        }
     }
 
     //#endregion
-
 
     export class InlineDisplayServiceCellValidationPlugin implements IDisplayServiceCellValidationPlugin {
 
@@ -854,6 +828,11 @@ module dt.editable {
             return Editable.mergeErrors(errors);
         }
     }
+
+    //Register plugins
+    Editable.defaultSettings.services.display.plugins.cellValidation = InlineDisplayServiceCellValidationPlugin;
+    Editable.defaultSettings.services.display.plugins.rowValidation = InlineDisplayServiceRowValidationPlugin;
+
 
     export class DefaultDisplayService implements IDisplayService {
         public dt = {
@@ -1052,7 +1031,7 @@ module dt.editable {
 
     //#region Edit
 
-    export class BaseEditCommand extends dt.BaseCommand {
+    export class BaseEditCommand extends dt.command.BaseCommand {
 
         constructor(defSettings, settings) {
             super(defSettings, settings);
@@ -1072,22 +1051,21 @@ module dt.editable {
         public static $inject = ['settings']
         constructor(settings) {
             super({
-                //html: 'Edit',
                 attrs: {
-                    'ng-bind': "$isInEditMode() === false ? 'Edit' : 'Save'"
+                    'ng-bind': "$isInEditMode() === false ? ('Edit' | translate) : ('Save' | translate)"
                 }
             }, settings);
         }
     }
 
     //Register commands
-    dt.CommandTablePlugin.registerCommand(EditCommand);
+    dt.command.CommandTablePlugin.registerCommand(EditCommand);
 
     //#endregion
 
     //#region Remove
 
-    export class BaseRemoveCommand extends dt.BaseCommand {
+    export class BaseRemoveCommand extends dt.command.BaseCommand {
 
         constructor(defSettings, settings) {
             super(defSettings, settings);
@@ -1104,6 +1082,9 @@ module dt.editable {
         public static $inject = ['settings']
         constructor(settings) {
             super({
+                attrs: {
+                    'translate': ''
+                },
                 html: 'Remove',
             }, settings);
         }
@@ -1111,7 +1092,40 @@ module dt.editable {
     }
 
     //Register commands
-    dt.CommandTablePlugin.registerCommand(RemoveCommand);
+    dt.command.CommandTablePlugin.registerCommand(RemoveCommand);
+
+    //#endregion
+
+    //#region Reject
+
+    export class BaseRejectCommand extends dt.command.BaseCommand {
+
+        constructor(defSettings, settings) {
+            super(defSettings, settings);
+        }
+
+        public execute(scope) {
+            scope.$row.reject();
+        }
+    }
+
+    export class RejectCommand extends BaseRejectCommand {
+        public static alias = 'reject';
+
+        public static $inject = ['settings']
+        constructor(settings) {
+            super({
+                attrs: {
+                    'translate': ''
+                },
+                html: 'Reject',
+            }, settings);
+        }
+
+    }
+
+    //Register commands
+    dt.command.CommandTablePlugin.registerCommand(RejectCommand);
 
     //#endregion
 
@@ -1286,6 +1300,14 @@ module dt.editable {
 
         public editRow(row: number): void {
             
+        }
+
+        public rejectRow(row: number): void {
+            var dtRow = this.dt.api.row(row);
+            this.dataService.rejectItems([dtRow]);
+            var rowScope = angular.element(dtRow.node()).scope();
+            if (rowScope && !rowScope.$$phase)
+                rowScope.$digest();
         }
 
         public saveRow(row: number): void {
@@ -1641,6 +1663,10 @@ module dt.editable {
         var ctx = this.settings()[0];
         ctx.editable.editor.editRow(this.index());
     });
+    $.fn.DataTable.Api.register('row().reject()', function () {
+        var ctx = this.settings()[0];
+        ctx.editable.editor.rejectRow(this.index());
+    });
     $.fn.DataTable.Api.register('row().save()', function () {
         var ctx = this.settings()[0];
         ctx.editable.editor.saveRow(this.index());
@@ -1717,6 +1743,8 @@ module dt.editable {
     //#region TableTools buttons
 
     var TableTools = $.fn.DataTable.TableTools;
+
+    if (!TableTools) return;
 
     //#region editable_remove
     TableTools.buttons.editable_remove = $.extend({}, TableTools.buttonBase, {

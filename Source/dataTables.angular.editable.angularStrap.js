@@ -222,11 +222,12 @@
                         var visible = false;
                         var options = $.extend({}, asPopoverRowErrorsSettings.popoverOptions);
                         $compile(rowNode)(scope);
-                        scope.$watchCollection("$rowData._details", function (newVal) {
-                            console.log('wwww');
+                        var applyPlacement = function () {
                             if (popover)
-                                $timeout(popover.popover.$applyPlacement, 500);
-                        });
+                                popover.popover.$applyPlacement();
+                        };
+                        scope.$parent.$on('dt.rowExpanded', applyPlacement);
+                        scope.$parent.$on('dt.rowCollapsed', applyPlacement);
                         scope.$watchCollection(scope.$rowFormName + ".$error", function (newVal) {
                             var errors = scope.$rowValidate();
                             var rowData = scope.$rowData;
