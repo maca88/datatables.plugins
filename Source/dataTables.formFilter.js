@@ -54,20 +54,20 @@
         FormFilter.prototype.resetForms = function () {
             var _this = this;
             $.each(this.settings.formSelectors, function (i, selector) {
-                var form = $(selector);
+                var form = _this.executeSelector(selector);
                 if (!form.length)
                     return;
-                _this.settings.resetForm(form);
+                _this.settings.resetForm.call(_this, form);
             });
         };
 
         FormFilter.prototype.setFormsData = function (data) {
             var _this = this;
             $.each(data, function (selector, val) {
-                var form = $(selector);
+                var form = _this.executeSelector(selector);
                 if (!form.length)
                     return;
-                _this.settings.setFormData(form, val);
+                _this.settings.setFormData.call(_this, form, val);
             });
         };
 
@@ -76,15 +76,30 @@
             if (typeof separateForms === "undefined") { separateForms = false; }
             var data = null;
             $.each(this.settings.formSelectors, function (i, selector) {
-                var form = $(selector);
+                var form = _this.executeSelector(selector);
                 if (!form.length)
                     return;
                 if (separateForms) {
-                    (data = data || {})[selector] = _this.settings.getFormData(form);
+                    (data = data || {})[selector] = _this.settings.getFormData.call(_this, form);
                 } else
-                    data = _this.settings.mergeFormData(data, _this.settings.getFormData(form));
+                    data = _this.settings.mergeFormData.call(_this, data, _this.settings.getFormData.call(_this, form));
             });
             return data;
+        };
+
+        FormFilter.prototype.executeSelector = function (selector) {
+            var parent = null;
+            var currentNode = this.dt.settings.nTable;
+            while (currentNode) {
+                parent = currentNode;
+                currentNode = currentNode.parentNode;
+            }
+            if (parent instanceof DocumentFragment)
+                parent = parent.children;
+            var elem = $(selector, parent);
+            if (!elem.length)
+                elem = $(selector);
+            return elem;
         };
 
         FormFilter.prototype.setServerParams = function (data) {
@@ -101,7 +116,7 @@
         FormFilter.prototype.setupForms = function () {
             var _this = this;
             $.each(this.settings.formSelectors, function (i, selector) {
-                $(selector).submit(function (e) {
+                _this.executeSelector(selector).submit(function (e) {
                     e.preventDefault();
                     _this.dt.api.draw(true);
                 });

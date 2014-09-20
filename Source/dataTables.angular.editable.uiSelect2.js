@@ -1,4 +1,10 @@
-﻿var dt;
+﻿var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var dt;
 (function (dt) {
     (function (_editable) {
         (function (uiSelect2) {
@@ -11,6 +17,10 @@
                 }
                 DisplayServiceEditTypePlugin.prototype.getSupportedTypes = function () {
                     return ['select'];
+                };
+
+                DisplayServiceEditTypePlugin.prototype.dispose = function () {
+                    this.displayService = null;
                 };
 
                 DisplayServiceEditTypePlugin.prototype.selectControl = function (event, cell, col) {
@@ -61,15 +71,19 @@
 
                     var select = $('<select />').attr('ui-select2', '$settings').attr('ng-model', Editable.MODEL_PATH).attr(Editable.EDIT_CONTROL_ATTRS, '').attr((template.select.attrs || {})).addClass(template.select.className || '').addClass(this.displayService.getControlClass());
 
+                    if (opts.ngOptions) {
+                        select.attr('ng-options', opts.ngOptions);
+                    }
+
                     //we have to add an empty option
                     if (settings.allowClear === true) {
                         select.append($('<option />'));
                     }
 
                     if (opts.groups) {
-                        select.append($('<optgroup />').attr('ng-repeat', 'group in $groups').attr('label', '{{group.name}}').attr((template.optgroup.attrs || {})).addClass(template.optgroup.className || '').append($('<option />').attr('ng-repeat', 'option in group.options').attr('ng-bind', 'option.text').attr('ng-value', 'option.value').attr((template.option.attrs || {})).addClass(template.option.className || '')));
+                        select.append($('<optgroup />').attr('ng-repeat', 'group in $groups').attr('label', '{{group.name}}').attr((template.optgroup.attrs || {})).addClass(template.optgroup.className || '').append($('<option />').attr('ng-repeat', 'option in group.options').attr('ng-bind', 'option.text').attr('ng-value', 'option.id').attr((template.option.attrs || {})).addClass(template.option.className || '')));
                     } else {
-                        select.append($('<option />').attr('ng-repeat', 'option in $options').attr('ng-bind', 'option.text').attr('ng-value', 'option.value').attr((template.option.attrs || {})).addClass(template.option.className || ''));
+                        select.append($('<option />').attr('ng-repeat', 'option in $options').attr('ng-bind', 'option.text').attr('ng-value', 'option.id').attr((template.option.attrs || {})).addClass(template.option.className || ''));
                     }
                     return select[0].outerHTML;
                 };
@@ -80,6 +94,44 @@
 
             //Register plugins
             Editable.defaultSettings.services.display.plugins.editTypes.push(DisplayServiceEditTypePlugin);
+
+            var ColumnAttributeProcessor = (function (_super) {
+                __extends(ColumnAttributeProcessor, _super);
+                function ColumnAttributeProcessor() {
+                    _super.call(this, ['select2', 'asInput', 'select2Settings', 'select2Groups']);
+                }
+                ColumnAttributeProcessor.prototype.process = function (column, attrName, attrVal, $node) {
+                    var editable, template, attrs, input;
+                    if (!Editable.isColumnEditable($node))
+                        return;
+                    if (!angular.isObject(column.editable))
+                        column.editable = {};
+                    editable = column.editable;
+                    template = editable.template = editable.template || {};
+                    input = template.input = template.input || {};
+                    attrs = input.attrs = input.attrs || {};
+
+                    switch (attrName) {
+                        case 'select2':
+                            attrs['ui-select2'] = attrVal;
+                            break;
+                        case 'asInput':
+                            template.asInput = true;
+                            break;
+                        case 'select2Settings':
+                            editable.settings = attrVal;
+                            break;
+                        case 'select2Groups':
+                            editable.groups = attrVal;
+                            break;
+                    }
+                };
+                return ColumnAttributeProcessor;
+            })(dt.BaseAttributeProcessor);
+            uiSelect2.ColumnAttributeProcessor = ColumnAttributeProcessor;
+
+            //Register column attribute processor
+            dt.TableController.registerColumnAttrProcessor(new ColumnAttributeProcessor());
         })(_editable.uiSelect2 || (_editable.uiSelect2 = {}));
         var uiSelect2 = _editable.uiSelect2;
     })(dt.editable || (dt.editable = {}));

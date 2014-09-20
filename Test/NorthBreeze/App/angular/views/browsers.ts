@@ -55,6 +55,7 @@
                     [5, 10, 25, 50, 100, 200, "All"]
                 ],
                 columns: [
+                    { selectableColumn: true },
                     { iconColumn: true },
                     {
                         data: "engine", title: "Engine", className: "text-right", type: "string",
@@ -152,9 +153,7 @@
                         data: "date", title: "Date", type: "datetime", width: "200px",
                         editable: {
                             validators: { required: true },
-                            template: {
-                                time: { attrs: { 'data-minute-step': 10 } },
-                            }
+                            clearIcon: true,
                         },
                         expression: "data.date | date:'shortDate'"
                     },
@@ -192,7 +191,7 @@
                         }
                     },
                     editor: {
-                        type: dt.editable.InlineEditor
+                        type: dt.editable.BatchEditor
                     },
                     //row validators
                     validators: {

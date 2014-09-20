@@ -89,6 +89,9 @@
                     return ["date", "datetime", "time"];
                 };
 
+                DisplayServiceEditTypePlugin.prototype.dispose = function () {
+                };
+
                 DisplayServiceEditTypePlugin.prototype.getEditTemplateForType = function (type, col) {
                     var opts = Editable.getColumnTemplateSettings(col) || {};
                     var $template;

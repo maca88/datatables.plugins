@@ -20,26 +20,39 @@
                 CommandTablePlugin.registeredCommands[command.alias] = command;
         }
 
-        private table: TableController;
+        private tableController: ITableController;
         private $injector: ng.auto.IInjectorService;
         private dt = {
             api: null,
             settings: null
         };
 
-        public static $inject = ['dtTable', '$injector'];
-        constructor(dtTable: TableController, $injector: ng.auto.IInjectorService) {
-            this.table = dtTable;
+        public static $inject = ['tableController', '$injector'];
+        constructor(tableController: TableController, $injector: ng.auto.IInjectorService) {
+            this.tableController = tableController;
             this.$injector = $injector;
         }
 
         public name: string = 'command';
 
         //check if there is any column that has the commands property set
-        public isEnabled(): boolean {
-            var opts = this.table.settings.options;
+        public static isEnabled(settings): boolean {
             var enabled = false;
-            angular.forEach(opts.columns, col => {
+            for (var i = 0; i < settings.columns.length; i++) {
+                var col = settings.columns[i];
+                if (col.commands === undefined) continue;
+                if (!angular.isArray(col.commands))
+                    throw 'column "' + col.title + '" property commands must be an array';
+                enabled = true;
+                break;
+            }
+            return enabled;
+        }
+
+        public initialize(dtSettings): void {
+            this.dt.settings = dtSettings;
+            this.dt.api = dtSettings.oInstance.api();
+            angular.forEach(this.dt.settings.aoColumns, col => {
                 if (col.commands === undefined) return;
                 if (!angular.isArray(col.commands))
                     throw 'column "' + col.title + '" property commands must be an array';
@@ -50,14 +63,7 @@
                 col.defaultContent = cmds.template;
                 col.$commandScopes = cmds.scopes;
                 col.$commandInstances = cmds.instances;
-                enabled = true;
             });
-            return enabled;
-        }
-
-        public initialize(dtSettings): void {
-            this.dt.settings = dtSettings;
-            this.dt.api = dtSettings.oInstance.api();
         }
 
         private buildCommands(commands): any {
@@ -123,18 +129,54 @@
         }
 
         public destroy(): void {
-            this.table = null;
+            this.tableController = null;
             this.dt = null;
         }
 
-        private onCellPostLink(args: ICellPostLinkArgs) {
+        private onCellPostLink(event, args: ICellPostLinkArgs) {
             var col = args.column;
             args.scope.$commands = col.$commandScopes;
         }
     }
 
     //Register plugin
-    TableController.registerPlugin(CommandTablePlugin);
+    TableController.registerPlugin(CommandTablePlugin.isEnabled, CommandTablePlugin);
+
+
+    export class ColumnAttributeProcessor extends BaseAttributeProcessor implements IColumnAttributeProcessor {
+        constructor() {
+            super([/^cmd([0-9]+)/gi]);
+        }
+
+        public process(column, attrName: string, attrVal, $node: JQuery): void {
+            if (!angular.isString(attrVal) && !angular.isArray(attrVal) && !attrVal.length)
+                throw 'attribute dt-cmd must contain a string or an array with at least one element. [name, settings = optional]';
+            var pattern = this.getMatchedPattern(attrName);
+            var commands = column.commands = column.commands || [];
+            var cmd: any = {
+                index: parseInt(pattern.exec(attrName)[1])
+            };
+            if (angular.isString(attrVal))
+                cmd.name = attrVal;
+            else {
+                cmd.name = attrVal[0];
+            if (attrVal.length > 1)
+                cmd.settings = attrVal[1];
+            }
+
+            //position the command in the array
+            var cIdx = 0;
+            for (var i = 0; i < commands.length; i++) {
+                var idx = commands[i].index || i;
+                if (idx < cmd.index)
+                    cIdx++;
+            }
+            commands.splice(cIdx, 0, cmd);
+        }
+    }
+
+    //Register column attribute processor
+    TableController.registerColumnAttrProcessor(new ColumnAttributeProcessor());
 
 
     export class BaseCommand implements ICommand {

@@ -17,6 +17,10 @@
             return ['select'];
         }
 
+        public dispose() {
+            this.displayService = null;
+        }
+
         public selectControl(event, cell, col): boolean {
             var select:any = $('select[ui-select2]', cell);
             if (!select.length) return false;
@@ -73,6 +77,10 @@
                 .addClass(template.select.className || '')
                 .addClass(this.displayService.getControlClass());
 
+            if (opts.ngOptions) {
+                select.attr('ng-options', opts.ngOptions);
+            }
+
             //we have to add an empty option
             if (settings.allowClear === true) {
                 select.append($('<option />'));
@@ -89,7 +97,7 @@
                         $('<option />')
                         .attr('ng-repeat', 'option in group.options')
                         .attr('ng-bind', 'option.text')
-                        .attr('ng-value', 'option.value')
+                        .attr('ng-value', 'option.id')
                         .attr(<Object>(template.option.attrs || {}))
                         .addClass(template.option.className || '')
                     ));
@@ -98,7 +106,7 @@
                     $('<option />')
                         .attr('ng-repeat', 'option in $options')
                         .attr('ng-bind', 'option.text')
-                        .attr('ng-value', 'option.value')
+                        .attr('ng-value', 'option.id')
                         .attr(<Object>(template.option.attrs || {}))
                         .addClass(template.option.className || '')
                     );
@@ -109,6 +117,42 @@
 
     //Register plugins
     Editable.defaultSettings.services.display.plugins.editTypes.push(DisplayServiceEditTypePlugin);
+
+
+    export class ColumnAttributeProcessor extends BaseAttributeProcessor implements IColumnAttributeProcessor {
+        constructor() {
+            super(['select2', 'asInput', 'select2Settings', 'select2Groups']);
+        }
+
+        public process(column, attrName: string, attrVal, $node: JQuery): void {
+            var editable, template, attrs, input;
+            if (!Editable.isColumnEditable($node)) return;
+            if (!angular.isObject(column.editable))
+                column.editable = {};
+            editable = column.editable;
+            template = editable.template = editable.template || {};
+            input = template.input = template.input || {};
+            attrs = input.attrs = input.attrs || {};
+
+            switch (attrName) {
+                case 'select2':
+                    attrs['ui-select2'] = attrVal;
+                    break;
+                case 'asInput':
+                    template.asInput = true;
+                    break;
+                case 'select2Settings':
+                    editable.settings = attrVal;
+                    break;
+                case 'select2Groups':
+                    editable.groups = attrVal;
+                    break;
+            }
+        }
+    }
+
+    //Register column attribute processor
+    TableController.registerColumnAttrProcessor(new ColumnAttributeProcessor());
 
     //#endregion
 }

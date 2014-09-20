@@ -63,31 +63,46 @@
 
         public resetForms() {
             $.each(this.settings.formSelectors, (i, selector) => {
-                var form = $(selector);
+                var form = this.executeSelector(selector);
                 if (!form.length) return;
-                this.settings.resetForm(form);
+                this.settings.resetForm.call(this, form);
             });
         }
 
         public setFormsData(data) {
             $.each(data, (selector, val) => {
-                var form = $(selector);
+                var form = this.executeSelector(selector);
                 if (!form.length) return;
-                this.settings.setFormData(form, val);
+                this.settings.setFormData.call(this, form, val);
             });
         }
 
         public getFormsData(separateForms = false) {
             var data = null;
             $.each(this.settings.formSelectors, (i, selector) => {
-                var form = $(selector);
+                var form = this.executeSelector(selector);
                 if (!form.length) return;
                 if (separateForms) {
-                    (data = data || {})[selector] = this.settings.getFormData(form);
+                    (data = data || {})[selector] = this.settings.getFormData.call(this, form);
                 } else
-                    data = this.settings.mergeFormData(data, this.settings.getFormData(form));
+                    data = this.settings.mergeFormData.call(this, data, this.settings.getFormData.call(this, form));
             });
             return data;
+        }
+
+        private executeSelector(selector: string) {
+            var parent = null;
+            var currentNode: Node = this.dt.settings.nTable;
+            while (currentNode) {
+                parent = currentNode;
+                currentNode = currentNode.parentNode;
+            }
+            if (parent instanceof DocumentFragment)
+                parent = parent.children;
+            var elem = $(selector, parent);
+            if (!elem.length) 
+                elem = $(selector);
+            return elem;
         }
 
         private setServerParams(data) {
@@ -103,7 +118,7 @@
 
         private setupForms() {
             $.each(this.settings.formSelectors, (i, selector) => {
-                $(selector).submit(e => {
+                this.executeSelector(selector).submit(e => {
                     e.preventDefault();
                     this.dt.api.draw(true);
                 });

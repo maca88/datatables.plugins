@@ -12,7 +12,7 @@
 
     export class I18NTablePlugin implements ITablePlugin, I18NPlugin {
         
-        private table: TableController;
+        private tableController: ITableController;
         private dt = {
             api: null,
             settings: null
@@ -25,9 +25,9 @@
             
         };
 
-        public static $inject = ['dtTable', '$injector'];
-        constructor(dtTable: TableController, $injector: ng.auto.IInjectorService) {
-            this.table = dtTable;
+        public static $inject = ['tableController', '$injector'];
+        constructor(tableController: TableController, $injector: ng.auto.IInjectorService) {
+            this.tableController = tableController;
             $.extend(this.resources, I18NTablePlugin.globalResources);
             this.$injector = $injector;
             this.setupService();
@@ -54,7 +54,7 @@
 
         public name: string = 'i18N';
 
-        public isEnabled(): boolean {
+        public static isEnabled(): boolean {
             return true;
         }
 
@@ -67,7 +67,7 @@
             this.service = null;
             this.resources = null;
             this.dt = null;
-            this.table = null;
+            this.tableController = null;
         }
 
         private setupService() {
@@ -82,15 +82,15 @@
         }
 
 
-        private tableCreated(api): void {
+        private tableCreated(event: ng.IAngularEvent, api): void {
         }
 
-        private tableCreating(): void {
+        private tableCreating(event: ng.IAngularEvent): void {
         }
     }
 
     //Register plugin
-    TableController.registerPlugin(I18NTablePlugin);
+    TableController.registerPlugin(I18NTablePlugin.isEnabled, I18NTablePlugin);
 
 
     //#region I18N services

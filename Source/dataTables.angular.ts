@@ -62,15 +62,47 @@ module dt {
 
     export interface ITablePlugin {
         name: string;
-        isEnabled(): boolean;
         initialize(dtSettings): void
         destroy(): void;
         getEventListeners(): IEventListener[];
     }
 
+    
+
+    export interface ITableController {
+        addEventListener(el: IEventListener): Function;
+        removeEventListener(el: IEventListener): void;
+        $attrs: any;
+        settings: any;
+        $scope: any;
+        $element: JQuery;
+    }
+
+    export interface IAttributeProcessor {
+        isAttributeSupported(attrName: string): boolean;
+        process(obj, attrName: string, attrVal, $node: JQuery): void;
+    }
+
+    export interface IColumnAttributeProcessor extends IAttributeProcessor { 
+    }
+
+    export interface ITableAttributeProcessor extends IAttributeProcessor {
+    }
+
+    //private interfaces
+    interface ITablePluginStore {
+        pluginType: ITablePlugin;
+        isEnabled(options);
+    }
+
+    interface IActiveTablePlugin {
+        instance: ITablePlugin;
+        eventListeners: IEventListener[];
+    }
+
     //#endregion
 
-    export class TableController {
+    export class TableController implements ITableController {
 
         //constant
         public static events = {
@@ -82,11 +114,23 @@ module dt {
             rowPreLink: 'rowPreLink',
             tableCreating: 'tableCreating',
             tableCreated: 'tableCreated',
-            blocksCreated: 'blocksCreated'
+            blocksCreated: 'blocksCreated',
         };
 
-        public static registerPlugin = (plugin) => {
-            TableController.defaultSettings.plugins.push(plugin);
+        public static registerPlugin = (isEnabledFn: Function, pluginType) => {
+            var pluginStore: ITablePluginStore = {
+                isEnabled: <any>isEnabledFn,
+                pluginType: pluginType
+            };
+            TableController.defaultSettings.plugins.push(pluginStore);
+        }
+
+        public static registerColumnAttrProcessor = (processor: IColumnAttributeProcessor) => {
+            TableController.defaultSettings.columnAttrProcessors.push(processor);
+        }
+
+        public static registerTableAttrProcessor = (processor: ITableAttributeProcessor) => {
+            TableController.defaultSettings.tableAttrProcessors.push(processor);
         }
 
         public static defaultSettings = {
@@ -101,7 +145,9 @@ module dt {
             tableCreated: [],
             rowsRemoved: [],
             rowsAdded: [],
-            plugins: []
+            plugins: [],
+            columnAttrProcessors: [],
+            tableAttrProcessors: []
         };
         public dt = {
             api: null,
@@ -123,8 +169,10 @@ module dt {
         private lastBlockMap = {};
         private templatesToLoad = [];
         private watchedProperties = [];
-        private activePlugins = [];
-        //Plugins event listeners
+        private activePlugins: IActiveTablePlugin[] = [];
+        private declarativeHeader = false;
+        private declarativeFooter = false;
+        //Plugins event listeners. $emit is not an option as the events would be transmitted cross different tables
         private eventListeners = {
             'cellCompile': [],
             'cellPostLink': [],
@@ -160,24 +208,44 @@ module dt {
             }
         };
 
+        //Will execute the selector form the root of the node passed as parameter
+        public static executeSelector(selector: string, node: Node) {
+            var parent = null;
+            var currentNode: Node = node;
+            while (currentNode) {
+                parent = currentNode;
+                currentNode = currentNode.parentNode;
+            }
+            if (parent instanceof DocumentFragment)
+                parent = parent.children;
+            var elem = $(selector, parent);
+            if (!elem.length)
+                elem = $(selector);
+            return elem;
+        }
+
+        public addEventListener(el: IEventListener): Function {
+            this.eventListeners[el.event].push(el);
+            return () => this.removeEventListener(el);
+        }
+
+        public removeEventListener(el: IEventListener) {
+            var idx = this.eventListeners[el.event].indexOf(el);
+            if (idx >= 0)
+                this.eventListeners[el.event].splice(idx, 1);
+        }
 
         public setupTable() { //postLink
-            this.mergeDomAttributes();
+            if ($('tfoot>tr>th', this.$element).length)
+                this.declarativeFooter = true;
+            if ($('thead>tr>th', this.$element).length)
+                this.declarativeHeader = true;
 
-            // Store a list of elements from previous run. This is a hash where key is the item from the
-            // iterator, and the value is objects with following properties.
-            //   - scope: bound scope
-            //   - id: hash of the item.
-            //   - index: position
-            this.lastBlockMap = {};
-
-            this.mergeDomColumn();
-
+            this.mergeTableAttributes();
+            this.mergeColumnAttributes();
             this.setupColumns();
-
             if (this.settings.rowBinding) 
                 this.setupRowBinding();
-
             this.loadTemplates(this.initialize.bind(this));
         }
 
@@ -200,14 +268,29 @@ module dt {
                 onSuccess();
         }
 
-        private triggerEventListeners(name, params) {
+        private triggerEventListeners(name: string, params: any[]): ng.IAngularEvent {
+            var stopPropagation = false,
+                event: ng.IAngularEvent = {
+                    targetScope: this.$scope,
+                    currentScope: this.$scope,
+                    name: name,
+                    stopPropagation: () => { stopPropagation = true; },
+                    preventDefault: () => {
+                        event.defaultPrevented = true;
+                    },
+                    defaultPrevented: false
+                };
+
+            var elParams = [event].concat(params);
+
             var arr = this.eventListeners[name] || [];
             var eventListener: IEventListener;
             for (var i = 0; i < arr.length; i++) {
                 eventListener = arr[i];
+                if (stopPropagation) break;
 
                 //skip listeners if the condition returns false
-                if (eventListener.condition && !eventListener.condition())
+                if (eventListener.condition && !eventListener.condition.call(eventListener.scope))
                     continue;
 
                 //lazy event listener
@@ -215,19 +298,71 @@ module dt {
                     eventListener.scope = eventListener.scope();
                     eventListener.fn = eventListener.fn();
                 }
-                eventListener.fn.apply(eventListener.scope, params);
+                eventListener.fn.apply(eventListener.scope, elParams);
             }
+            return event;
+        }
+
+        private instantiatePlugins() {
+            var locals = {
+                'tableController': this
+            };
+            angular.forEach(this.settings.plugins, (pluginStore: ITablePluginStore) => {
+                if (!pluginStore.isEnabled(this.settings.options)) return;
+
+                var plugin: ITablePlugin = this.$injector.instantiate(pluginStore.pluginType, locals);
+                var activePlugin: IActiveTablePlugin = {
+                    eventListeners: plugin.getEventListeners(),
+                    instance: plugin
+                };
+                this.activePlugins.push(activePlugin);
+                locals[plugin.name] = plugin;
+                //Register event listeners
+                var eventListeners = activePlugin.eventListeners;
+                if (angular.isArray(eventListeners)) {
+                    angular.forEach(eventListeners, (el: IEventListener) => {
+                        this.eventListeners[el.event].push(el);
+                    });
+                }
+            });
         }
 
         private initializePlugins(dtSettings) {
+            var options = this.settings.options;
             this.dt.settings = dtSettings;
             this.dt.api = dtSettings.oInstance.api();
             //setup table scope properties
-            this.setupScope();
+            //this.setupScope();
 
-            angular.forEach(this.activePlugins, (plugin: ITablePlugin) => {
-                plugin.initialize(dtSettings);
+            //Copy custom table properties
+            angular.forEach(options, (val, key) => {
+                if (val === undefined || dtSettings.hasOwnProperty(key)) return;
+                dtSettings[key] = val;
             });
+
+            //Copy custom column properties
+            angular.forEach(dtSettings.aoColumns, (oCol, idx) => {
+                var origIdx = oCol._ColReorder_iOrigCol; //take care of reordered columns
+                origIdx = origIdx == null ? idx : origIdx;
+                var col = options.columns[origIdx];
+                angular.forEach(col, (val, key) => {
+                    if (oCol.hasOwnProperty(key) || val === undefined) return;
+                    oCol[key] = val;
+                });
+            });
+
+            angular.forEach(this.activePlugins, (activePlugin: IActiveTablePlugin) => {
+                activePlugin.instance.initialize(dtSettings); 
+            });
+        }
+
+        private destroyActivePlugin(plugin: IActiveTablePlugin) {
+            //remove event listeners
+            angular.forEach(plugin.eventListeners, (el: IEventListener) => {
+                var idx = this.eventListeners[el.event].indexOf(el);
+                this.eventListeners[el.event].splice(idx);
+            });
+            plugin.instance.destroy();
         }
 
         private initialize() {
@@ -250,21 +385,8 @@ module dt {
             //Enable angular plugins
             options.dom = options.dom ? 'E' + options.dom : 'E' + $.fn.dataTable.defaults.dom;
 
-            var locals = {
-                'dtTable': this
-            };
-            angular.forEach(this.settings.plugins, pluginType => {
-                var plugin: ITablePlugin = this.$injector.instantiate(pluginType, locals);
-                if (!plugin.isEnabled()) return;
-                locals[plugin.name] = plugin;
-                this.activePlugins.push(plugin);
-                var eventListeners = plugin.getEventListeners();
-                if (angular.isArray(eventListeners)) {
-                    angular.forEach(eventListeners, (el: IEventListener) => {
-                        this.eventListeners[el.event].push(el);
-                    });
-                }
-            });
+            //Before trigger the first event instantiate plugins that evaluate as enabled
+            this.instantiatePlugins();
 
             this.triggerEventListeners(TableController.events.tableCreating, []);
 
@@ -272,6 +394,16 @@ module dt {
             var api = this.dt.api = this.$element.DataTable(options);
             if (debug) console.timeEnd('initDataTable');
             var dtSettings = this.dt.settings = api.settings()[0];
+            //setup table scope properties
+            this.setupScope();
+            //he have to compile header manually
+            if (!this.declarativeHeader) {
+                this.$compile($(dtSettings.nTHead))(this.$scope);
+            }
+            //he have to compile footer manually
+            if (!this.declarativeFooter && dtSettings.nTFoot) {
+                this.$compile($(dtSettings.nTFoot))(this.$scope);
+            }
 
             this.triggerEventListeners(TableController.events.tableCreated, [api]);
 
@@ -281,17 +413,6 @@ module dt {
             dtSettings.getBindingData = () => {
                 return this.$scope.$eval(this.settings.collectionPath);
             };
-
-            //Copy the custom column parameters to the aoColumns
-            angular.forEach(dtSettings.aoColumns, (oCol, idx) => {
-                var origIdx = oCol._ColReorder_iOrigCol; //take care of reordered columns
-                origIdx = origIdx == null ? idx : origIdx;
-                var col = options.columns[origIdx];
-                angular.forEach(col, (val, key) => {
-                    if (oCol[key] !== undefined || val === undefined) return;
-                    oCol[key] = val;
-                });
-            });
 
             //Attach to dt events for digestion
             var digestProxy = $.proxy(this.digestDisplayedPage, this, api);
@@ -485,14 +606,15 @@ module dt {
             var debug = this.settings.debug;
             if (debug) console.time("Destroying datatables with id: " + id);
             $(this.dt.settings.oInstance).off('column-reorder.angular');
-            angular.forEach(this.activePlugins, (plugin: ITablePlugin) => {
-                plugin.destroy();
+            angular.forEach(this.activePlugins, (plugin: IActiveTablePlugin) => {
+                this.destroyActivePlugin(plugin);
             });
             this.dt.api.destroy();
             this.dt = null;
             this.settings = null;
             this.$templateCache = null;
             this.activePlugins = null;
+            this.eventListeners = null;
             this.$attrs = null;
             this.$q = null;
             this.$http = null;
@@ -508,6 +630,7 @@ module dt {
         private setupScope() {
             this.$scope.$columns = this.dt.settings.aoColumns;
             this.$scope.$rows = this.dt.settings.aoData;
+            this.$scope.$table = this.dt.api;
             this.$scope.$$tableController = this;
         }
 
@@ -734,10 +857,10 @@ module dt {
         }
 
         //table attributes have the highest priority
-        private mergeDomAttributes() {
+        private mergeTableAttributes() {
             var attrs = this.$attrs;
-            var scope = this.$scope;
             var $element = this.$element;
+            var scope = this.$scope;
 
             this.settings.invalidateRows = attrs.dtInvalidateRows ? attrs.dtInvalidateRows : this.settings.invalidateRows;
             this.settings.digestOnDraw = attrs.dtDigestOnDraw ? (attrs.dtDigestOnDraw == "true") : this.settings.digestOnDraw;
@@ -807,7 +930,7 @@ module dt {
             });
         }
 
-        private mergeDomColumn() {
+        private mergeColumnAttributes() {
             var table = this.$element;
             var explicitColumns = [];
             angular.forEach(angular.element('thead>tr>th', table), (node) => {
@@ -824,6 +947,7 @@ module dt {
 
         private mergeNodeAttributesToObject(node, obj, ignoreAttrs = []) {
             var $node = angular.element(node);
+            var nodeName = node.nodeName.toUpperCase();
             angular.forEach(node.attributes, nodeAttr => {
                 if (nodeAttr.name.indexOf("dt-") !== 0 || ignoreAttrs.indexOf(nodeAttr.name) >= 0) return;
                 var words = nodeAttr.name.substring(3).split('-');
@@ -834,15 +958,35 @@ module dt {
                     else
                         popName += w;
                 });
-                obj[popName] = $node.attr(nodeAttr.name);
-                if (!obj[popName]) return;
+                var propVal:any = $node.attr(nodeAttr.name);
+                if (!propVal) return;
 
-                if (obj[popName].toUpperCase() == 'TRUE')
-                    obj[popName] = true;
-                else if (obj[popName].toUpperCase() == 'FALSE')
-                    obj[popName] = false;
-                else if (obj[popName].length && (obj[popName][0] == '{' || obj[popName][0] == '['))
-                    obj[popName] = this.$scope.$eval(obj[popName]);
+                if (propVal.toUpperCase() == 'TRUE')
+                    propVal = true;
+                else if (propVal.toUpperCase() == 'FALSE')
+                    propVal = false;
+                else if (propVal.length && (propVal[0] == '{' || propVal[0] == '['))
+                    propVal = this.$scope.$eval(propVal);
+
+                var attrProcessed = false;
+                var processors: IAttributeProcessor[] = nodeName === 'TABLE'
+                    ? this.settings.tableAttrProcessors
+                    : this.settings.columnAttrProcessors;
+
+                for (var i = 0; i < processors.length; i++) {
+                    var processor: IAttributeProcessor = processors[i];
+                    if (!processor.isAttributeSupported(popName)) continue;
+                    processor.process(obj, popName, propVal, $node);
+                    attrProcessed = true;
+                    break;
+                }
+
+                if (!attrProcessed) {
+                    if (obj.hasOwnProperty(popName) && $.isPlainObject(obj[popName]) && $.isPlainObject(propVal))
+                        $.extend(true, obj[popName], propVal);
+                    else
+                        obj[popName] = propVal;
+                }  
             });
         }
 
@@ -881,8 +1025,10 @@ module dt {
                     col.orderable = false;
                     col.searchable = false;
                     col.type = "html";
-                    if (col.template)
-                        col.templateHtml = $(col.template).clone().removeAttr('ng-non-bindable').show().html();
+                    if (col.template) {
+                        var tpl = TableController.executeSelector(col.template, this.$element[0]);
+                        col.templateHtml = tpl.clone().removeAttr('ng-non-bindable').show().html();
+                    }
                     else {
                         var tmpl = this.$templateCache.get(col.templateUrl);
                         if (!tmpl)
@@ -921,7 +1067,42 @@ module dt {
 
     }
 
-    
+    export class BaseAttributeProcessor implements IAttributeProcessor {
+
+        public patterns: any[] = [];
+
+        constructor(patterns: any[]) {
+            this.patterns = patterns;
+        }
+
+        public isAttributeSupported(attrName: string): boolean {
+            return this.getMatchedPattern(attrName) !== null;
+        }
+
+        public process(obj, attrName: string, attrVal, $node: JQuery): void {
+            
+        }
+
+        public getMatchedPattern(attrName: string) {
+            var result: any = null;
+            for (var i = 0; i < this.patterns.length; i++) {
+                var attr = this.patterns[i];
+                if (attr instanceof RegExp) {
+                    (<RegExp>attr).lastIndex = 0;
+                    if ((<RegExp>attr).test(attrName))
+                        result = attr;
+                    (<RegExp>attr).lastIndex = 0;
+                } else if (angular.isString(attr) && (attrName === attr)) {
+                    result = attr;
+                } else if (angular.isFunction(attr) && attr(attrName)) {
+                    result = attr;
+                }
+                if (result !== null) return result;
+            }
+            return null;
+        }
+    }
+
     export class AngularHelper {
         
         private static uid: number = 0;
@@ -1111,7 +1292,7 @@ module dt {
     });
     $.fn.DataTable.Api.register('digestDisplayedPage()', function() {
         //Digest only rendered rows
-        $("#" + this.table().node().id + " > tbody > tr").each(function() {
+        $("tbody > tr", this.table().node()).each(function() {
             var rowScope = angular.element(this).scope();
             if (rowScope && !rowScope.$$phase)
                 rowScope.$digest();

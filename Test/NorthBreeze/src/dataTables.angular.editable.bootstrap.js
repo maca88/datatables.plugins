@@ -10,7 +10,7 @@ var dt;
         (function (bootstrap) {
             var Editable = dt.editable.Editable;
 
-            Editable.defaultEditTemplateControl.className = 'form-control';
+            Editable.defaultEditTemplateControl.className = 'form-control input-sm';
             Editable.defaultEditTemplateWrapper.className = 'form-group';
 
             var DisplayServiceStylePlugin = (function () {
@@ -40,7 +40,7 @@ var dt;
                     _super.call(this, {
                         className: 'btn btn-default',
                         attrs: {
-                            'ng-bind': "$isInEditMode() === false ? 'Edit' : 'Save'"
+                            'ng-bind': "$isInEditMode() === false ? ('Edit' | translate) : ('Save' | translate)"
                         }
                     }, settings);
                 }
@@ -56,7 +56,7 @@ var dt;
                 function BootstrapIconEditCommand(settings) {
                     _super.call(this, {
                         className: 'btn btn-default',
-                        html: '<span title="' + "{{$isInEditMode() === false ? 'Edit' : 'Save'}}" + '" ' + 'class="glyphicon" ng-class="{' + " 'disabled': " + dt.command.BaseCommand.CAN_EXEC_EXPR + " === false," + " 'glyphicon-edit': $isInEditMode() === false, 'glyphicon-floppy-disk': $isInEditMode() }" + '"></span>'
+                        html: '<span title="' + "{{$isInEditMode() === false ? ('Edit' | translate) : ('Save' | translate)}}" + '" ' + 'class="glyphicon" ng-class="{' + " 'disabled': " + dt.command.BaseCommand.CAN_EXEC_EXPR + " === false," + " 'glyphicon-edit': $isInEditMode() === false, 'glyphicon-floppy-disk': $isInEditMode() }" + '"></span>'
                     }, settings);
                 }
                 BootstrapIconEditCommand.alias = 'bs.icon.edit';
@@ -77,6 +77,7 @@ var dt;
                 function BootstrapRemoveCommand(settings) {
                     _super.call(this, {
                         className: 'btn btn-default',
+                        attrs: { 'translate': '' },
                         html: 'Remove'
                     }, settings);
                 }
@@ -92,7 +93,7 @@ var dt;
                 function BootstrapIconRemoveCommand(settings) {
                     _super.call(this, {
                         className: 'btn btn-default',
-                        html: '<span title="Remove" class="glyphicon glyphicon-remove"></span>'
+                        html: '<span title="{{\'Remove\' | translate}}" class="glyphicon glyphicon-remove"></span>'
                     }, settings);
                 }
                 BootstrapIconRemoveCommand.alias = 'bs.icon.remove';
@@ -113,6 +114,7 @@ var dt;
                 function BootstrapRejectCommand(settings) {
                     _super.call(this, {
                         className: 'btn btn-default',
+                        attrs: { 'translate': '' },
                         html: 'Reject'
                     }, settings);
                 }
@@ -128,7 +130,7 @@ var dt;
                 function BootstrapIconRejectCommand(settings) {
                     _super.call(this, {
                         className: 'btn btn-default',
-                        html: '<span title="Reject" class="glyphicon glyphicon-repeat"></span>'
+                        html: '<span title="{{\'Reject\' | translate}}" class="glyphicon glyphicon-repeat"></span>'
                     }, settings);
                 }
                 BootstrapIconRejectCommand.alias = 'bs.icon.reject';

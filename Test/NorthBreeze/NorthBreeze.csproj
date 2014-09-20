@@ -41,8 +41,20 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="App\angular\examples\editable\programmatic.html" />
-    <Content Include="App\angular\examples\editable\programmatic.js">
+    <Content Include="App\angular\examples\editable\batch\declarative.html" />
+    <Content Include="App\angular\examples\editable\batch\declarative.js">
+      <DependentUpon>declarative.ts</DependentUpon>
+    </Content>
+    <Content Include="App\angular\examples\editable\batch\programmatic.html" />
+    <Content Include="App\angular\examples\editable\batch\programmatic.js">
+      <DependentUpon>programmatic.ts</DependentUpon>
+    </Content>
+    <Content Include="App\angular\examples\editable\inline\declarative.html" />
+    <Content Include="App\angular\examples\editable\inline\declarative.js">
+      <DependentUpon>declarative.ts</DependentUpon>
+    </Content>
+    <Content Include="App\angular\examples\editable\inline\programmatic.html" />
+    <Content Include="App\angular\examples\editable\inline\programmatic.js">
       <DependentUpon>programmatic.ts</DependentUpon>
     </Content>
     <Content Include="App\angular\examples\programmatic.js">
@@ -106,6 +118,7 @@
       <DependentUpon>Northwind.mdf</DependentUpon>
     </Content>
     <Content Include="CommandLine.dll" />
+    <Content Include="Content\bootstrap-datetimepicker.css" />
     <Content Include="Content\bootstrap-theme.css" />
     <Content Include="Content\bootstrap-theme.min.css" />
     <Content Include="Content\bootstrap.min.css" />
@@ -267,6 +280,7 @@
     <Content Include="Scripts\angular-ui\ui-bootstrap.js" />
     <Content Include="Scripts\angular-ui\ui-bootstrap.min.js" />
     <Content Include="Scripts\angular.js" />
+    <Content Include="Scripts\bootstrap-datetimepicker.js" />
     <Content Include="Scripts\bootstrap.js" />
     <Content Include="Scripts\bootstrap.min.js" />
     <Content Include="Scripts\breeze.ajaxpost.js" />
@@ -329,6 +343,10 @@
     <None Include="Scripts\jquery-2.1.1.intellisense.js" />
     <Content Include="Scripts\jquery-2.1.1.js" />
     <Content Include="Scripts\jquery-2.1.1.min.js" />
+    <Content Include="Scripts\moment-with-locales.js" />
+    <Content Include="Scripts\moment-with-locales.min.js" />
+    <Content Include="Scripts\moment.js" />
+    <Content Include="Scripts\moment.min.js" />
     <Content Include="Scripts\q.js" />
     <Content Include="Scripts\q.min.js" />
     <Content Include="Scripts\Select2-locales\select2_locale_ar.js" />
@@ -379,7 +397,16 @@
     <Content Include="Scripts\select2.js" />
     <Content Include="Scripts\select2.min.js" />
     <Content Include="Scripts\toastr.js" />
-    <TypeScriptCompile Include="App\angular\examples\editable\programmatic.ts">
+    <TypeScriptCompile Include="App\angular\examples\editable\batch\declarative.ts">
+      <DependentUpon>declarative.html</DependentUpon>
+    </TypeScriptCompile>
+    <TypeScriptCompile Include="App\angular\examples\editable\batch\programmatic.ts">
+      <DependentUpon>programmatic.html</DependentUpon>
+    </TypeScriptCompile>
+    <TypeScriptCompile Include="App\angular\examples\editable\inline\declarative.ts">
+      <DependentUpon>declarative.html</DependentUpon>
+    </TypeScriptCompile>
+    <TypeScriptCompile Include="App\angular\examples\editable\inline\programmatic.ts">
       <DependentUpon>programmatic.html</DependentUpon>
     </TypeScriptCompile>
     <TypeScriptCompile Include="App\angular\examples\programmatic.ts">
@@ -420,7 +447,11 @@
     </TypeScriptCompile>
     <TypeScriptCompile Include="northwind.d.ts" />
     <TypeScriptCompile Include="Scripts\jaydata.d.ts" />
+    <TypeScriptCompile Include="src\angular.datetimepicker.ts" />
     <TypeScriptCompile Include="src\dataTables.advancedFilter.ts" />
+    <Content Include="src\angular.datetimepicker.js">
+      <DependentUpon>angular.datetimepicker.ts</DependentUpon>
+    </Content>
     <Content Include="src\dataTables.advancedFilter.js">
       <DependentUpon>dataTables.advancedFilter.ts</DependentUpon>
     </Content>
@@ -428,15 +459,20 @@
     <TypeScriptCompile Include="src\dataTables.angular.editable.angularStrap.ts" />
     <TypeScriptCompile Include="src\dataTables.angular.editable.bootstrap.ts" />
     <TypeScriptCompile Include="src\dataTables.angular.editable.breeze.ts" />
+    <TypeScriptCompile Include="src\dataTables.angular.editable.datetimepicker.ts" />
     <TypeScriptCompile Include="src\dataTables.angular.editable.uiBootstrap.ts" />
     <TypeScriptCompile Include="src\dataTables.angular.editable.uiSelect2.ts" />
     <TypeScriptCompile Include="src\dataTables.angular.i18N.ts" />
+    <TypeScriptCompile Include="src\dataTables.angular.selectable.bootstrap.ts" />
     <TypeScriptCompile Include="src\dataTables.angular.selectable.ts" />
     <TypeScriptCompile Include="src\dataTables.entityFilter.ts" />
     <TypeScriptCompile Include="src\dataTables.colPin.ts" />
     <TypeScriptCompile Include="src\dataTables.colResize.ts" />
     <Content Include="src\dataTables.angular.command.js">
       <DependentUpon>dataTables.angular.command.ts</DependentUpon>
+    </Content>
+    <Content Include="src\dataTables.angular.editable.datetimepicker.js">
+      <DependentUpon>dataTables.angular.editable.datetimepicker.ts</DependentUpon>
     </Content>
     <Content Include="src\dataTables.angular.editable.uiBootstrap.js">
       <DependentUpon>dataTables.angular.editable.uiBootstrap.ts</DependentUpon>
@@ -446,6 +482,9 @@
     </Content>
     <Content Include="src\dataTables.angular.js">
       <DependentUpon>dataTables.angular.ts</DependentUpon>
+    </Content>
+    <Content Include="src\dataTables.angular.selectable.bootstrap.js">
+      <DependentUpon>dataTables.angular.selectable.bootstrap.ts</DependentUpon>
     </Content>
     <Content Include="src\dataTables.angular.selectable.js">
       <DependentUpon>dataTables.angular.selectable.ts</DependentUpon>

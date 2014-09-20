@@ -1,2 +1,23 @@
 ﻿<h2>Home</h2>
 
+Disable fieldset<input type="checkbox" ng-model="vm.bool"/>
+
+<fieldset ng-disabled="vm.bool">
+    
+    <input type='text' class="form-control" bs-datetime-picker ng-model="vm.date" dp-pick-time="false" />
+
+    <input type='text' class="form-control" bs-datetime-picker ng-model="vm.time" dp-pick-date="false" />
+    
+    <input type='text' class="form-control" bs-datetime-picker ng-model="vm.date" readonly />
+
+    <input type='text' class="form-control" bs-datetime-picker ng-model="vm.date" disabled />
+
+    <input type='text' class="form-control" bs-datetime-picker ng-model="vm.date" bs-icon class="form-control" />
+    
+    <input type='text' class="form-control" bs-datetime-picker ng-model="vm.date" bs-clear-icon class="form-control" />
+    
+    <input type='text' class="form-control" bs-datetime-picker ng-model="vm.date" bs-icon bs-clear-icon disabled />
+
+</fieldset>
+
+

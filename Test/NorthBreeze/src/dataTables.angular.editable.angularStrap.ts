@@ -84,6 +84,10 @@
             return ["date", "datetime", "time"];
         }
 
+        public dispose() {
+            
+        }
+
         public getEditTemplateForType(type, col): string {
             var opts = Editable.getColumnTemplateSettings(col) || {};
             var $template;

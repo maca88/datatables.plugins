@@ -2,14 +2,14 @@
 (function (dt) {
     (function (i18N) {
         var I18NTablePlugin = (function () {
-            function I18NTablePlugin(dtTable, $injector) {
+            function I18NTablePlugin(tableController, $injector) {
                 this.dt = {
                     api: null,
                     settings: null
                 };
                 this.resources = {};
                 this.name = 'i18N';
-                this.table = dtTable;
+                this.tableController = tableController;
                 $.extend(this.resources, I18NTablePlugin.globalResources);
                 this.$injector = $injector;
                 this.setupService();
@@ -33,7 +33,7 @@
                 ];
             };
 
-            I18NTablePlugin.prototype.isEnabled = function () {
+            I18NTablePlugin.isEnabled = function () {
                 return true;
             };
 
@@ -45,7 +45,7 @@
                 this.service = null;
                 this.resources = null;
                 this.dt = null;
-                this.table = null;
+                this.tableController = null;
             };
 
             I18NTablePlugin.prototype.setupService = function () {
@@ -59,18 +59,18 @@
                 this.service = this.$injector.instantiate(type, { resources: this.resources });
             };
 
-            I18NTablePlugin.prototype.tableCreated = function (api) {
+            I18NTablePlugin.prototype.tableCreated = function (event, api) {
             };
 
-            I18NTablePlugin.prototype.tableCreating = function () {
+            I18NTablePlugin.prototype.tableCreating = function (event) {
             };
-            I18NTablePlugin.$inject = ['dtTable', '$injector'];
+            I18NTablePlugin.$inject = ['tableController', '$injector'];
             return I18NTablePlugin;
         })();
         i18N.I18NTablePlugin = I18NTablePlugin;
 
         //Register plugin
-        dt.TableController.registerPlugin(I18NTablePlugin);
+        dt.TableController.registerPlugin(I18NTablePlugin.isEnabled, I18NTablePlugin);
 
         //#region I18N services
         var DefaultI18NService = (function () {

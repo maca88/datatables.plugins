@@ -1,0 +1,24 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Datatables - Editable Example: Programmatic definition</title>
+
+    <link href="../../../../../libs/datatables/css/jquery.dataTables.css" rel="stylesheet" type="text/css" />
+    <script src="../../../../../Scripts/jquery-1.9.1.js"></script>
+    <script src="../../../../../libs/datatables/js/jquery.dataTables.js"></script>
+    <script src="../../../../../libs/datatables/extensions/KeyTable/js/dataTables.keyTable.js"></script>
+    <script src="../../../../../libs/angular.js"></script>
+    <script src="../../../../../src/dataTables.angular.js"></script>
+    <script src="../../../../../src/dataTables.angular.i18N.js"></script>
+    <script src="../../../../../src/dataTables.angular.command.js"></script>
+    <script src="../../../../../src/dataTables.angular.editable.js"></script>
+    <script src="programmatic.js"></script>
+</head>
+<body ng-app="app" ng-controller="mainController">
+
+    <h1>Programmatic</h1>
+
+    <table dt-table dt-data="data" dt-options="options"></table>
+
+</body>
+</html>

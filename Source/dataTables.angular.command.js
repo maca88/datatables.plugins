@@ -1,16 +1,22 @@
-﻿var dt;
+﻿var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var dt;
 (function (dt) {
     (function (_command) {
         
 
         var CommandTablePlugin = (function () {
-            function CommandTablePlugin(dtTable, $injector) {
+            function CommandTablePlugin(tableController, $injector) {
                 this.dt = {
                     api: null,
                     settings: null
                 };
                 this.name = 'command';
-                this.table = dtTable;
+                this.tableController = tableController;
                 this.$injector = $injector;
             }
             CommandTablePlugin.registerCommand = function (command) {
@@ -20,11 +26,25 @@
             };
 
             //check if there is any column that has the commands property set
-            CommandTablePlugin.prototype.isEnabled = function () {
-                var _this = this;
-                var opts = this.table.settings.options;
+            CommandTablePlugin.isEnabled = function (settings) {
                 var enabled = false;
-                angular.forEach(opts.columns, function (col) {
+                for (var i = 0; i < settings.columns.length; i++) {
+                    var col = settings.columns[i];
+                    if (col.commands === undefined)
+                        continue;
+                    if (!angular.isArray(col.commands))
+                        throw 'column "' + col.title + '" property commands must be an array';
+                    enabled = true;
+                    break;
+                }
+                return enabled;
+            };
+
+            CommandTablePlugin.prototype.initialize = function (dtSettings) {
+                var _this = this;
+                this.dt.settings = dtSettings;
+                this.dt.api = dtSettings.oInstance.api();
+                angular.forEach(this.dt.settings.aoColumns, function (col) {
                     if (col.commands === undefined)
                         return;
                     if (!angular.isArray(col.commands))
@@ -36,14 +56,7 @@
                     col.defaultContent = cmds.template;
                     col.$commandScopes = cmds.scopes;
                     col.$commandInstances = cmds.instances;
-                    enabled = true;
                 });
-                return enabled;
-            };
-
-            CommandTablePlugin.prototype.initialize = function (dtSettings) {
-                this.dt.settings = dtSettings;
-                this.dt.api = dtSettings.oInstance.api();
             };
 
             CommandTablePlugin.prototype.buildCommands = function (commands) {
@@ -109,23 +122,60 @@
             };
 
             CommandTablePlugin.prototype.destroy = function () {
-                this.table = null;
+                this.tableController = null;
                 this.dt = null;
             };
 
-            CommandTablePlugin.prototype.onCellPostLink = function (args) {
+            CommandTablePlugin.prototype.onCellPostLink = function (event, args) {
                 var col = args.column;
                 args.scope.$commands = col.$commandScopes;
             };
             CommandTablePlugin.registeredCommands = {};
 
-            CommandTablePlugin.$inject = ['dtTable', '$injector'];
+            CommandTablePlugin.$inject = ['tableController', '$injector'];
             return CommandTablePlugin;
         })();
         _command.CommandTablePlugin = CommandTablePlugin;
 
         //Register plugin
-        dt.TableController.registerPlugin(CommandTablePlugin);
+        dt.TableController.registerPlugin(CommandTablePlugin.isEnabled, CommandTablePlugin);
+
+        var ColumnAttributeProcessor = (function (_super) {
+            __extends(ColumnAttributeProcessor, _super);
+            function ColumnAttributeProcessor() {
+                _super.call(this, [/^cmd([0-9]+)/gi]);
+            }
+            ColumnAttributeProcessor.prototype.process = function (column, attrName, attrVal, $node) {
+                if (!angular.isString(attrVal) && !angular.isArray(attrVal) && !attrVal.length)
+                    throw 'attribute dt-cmd must contain a string or an array with at least one element. [name, settings = optional]';
+                var pattern = this.getMatchedPattern(attrName);
+                var commands = column.commands = column.commands || [];
+                var cmd = {
+                    index: parseInt(pattern.exec(attrName)[1])
+                };
+                if (angular.isString(attrVal))
+                    cmd.name = attrVal;
+                else {
+                    cmd.name = attrVal[0];
+                    if (attrVal.length > 1)
+                        cmd.settings = attrVal[1];
+                }
+
+                //position the command in the array
+                var cIdx = 0;
+                for (var i = 0; i < commands.length; i++) {
+                    var idx = commands[i].index || i;
+                    if (idx < cmd.index)
+                        cIdx++;
+                }
+                commands.splice(cIdx, 0, cmd);
+            };
+            return ColumnAttributeProcessor;
+        })(dt.BaseAttributeProcessor);
+        _command.ColumnAttributeProcessor = ColumnAttributeProcessor;
+
+        //Register column attribute processor
+        dt.TableController.registerColumnAttrProcessor(new ColumnAttributeProcessor());
 
         var BaseCommand = (function () {
             function BaseCommand(defSettings, settings) {

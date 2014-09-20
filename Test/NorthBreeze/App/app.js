@@ -1,6 +1,6 @@
 ﻿'use strict';
 
-var app = angular.module('app', ['ngRoute', 'dt', 'breeze.angular', 'jaydata', 'ui.bootstrap', /*'mgcrea.ngStrap',*/ 'ui.select2']);
+var app = angular.module('app', ['ngRoute', 'dt', 'breeze.angular', 'jaydata', 'ui.bootstrap', /*'mgcrea.ngStrap',*/ 'ui.select2', 'eonasdan']);
 
 ////Workaround for manually trigger tooltips 
 ////http://stackoverflow.com/questions/20939754/good-way-to-dynamically-open-close-a-popover-or-tooltip-using-angular-based
@@ -18,6 +18,11 @@ app.modules = [
         name: 'main',
         title: 'Home',
         isOpen: false,
+        controller: function($scope) {
+            $scope.vm = {
+                date: new Date()
+            };
+        },
         baseTemplateUrl: 'App/main/views/',
         routes: [
             { path: '/', name: 'Home', templateUrl: 'home.html', }
@@ -128,6 +133,8 @@ app.config(['$routeProvider', function ($routeProvider) {
                 rt.templateUrl = module.baseTemplateUrl + rt.templateUrl;
             if (module.basePath)
                 rt.path = module.basePath + rt.path;
+            if (module.controller)
+                rt.controller = module.controller;
 
             rt.resolve = rt.resolve || {};
             rt.resolve.breezedataservice = "breezeDataServicePromise";
