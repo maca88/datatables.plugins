@@ -1,6 +1,7 @@
 ﻿'use strict';
 
-var app = angular.module('app', ['ngRoute', 'dt', 'breeze.angular', 'jaydata', 'ui.bootstrap', /*'mgcrea.ngStrap',*/ 'ui.select2', 'eonasdan']);
+var app = angular.module('app', ['ngRoute', 'dt', 'breeze.angular', 'jaydata', 'ui.bootstrap', 
+/*'mgcrea.ngStrap',*/ 'ui.select2', 'ui.bootstrap.datetimepicker']);
 
 ////Workaround for manually trigger tooltips 
 ////http://stackoverflow.com/questions/20939754/good-way-to-dynamically-open-close-a-popover-or-tooltip-using-angular-based
@@ -20,7 +21,14 @@ app.modules = [
         isOpen: false,
         controller: function($scope) {
             $scope.vm = {
-                date: new Date()
+                date: new Date(),
+                 
+            };
+            $scope.open = function($event) {
+                $event.preventDefault();
+                $event.stopPropagation();
+
+                $scope.opened = true;
             };
         },
         baseTemplateUrl: 'App/main/views/',

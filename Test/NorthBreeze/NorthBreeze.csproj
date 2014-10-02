@@ -166,6 +166,7 @@
     <Content Include="Scripts\angular-strap.min.js" />
     <Content Include="Scripts\angular-strap.tpl.js" />
     <Content Include="Scripts\angular-strap.tpl.min.js" />
+    <Content Include="Scripts\angular-ui\ui-datetimepicker-tpls.js" />
     <Content Include="Scripts\angular-ui\ui-select2.js" />
     <Content Include="Scripts\angular.min.js" />
     <Content Include="Scripts\angular.min.js.map" />
@@ -447,11 +448,7 @@
     </TypeScriptCompile>
     <TypeScriptCompile Include="northwind.d.ts" />
     <TypeScriptCompile Include="Scripts\jaydata.d.ts" />
-    <TypeScriptCompile Include="src\angular.datetimepicker.ts" />
     <TypeScriptCompile Include="src\dataTables.advancedFilter.ts" />
-    <Content Include="src\angular.datetimepicker.js">
-      <DependentUpon>angular.datetimepicker.ts</DependentUpon>
-    </Content>
     <Content Include="src\dataTables.advancedFilter.js">
       <DependentUpon>dataTables.advancedFilter.ts</DependentUpon>
     </Content>
@@ -459,7 +456,7 @@
     <TypeScriptCompile Include="src\dataTables.angular.editable.angularStrap.ts" />
     <TypeScriptCompile Include="src\dataTables.angular.editable.bootstrap.ts" />
     <TypeScriptCompile Include="src\dataTables.angular.editable.breeze.ts" />
-    <TypeScriptCompile Include="src\dataTables.angular.editable.datetimepicker.ts" />
+    <TypeScriptCompile Include="src\dataTables.angular.editable.uiDatetimepicker.ts" />
     <TypeScriptCompile Include="src\dataTables.angular.editable.uiBootstrap.ts" />
     <TypeScriptCompile Include="src\dataTables.angular.editable.uiSelect2.ts" />
     <TypeScriptCompile Include="src\dataTables.angular.i18N.ts" />
@@ -471,11 +468,11 @@
     <Content Include="src\dataTables.angular.command.js">
       <DependentUpon>dataTables.angular.command.ts</DependentUpon>
     </Content>
-    <Content Include="src\dataTables.angular.editable.datetimepicker.js">
-      <DependentUpon>dataTables.angular.editable.datetimepicker.ts</DependentUpon>
-    </Content>
     <Content Include="src\dataTables.angular.editable.uiBootstrap.js">
       <DependentUpon>dataTables.angular.editable.uiBootstrap.ts</DependentUpon>
+    </Content>
+    <Content Include="src\dataTables.angular.editable.uiDatetimepicker.js">
+      <DependentUpon>dataTables.angular.editable.uiDatetimepicker.ts</DependentUpon>
     </Content>
     <Content Include="src\dataTables.angular.i18N.js">
       <DependentUpon>dataTables.angular.i18N.ts</DependentUpon>
@@ -532,6 +529,7 @@
     <Content Include="src\dataTables.rowDetails.js">
       <DependentUpon>dataTables.rowDetails.ts</DependentUpon>
     </Content>
+    <Content Include="Scripts\angular-ui\ui-datetimepicker.js" />
     <Content Include="Web.config">
       <SubType>Designer</SubType>
     </Content>

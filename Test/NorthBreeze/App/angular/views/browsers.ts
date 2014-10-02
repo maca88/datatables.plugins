@@ -152,10 +152,9 @@
                     {
                         data: "date", title: "Date", type: "datetime", width: "200px",
                         editable: {
-                            validators: { required: true },
-                            clearIcon: true,
+                            validators: { required: true }
                         },
-                        expression: "data.date | date:'shortDate'"
+                        expression: "data.date | date:'short'"
                     },
                     { template: "#options-tpl" },
                     {

@@ -887,8 +887,10 @@ KeyTable = function ( oInit )
                 if (!oData.nTr) {
                     _oDatatable.oApi._fnCreateTr(_oDatatable, y);
                 }
-				return _oDatatable.aoData[ _oDatatable.aiDisplay[ y ] ].nTr.getElementsByTagName('td')[x];
-			}
+                //This is not ok if we have nested tables
+				//return _oDatatable.aoData[ _oDatatable.aiDisplay[ y ] ].nTr.getElementsByTagName('td')[x];
+		        return $('>td', _oDatatable.aoData[_oDatatable.aiDisplay[y]].nTr)[x];
+		    }
 			else
 			{
 				return null;

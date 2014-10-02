@@ -2,24 +2,35 @@
     
     export class DisplayServiceEditTypePlugin implements IDisplayServiceEditTypePlugin {
 
-        public static $inject = ['displayService', '$timeout'];
-        constructor(private displayService: IDisplayService, private $timeout) {
+        public static $inject = ['displayService', '$timeout', '$locale'];
+        constructor(private displayService: IDisplayService, private $timeout, private $locale) {
         }
 
         public selectControl(event, cell, col): boolean {
-            this.$timeout(() => {
-                var dpElem = angular.element('div.date', cell);
-                if (!dpElem.length)
-                    dpElem = angular.element('input.' + this.displayService.getControlClass(), cell);
-
-                dpElem.data('DateTimePicker').show(event);
-            });
-            
-            return true;
+            return false;
         }
 
         public cellPostLink(args: dt.ICellPostLinkArgs) {
-
+            if (!Editable.isColumnEditable(args.column)) return;
+            var editable = Editable.getColumnEditableSettings(args.column) || {};
+            var scope = args.scope;
+            if (editable.options)
+                scope.$options = editable.options;
+            var type = Editable.getColumnType(args.column);
+            var format;
+            switch (type) {
+                case 'date':
+                    format = this.$locale.DATETIME_FORMATS.shortDate;
+                    break;
+                case 'time':
+                    format = this.$locale.DATETIME_FORMATS.shortTime;
+                    break;
+                default:
+                    format = this.$locale.DATETIME_FORMATS.short;
+                    break;
+            }
+            scope.$format = format;
+            //todo watch $locale for changes
         }
 
         public canBlurCell(event: any, cell, col): boolean {
@@ -41,8 +52,12 @@
             var $template = $('<input />')
                 .attr({
                     'ng-model': Editable.MODEL_PATH,
-                    'bs-datetime-picker': '',
-                    'type': 'text'
+                    'datetimepicker-popup': '{{$format}}',
+                    'type': 'text',
+                    'close-text': '{{\'Close\' | translate}}',
+                    'clear-text': '{{\'Clear\' | translate}}',
+                    'current-text': '{{\'Current\' | translate}}',
+                    'open-on-focus': 'true'
                 })
                 .attr(Editable.EDIT_CONTROL_ATTRS, '')
                 .addClass('form-control')
@@ -50,16 +65,9 @@
                 .addClass(tmplSettings.className || '')
                 .attr(<Object>(tmplSettings.attrs || {}));
 
-            if (opts.clearIcon)
-                $template.attr('bs-clear-icon', angular.isString(opts.clearIcon) ? opts.clearIcon : '');
+            if (opts.options)
+                $template.attr('datepicker-options', '$options');
 
-            if (opts.icon)
-                $template.attr('bs-icon', angular.isString(opts.icon) ? opts.icon : '');
-
-            if (type === 'date')
-                $template.attr('dp-pick-time', 'false');
-            else if (type === 'time')
-                $template.attr('dp-pick-date', 'false');
 
             if ($.isFunction(opts.init))
                 opts.init.call(this, $template, type, opts);
