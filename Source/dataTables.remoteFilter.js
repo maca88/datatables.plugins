@@ -19,7 +19,7 @@
         };
 
         BreezeRemoteFilterAdapter.prototype.processQuery = function (eManager, query, start, length, data) {
-            var clientToServerNameFn = eManager.metadataStore.namingConvention.clientPropertyNameToServer;
+            //var clientToServerNameFn = eManager.metadataStore.namingConvention.clientPropertyNameToServer;
             var select = "";
             var order = "";
             var columnPredicates = [];
@@ -36,7 +36,7 @@
                 if (!column.data || $.type(column.data) === 'number')
                     return;
 
-                var serverSideName = clientToServerNameFn(column.data);
+                var serverSideName = column.data;
                 select += serverSideName + ",";
 
                 if (column.searchable === false)
@@ -61,7 +61,7 @@
                 var column = data.columns[ord.column];
                 if (!column.data || $.type(column.data) === 'number')
                     return;
-                var serverSideName = clientToServerNameFn(column.data);
+                var serverSideName = column.data;
                 var dir = ord.dir == "desc" ? " desc" : "";
                 order += serverSideName + dir + ",";
             });
@@ -391,11 +391,11 @@
         RemoteFilter.prototype.setupAdapter = function () {
             if (this.settings.adapter)
                 return;
-            if (breeze !== undefined && $data != undefined)
+            if (window.hasOwnProperty("breeze") && window.hasOwnProperty("$data"))
                 throw 'adapter must be specified';
-            if (breeze !== undefined)
+            if (window.hasOwnProperty("breeze"))
                 this.settings.adapter = dt.BreezeRemoteFilterAdapter;
-            if ($data != undefined)
+            if (window.hasOwnProperty("$data"))
                 this.settings.adapter = dt.JayDataRemoteFilterAdapter;
         };
 
