@@ -480,6 +480,14 @@ module dt {
                 value = newValue[index];
 
                 hash = hashKey(value);
+                //validate hash
+                if (this.lastBlockMap.hasOwnProperty(hash)) {
+                    block = this.lastBlockMap[hash];
+                    if (aoData[block.index]._aData !== value) { //objects are not the same, possible a deep clone occured
+                        delete value['$$dtHash'];
+                        hash = hashKey(value); //recalculate hash key
+                    }
+                }
                 if (this.lastBlockMap.hasOwnProperty(hash)) {
                     block = this.lastBlockMap[hash];
                     delete this.lastBlockMap[hash];
