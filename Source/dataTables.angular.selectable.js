@@ -280,4 +280,3 @@
         this.allRowsSelected = !(this.allRowsSelected);
     });
 }(window, document, undefined));
-//# sourceMappingURL=dataTables.angular.selectable.js.map

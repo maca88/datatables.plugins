@@ -186,4 +186,3 @@
         return fn.call(oSettings.formFilter, oSettings.formFilter.currentFormsData, data, dataIndex, rowData);
     });
 }(window, document));
-//# sourceMappingURL=dataTables.formFilter.js.map

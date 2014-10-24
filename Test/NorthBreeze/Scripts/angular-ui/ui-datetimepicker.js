@@ -545,6 +545,19 @@
         appendToBody: false,
         showButtonBar: true
     })
+
+    .directive('datetimepickerInputGroup', [
+        '$compile', '$parse', '$document', '$position', '$timeout', 'dateFilter', 'dateParser', 'datetimepickerPopupConfig',
+        function($compile, $parse, $document, $position, $timeout, dateFilter, dateParser, datetimepickerPopupConfig) {
+            return {
+                restrict: 'EA',
+                scope: true,
+                link: function(scope, element, attrs, ngModel) {
+                    scope.isOpened = false;
+                }
+            }
+        }
+    ])
     .directive('datetimepickerPopup', [
         '$compile', '$parse', '$document', '$position', '$timeout', 'dateFilter', 'dateParser', 'datetimepickerPopupConfig',
         function($compile, $parse, $document, $position, $timeout, dateFilter, dateParser, datetimepickerPopupConfig) {

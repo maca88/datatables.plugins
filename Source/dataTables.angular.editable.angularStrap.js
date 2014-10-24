@@ -287,4 +287,3 @@
         }
     ]);
 }(window, document, undefined));
-//# sourceMappingURL=dataTables.angular.editable.angularStrap.js.map

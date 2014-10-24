@@ -53,4 +53,3 @@
 })(app || (app = {}));
 
 angular.module("app").controller("AngularExamples.PerformanceController", app.AngularExamples.PerformanceController);
-//# sourceMappingURL=performance.js.map

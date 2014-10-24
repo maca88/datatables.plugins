@@ -411,4 +411,3 @@
     if ((typeof $().emulateTransitionEnd == 'function'))
         dt.ColPin.defaultSettings.classes.iconClass = 'glyphicon glyphicon-pushpin';
 }(window, document, undefined));
-//# sourceMappingURL=dataTables.colPin.js.map

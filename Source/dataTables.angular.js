@@ -849,14 +849,20 @@ var dt;
                 if (col.data == null && col.defaultContent == null)
                     col.defaultContent = ""; //we have to set defaultContent otherwise dt will throw an error
 
-                //for template we will not support sorting and searching
                 if (col.template || col.templateUrl) {
-                    col.orderable = false;
-                    col.searchable = false;
-                    col.type = "html";
+                    //for template that dont have data defined we will not support sorting and searching
+                    if (col.data == null) {
+                        col.orderable = false;
+                        col.searchable = false;
+                        col.type = "html";
+                    }
                     if (col.template) {
-                        var tpl = TableController.executeSelector(col.template, _this.$element[0]);
-                        col.templateHtml = tpl.clone().removeAttr('ng-non-bindable').show().html();
+                        if (col.template.charAt(0) === "<" && col.template.charAt(col.template.length - 1) === ">" && col.template.length >= 3) {
+                            col.templateHtml = col.template;
+                        } else {
+                            var tpl = TableController.executeSelector(col.template, _this.$element[0]);
+                            col.templateHtml = tpl.clone().removeAttr('ng-non-bindable').show().html();
+                        }
                     } else {
                         var tmpl = _this.$templateCache.get(col.templateUrl);
                         if (!tmpl)
@@ -1253,4 +1259,3 @@ var dt;
             };
         }]);
 })(window, document, undefined);
-//# sourceMappingURL=dataTables.angular.js.map

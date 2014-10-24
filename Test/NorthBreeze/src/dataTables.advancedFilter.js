@@ -1490,4 +1490,3 @@
         "sFeature": "AdvancedFilter"
     });
 }(window, document, undefined));
-//# sourceMappingURL=dataTables.advancedFilter.js.map

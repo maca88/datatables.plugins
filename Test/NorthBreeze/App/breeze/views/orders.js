@@ -107,4 +107,3 @@
 })(app || (app = {}));
 
 angular.module("app").controller("BreezeExamples.OrdersController", app.BreezeExamples.OrdersController);
-//# sourceMappingURL=orders.js.map

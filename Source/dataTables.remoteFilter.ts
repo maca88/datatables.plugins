@@ -534,6 +534,14 @@
         return null;
     });
 
+    $.fn.DataTable.Api.register('remoteFilter.reload()', function (callback, resetPaging, force) {
+        var remoteFilter = this.settings()[0].remoteFilter;
+        if (!remoteFilter)
+            throw 'remoteFilter is not initilaized';
+        remoteFilter.cache.clear = force === true;
+        this.ajax.reload(callback, resetPaging);
+    });
+
     //Add as feature
     $.fn.dataTable.ext.feature.push({
         "fnInit": (oSettings) => {

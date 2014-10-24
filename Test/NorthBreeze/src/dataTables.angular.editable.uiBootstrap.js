@@ -174,4 +174,3 @@
         }
     ]);
 }(window, document, undefined));
-//# sourceMappingURL=dataTables.angular.editable.uiBootstrap.js.map

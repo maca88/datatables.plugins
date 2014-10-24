@@ -124,4 +124,3 @@
 })(app || (app = {}));
 
 angular.module("app").controller("JayDataExamples.OrdersController", app.JayDataExamples.OrdersController);
-//# sourceMappingURL=orders.js.map

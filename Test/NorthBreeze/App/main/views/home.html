@@ -11,10 +11,16 @@ Disable fieldset<input type="checkbox" ng-model="vm.bool"/>
     
     <input type="text" class="form-control" datetimepicker-popup="yyyy-MM-dd hh:mm" ng-model="vm.date" datepicker-options="dateOptions" ng-required="true" close-text="Close" open-on-focus="true" />
 
-    <div class="input-group">
-        <input type="text" class="form-control" datetimepicker-popup="yyyy-MM-dd hh:mm" is-open="opened" ng-model="vm.date" min-date="minDate" max-date="'2015-06-22'" datepicker-options="dateOptions" date-disabled="disabled(date, mode)" ng-required="true" close-text="Close" />
+    <div class="input-group" datetimepicker-input-group>
+        <input type="text" class="form-control" datetimepicker-popup="yyyy-MM-dd hh:mm" is-open="isOpened" ng-model="vm.date" min-date="minDate" max-date="'2015-06-22'" datepicker-options="dateOptions" date-disabled="disabled(date, mode)" ng-required="true" close-text="Close" />
         <span class="input-group-btn">
-            <button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
+            <button type="button" class="btn btn-default" ng-click="isOpened = true"><i class="glyphicon glyphicon-calendar"></i></button>
+        </span>
+    </div>
+    <div class="input-group" datetimepicker-input-group>
+        <input type="text" class="form-control" datetimepicker-popup="yyyy-MM-dd hh:mm" is-open="isOpened" ng-model="vm.date" min-date="minDate" max-date="'2015-06-22'" datepicker-options="dateOptions" date-disabled="disabled(date, mode)" ng-required="true" close-text="Close" />
+        <span class="input-group-btn">
+            <button type="button" class="btn btn-default" ng-click="isOpened = true"><i class="glyphicon glyphicon-calendar"></i></button>
         </span>
     </div>
 </fieldset>

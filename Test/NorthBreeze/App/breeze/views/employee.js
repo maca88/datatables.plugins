@@ -67,4 +67,3 @@
 })(app || (app = {}));
 
 angular.module("app").controller("BreezeExamples.EmployeeController", app.BreezeExamples.EmployeeController);
-//# sourceMappingURL=employee.js.map

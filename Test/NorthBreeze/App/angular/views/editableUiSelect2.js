@@ -168,4 +168,3 @@
 })(app || (app = {}));
 
 angular.module("app").controller("AngularExamples.EditableUiSelect2Controller", app.AngularExamples.EditableUiSelect2Controller);
-//# sourceMappingURL=editableUiSelect2.js.map

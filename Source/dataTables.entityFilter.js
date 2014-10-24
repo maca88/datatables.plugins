@@ -187,4 +187,3 @@
         return dt.EntityFilter.indexOfFor(entityFilters, stateName) >= 0;
     });
 }(window, document));
-//# sourceMappingURL=dataTables.entityFilter.js.map

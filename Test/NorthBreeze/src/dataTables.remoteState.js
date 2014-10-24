@@ -662,4 +662,3 @@
         "sFeature": "Remote state"
     });
 }(window, document, undefined));
-//# sourceMappingURL=dataTables.remoteState.js.map

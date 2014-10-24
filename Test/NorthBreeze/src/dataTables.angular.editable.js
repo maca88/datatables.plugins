@@ -1924,4 +1924,3 @@ var dt;
     //#endregion
     //#endregion
 }(window, document, undefined));
-//# sourceMappingURL=dataTables.angular.editable.js.map

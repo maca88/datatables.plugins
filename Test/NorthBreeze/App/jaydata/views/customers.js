@@ -118,4 +118,3 @@
 })(app || (app = {}));
 
 angular.module("app").controller("JayDataExamples.CustomerController", app.JayDataExamples.CustomerController);
-//# sourceMappingURL=customers.js.map

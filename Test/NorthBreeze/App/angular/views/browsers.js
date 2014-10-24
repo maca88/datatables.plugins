@@ -49,6 +49,7 @@
                     columns: [
                         { selectableColumn: true },
                         { iconColumn: true },
+                        { data: "version", template: '<span>Template: </span><span ng-bind="data.version"></span>', editable: false },
                         {
                             data: "engine", title: "Engine", className: "text-right", type: "string",
                             editable: {
@@ -270,4 +271,3 @@
 })(app || (app = {}));
 
 angular.module("app").controller("AngularExamples.BrowsersController", app.AngularExamples.BrowsersController);
-//# sourceMappingURL=browsers.js.map

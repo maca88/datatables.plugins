@@ -157,4 +157,3 @@ var dt;
         }
     ]);
 }(window, document, undefined));
-//# sourceMappingURL=dataTables.angular.editable.bootstrap.js.map

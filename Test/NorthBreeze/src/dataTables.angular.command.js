@@ -236,4 +236,3 @@ var dt;
     })(dt.command || (dt.command = {}));
     var command = dt.command;
 })(dt || (dt = {}));
-//# sourceMappingURL=dataTables.angular.command.js.map

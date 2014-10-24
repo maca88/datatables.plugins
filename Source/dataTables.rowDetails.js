@@ -662,4 +662,3 @@
         dt.RowDetails.intergateWithBootstrap();
     }
 }(window, document, undefined));
-//# sourceMappingURL=dataTables.rowDetails.js.map

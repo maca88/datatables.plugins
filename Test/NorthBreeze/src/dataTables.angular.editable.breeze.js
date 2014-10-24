@@ -137,4 +137,3 @@ var dt;
     })(dt.editable || (dt.editable = {}));
     var editable = dt.editable;
 })(dt || (dt = {}));
-//# sourceMappingURL=dataTables.angular.editable.breeze.js.map

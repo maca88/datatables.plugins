@@ -137,4 +137,3 @@ var dt;
     })(dt.editable || (dt.editable = {}));
     var editable = dt.editable;
 })(dt || (dt = {}));
-//# sourceMappingURL=dataTables.angular.editable.uiSelect2.js.map

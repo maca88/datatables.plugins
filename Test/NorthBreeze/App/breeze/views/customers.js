@@ -90,4 +90,3 @@
 })(app || (app = {}));
 
 angular.module("app").controller("BreezeExamples.CustomerController", app.BreezeExamples.CustomerController);
-//# sourceMappingURL=customers.js.map

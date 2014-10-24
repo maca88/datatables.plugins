@@ -25,4 +25,3 @@
         }
     };
 });
-//# sourceMappingURL=declarative.js.map
