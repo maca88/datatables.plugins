@@ -141,6 +141,7 @@ module dt {
             rowDataPath: 'data',
             options: {},
             collectionPath: null,
+            defaultContent: '',
             tableCreating: [],
             tableCreated: [],
             rowsRemoved: [],
@@ -878,11 +879,13 @@ module dt {
             this.settings.options = attrs.dtOptions ? this.cloneOptions(scope.$eval(attrs.dtOptions)) : this.settings.options;
             //this.settings.options.data = attrs.dtData ? scope.$eval(attrs.dtData) : this.settings.options.data;
             this.settings.collectionPath = attrs.dtData ? attrs.dtData : attrs.dtOptions + '.data';
+            this.settings.defaultContent = attrs.dtDefaultContent ? attrs.dtDefaultContent : this.settings.defaultContent;
 
             this.mergeNodeAttributesToObject($element[0], this.settings.options,
             [
                 "dt-table", "dt-data", "dt-width", "dt-invalidate-rows", "dt-debug",
-                "dt-digest-on-draw", "dt-row-binding", "dt-options", "dt-row-data-path"
+                "dt-digest-on-draw", "dt-row-binding", "dt-options", "dt-row-data-path",
+                "dt-default-content"
             ]);
             if (attrs.dtWidth)
                 $element.css('width', attrs.dtWidth);
@@ -967,7 +970,7 @@ module dt {
                         popName += w;
                 });
                 var propVal:any = $node.attr(nodeAttr.name);
-                if (!propVal) return;
+                if (propVal == null) return; //allow empty string
 
                 if (propVal.toUpperCase() == 'TRUE')
                     propVal = true;
@@ -1023,10 +1026,10 @@ module dt {
 
         private setupColumns() {
             var columns = this.settings.options.columns;
-
+            var defaultContent = this.settings.defaultContent;
             angular.forEach(columns, (col, idx) => {
-                if (col.data == null && col.defaultContent == null)
-                    col.defaultContent = ""; //we have to set defaultContent otherwise dt will throw an error
+                if (col.defaultContent == null && defaultContent != null)
+                    col.defaultContent = defaultContent;
 
                 if (col.template || col.templateUrl) {
                     //for template that dont have data defined we will not support sorting and searching
