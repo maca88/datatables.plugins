@@ -53,7 +53,7 @@
                 if (dt.TableController.checkAngularModulePresence('gettext'))
                     type = GetTextI18NService;
                 else if (dt.TableController.checkAngularModulePresence('pascalprecht.translate'))
-                    type = AngularTranslateI18Service;
+                    type = AngularTranslateI18NService;
                 else
                     type = DefaultI18NService;
                 this.service = this.$injector.instantiate(type, { resources: this.resources });
@@ -126,13 +126,13 @@
         })();
         i18N.GetTextI18NService = GetTextI18NService;
 
-        var AngularTranslateI18Service = (function () {
-            function AngularTranslateI18Service(resources, $interpolate, $translate) {
+        var AngularTranslateI18NService = (function () {
+            function AngularTranslateI18NService(resources, $interpolate, $translate) {
                 this.resources = resources;
                 this.$interpolate = $interpolate;
                 this.$translate = $translate;
             }
-            AngularTranslateI18Service.prototype.translate = function (key, params) {
+            AngularTranslateI18NService.prototype.translate = function (key, params) {
                 var lang = this.$translate.use();
                 var msg;
                 if (this.resources[lang] && this.resources[lang][key])
@@ -144,20 +144,20 @@
                 return exp(params || {});
             };
 
-            AngularTranslateI18Service.prototype.mergeResources = function (language, resources) {
+            AngularTranslateI18NService.prototype.mergeResources = function (language, resources) {
                 if (!this.resources[language]) {
                     this.resources[language] = {};
                 }
                 $.extend(this.resources[language], resources);
             };
 
-            AngularTranslateI18Service.prototype.setLanguage = function (language) {
+            AngularTranslateI18NService.prototype.setLanguage = function (language) {
                 this.$translate.use(language);
             };
-            AngularTranslateI18Service.$inject = ['resources', '$interpolate', '$translate'];
-            return AngularTranslateI18Service;
+            AngularTranslateI18NService.$inject = ['resources', '$interpolate', '$translate'];
+            return AngularTranslateI18NService;
         })();
-        i18N.AngularTranslateI18Service = AngularTranslateI18Service;
+        i18N.AngularTranslateI18NService = AngularTranslateI18NService;
     })(dt.i18N || (dt.i18N = {}));
     var i18N = dt.i18N;
 })(dt || (dt = {}));

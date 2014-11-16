@@ -41,22 +41,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="App\angular\examples\editable\batch\declarative.html" />
-    <Content Include="App\angular\examples\editable\batch\declarative.js">
-      <DependentUpon>declarative.ts</DependentUpon>
-    </Content>
-    <Content Include="App\angular\examples\editable\batch\programmatic.html" />
-    <Content Include="App\angular\examples\editable\batch\programmatic.js">
-      <DependentUpon>programmatic.ts</DependentUpon>
-    </Content>
-    <Content Include="App\angular\examples\editable\inline\declarative.html" />
-    <Content Include="App\angular\examples\editable\inline\declarative.js">
-      <DependentUpon>declarative.ts</DependentUpon>
-    </Content>
-    <Content Include="App\angular\examples\editable\inline\programmatic.html" />
-    <Content Include="App\angular\examples\editable\inline\programmatic.js">
-      <DependentUpon>programmatic.ts</DependentUpon>
-    </Content>
     <Content Include="App\angular\examples\programmatic.js">
       <DependentUpon>programmatic.ts</DependentUpon>
     </Content>
@@ -70,10 +54,6 @@
     </Content>
     <Content Include="App\angular\views\command.html" />
     <Content Include="App\angular\views\editable.html" />
-    <Content Include="App\angular\views\editableUiSelect2.html" />
-    <Content Include="App\angular\views\editableUiSelect2.js">
-      <DependentUpon>editableUiSelect2.html</DependentUpon>
-    </Content>
     <Content Include="App\angular\views\home.html" />
     <Content Include="App\angular\views\i18n.html" />
     <Content Include="App\angular\views\performance.js">
@@ -398,18 +378,6 @@
     <Content Include="Scripts\select2.js" />
     <Content Include="Scripts\select2.min.js" />
     <Content Include="Scripts\toastr.js" />
-    <TypeScriptCompile Include="App\angular\examples\editable\batch\declarative.ts">
-      <DependentUpon>declarative.html</DependentUpon>
-    </TypeScriptCompile>
-    <TypeScriptCompile Include="App\angular\examples\editable\batch\programmatic.ts">
-      <DependentUpon>programmatic.html</DependentUpon>
-    </TypeScriptCompile>
-    <TypeScriptCompile Include="App\angular\examples\editable\inline\declarative.ts">
-      <DependentUpon>declarative.html</DependentUpon>
-    </TypeScriptCompile>
-    <TypeScriptCompile Include="App\angular\examples\editable\inline\programmatic.ts">
-      <DependentUpon>programmatic.html</DependentUpon>
-    </TypeScriptCompile>
     <TypeScriptCompile Include="App\angular\examples\programmatic.ts">
       <DependentUpon>programmatic.html</DependentUpon>
     </TypeScriptCompile>
@@ -418,9 +386,6 @@
     </TypeScriptCompile>
     <TypeScriptCompile Include="App\angular\views\browsers.ts">
       <DependentUpon>browsers.html</DependentUpon>
-    </TypeScriptCompile>
-    <TypeScriptCompile Include="App\angular\views\editableUiSelect2.ts">
-      <DependentUpon>editableUiSelect2.html</DependentUpon>
     </TypeScriptCompile>
     <TypeScriptCompile Include="App\angular\views\performance.ts">
       <DependentUpon>performance.html</DependentUpon>
@@ -453,12 +418,6 @@
       <DependentUpon>dataTables.advancedFilter.ts</DependentUpon>
     </Content>
     <TypeScriptCompile Include="src\dataTables.angular.command.ts" />
-    <TypeScriptCompile Include="src\dataTables.angular.editable.angularStrap.ts" />
-    <TypeScriptCompile Include="src\dataTables.angular.editable.bootstrap.ts" />
-    <TypeScriptCompile Include="src\dataTables.angular.editable.breeze.ts" />
-    <TypeScriptCompile Include="src\dataTables.angular.editable.uiDatetimepicker.ts" />
-    <TypeScriptCompile Include="src\dataTables.angular.editable.uiBootstrap.ts" />
-    <TypeScriptCompile Include="src\dataTables.angular.editable.uiSelect2.ts" />
     <TypeScriptCompile Include="src\dataTables.angular.i18N.ts" />
     <TypeScriptCompile Include="src\dataTables.angular.selectable.bootstrap.ts" />
     <TypeScriptCompile Include="src\dataTables.angular.selectable.ts" />
@@ -467,12 +426,6 @@
     <TypeScriptCompile Include="src\dataTables.colResize.ts" />
     <Content Include="src\dataTables.angular.command.js">
       <DependentUpon>dataTables.angular.command.ts</DependentUpon>
-    </Content>
-    <Content Include="src\dataTables.angular.editable.uiBootstrap.js">
-      <DependentUpon>dataTables.angular.editable.uiBootstrap.ts</DependentUpon>
-    </Content>
-    <Content Include="src\dataTables.angular.editable.uiDatetimepicker.js">
-      <DependentUpon>dataTables.angular.editable.uiDatetimepicker.ts</DependentUpon>
     </Content>
     <Content Include="src\dataTables.angular.i18N.js">
       <DependentUpon>dataTables.angular.i18N.ts</DependentUpon>
@@ -493,21 +446,6 @@
     <Content Include="src\dataTables.colResize.js">
       <DependentUpon>dataTables.colResize.ts</DependentUpon>
     </Content>
-    <Content Include="src\dataTables.angular.editable.angularStrap.js">
-      <DependentUpon>dataTables.angular.editable.angularStrap.ts</DependentUpon>
-    </Content>
-    <Content Include="src\dataTables.angular.editable.bootstrap.js">
-      <DependentUpon>dataTables.angular.editable.bootstrap.ts</DependentUpon>
-    </Content>
-    <Content Include="src\dataTables.angular.editable.breeze.js">
-      <DependentUpon>dataTables.angular.editable.breeze.ts</DependentUpon>
-    </Content>
-    <Content Include="src\dataTables.angular.editable.js">
-      <DependentUpon>dataTables.angular.editable.ts</DependentUpon>
-    </Content>
-    <Content Include="src\dataTables.angular.editable.uiSelect2.js">
-      <DependentUpon>dataTables.angular.editable.uiSelect2.ts</DependentUpon>
-    </Content>
     <Content Include="src\dataTables.entityFilter.js">
       <DependentUpon>dataTables.entityFilter.ts</DependentUpon>
     </Content>
@@ -519,7 +457,6 @@
     </Content>
     <Content Include="src\dataTables.remoteState.css" />
     <TypeScriptCompile Include="src\dataTables.formFilter.ts" />
-    <TypeScriptCompile Include="src\dataTables.angular.editable.ts" />
     <TypeScriptCompile Include="src\dataTables.remoteFilter.ts" />
     <TypeScriptCompile Include="src\dataTables.remoteState.ts" />
     <TypeScriptCompile Include="src\dataTables.rowDetails.ts" />

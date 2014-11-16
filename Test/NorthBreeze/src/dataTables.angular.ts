@@ -421,8 +421,17 @@ module dt {
             //ColReorder
             $(dtSettings.oInstance).on('column-reorder.angular', digestProxy);
 
-            if (attrs.dtTable)
-                scope.$parent[attrs.dtTable] = api;
+            if (attrs.dtTable) {
+                //support for nested paths i.e. vm.table (attach instance to the vm property of the parent scope)
+                var modelScope = scope.$parent;
+                var tablePaths = attrs.dtTable.split('.');
+                var tablePropName = tablePaths.pop();
+                var modelPath = tablePaths.join('.');
+                if (modelPath)
+                    modelScope = modelScope.$eval(modelPath);
+                modelScope[tablePropName] = api;
+
+            }
 
             //We have to add the blocks to the lastBlockMap
             if (angular.isArray(dtSettings.aoData)) {
@@ -458,10 +467,10 @@ module dt {
                 rowBinding = this.settings.rowBinding,
                 index, hash, block: IBlock, rowData;
 
-            if (debug) console.time('$watchCollection - ' + collPath);
             if (!attrData) //update the oInit data only if the wach is watching tthe data from the oInit
                 dtSettings.oInit.data = newValue; //update init data
             if (!newValue) return;
+            if (debug) console.time('$watchCollection - ' + collPath);
             var
                 key,
                 value,
@@ -475,7 +484,7 @@ module dt {
                 removed = []; //rows that have been removed by dt api or by splice
 
             // locate existing items
-            length = newValue.length;
+            var length = newValue.length;
             for (index = 0; index < length; index++) {
                 key = index;
                 value = newValue[index];
@@ -674,7 +683,6 @@ module dt {
                 if (debug) console.time('createdRow' + rowIndex);
                 $rowNode = angular.element(rowNode);
                 $rowNode.attr('dt-row', rowIndex); //a child scope will be created
-                //$rowNode.data('$$dtTable', that);
                 hash = AngularHelper.hashKey(rowData);
 
                 rowMeta = {
@@ -747,13 +755,13 @@ module dt {
 
             if (!settings.digestOnDraw) return;
             options.drawCallback = function (dtSettings: any) {
-                if (debug) console.time('drawCallback');
+                if (debug) console.time('drawCallback - ' + that.dt.settings.sTableId);
                 if (dtSettings.bInitialised === true) {
                     that.digestDisplayedPage(this.api());
                 }
                 if (angular.isFunction(origDrawCallback))
                     origDrawCallback.apply(this, arguments);
-                if (debug) console.timeEnd('drawCallback');
+                if (debug) console.timeEnd('drawCallback - ' + that.dt.settings.sTableId);
             }
         }
 
@@ -812,9 +820,9 @@ module dt {
             this.triggerEventListeners(TableController.events.rowPostLink, [rowOpts]);
         }
 
-        public preLinkCell(scope, $cellNode, $rowNode, attrs) {
+        public preLinkCell(scope, $cellNode, attrs) {
             var cellNode = $cellNode[0],
-                rowIndex = $rowNode[0]._DT_RowIndex,
+                rowIndex = scope.$rowIndex,
                 rowData = this.dt.settings.aoData[rowIndex],
                 cellIndex = rowData.anCells.indexOf(cellNode),
                 columns = this.dt.settings.aoColumns,
@@ -838,9 +846,9 @@ module dt {
             this.triggerEventListeners(TableController.events.cellPreLink, [cell]);
         }
 
-        public postLinkCell(scope, $cellNode, $rowNode, attrs) {
+        public postLinkCell(scope, $cellNode, attrs) {
             var cellNode = $cellNode[0],
-                rowIndex = $rowNode[0]._DT_RowIndex,
+                rowIndex = scope.$rowIndex,
                 rowData = this.dt.settings.aoData[rowIndex],
                 cellIndex = rowData.anCells.indexOf(cellNode),
                 columns = this.dt.settings.aoColumns,
@@ -860,9 +868,9 @@ module dt {
         private digestDisplayedPage(api = null) {
             api = api ? api : this.dt.api;
             var debug = this.settings.debug;
-            if (debug) console.time('digestDisplayedPage');
+            if (debug) console.time('digestDisplayedPage - ' + this.dt.settings.sTableId);
             api.digestDisplayedPage();
-            if (debug) console.timeEnd('digestDisplayedPage');
+            if (debug) console.timeEnd('digestDisplayedPage - ' + this.dt.settings.sTableId);
         }
 
         //table attributes have the highest priority
@@ -1311,8 +1319,8 @@ module dt {
     $.fn.DataTable.Api.register('digestDisplayedPage()', function() {
         //Digest only rendered rows
         $("tbody > tr", this.table().node()).each(function() {
-            var rowScope = angular.element(this).scope();
-            if (rowScope && !rowScope.$$phase)
+            var rowScope:any = angular.element(this).scope();
+            if (rowScope && !rowScope.$root.$$phase)
                 rowScope.$digest();
         });
     });
@@ -1329,7 +1337,6 @@ module dt {
     });
 
     angular.module("dt", [])
-        .service('dt.i18N')
         .controller('dtTableController', dt.TableController)
         .directive("dtRow", [() => {
             return {
@@ -1340,19 +1347,11 @@ module dt {
                     return {
                         pre: (scope, iElement, iAttrs) => {
                             scope.$$tableController.preLinkRow(scope, iElement, iAttrs);
-                            //console.log('post row compile');
                         },
                         post: (scope, iElement, iAttrs) => {
                             scope.$$tableController.postLinkRow(scope, iElement, iAttrs);
-                            //console.log('post row compile');
                         }
                     }
-
-                    ////Post compile
-                    //return (scope, iElement, iAttrs, controller: dt.TableController) => {
-                    //    scope.$$tableController.postCompileRow(scope, iElement, iAttrs);
-                    //    //console.log('post row compile');
-                    //};
                 }
             }
         }])
@@ -1360,37 +1359,40 @@ module dt {
             return {
                 restrict: 'A',
                 priority: 1000,
+                //controller: "dtCellController",
                 scope: true, //whitin new scope
+                //'require': '^dtTable' cannot require as the cell is not yet in the table
                 compile: (tElement, tAttrs) => {
-                    //console.log('cell compile');
-                    var row = tElement.parent();
-
                     return {
-                        pre: (scope, iElement, iAttrs) => {
-                            scope.$$tableController.preLinkCell(scope, iElement, row, iAttrs);
+                        pre: (scope, iElement, iAttrs, ctrl) => {
+                            scope.$$tableController.preLinkCell(scope, iElement, iAttrs);
                         },
-                        post: (scope, iElement, iAttrs) => {
-                            scope.$$tableController.postLinkCell(scope, iElement, row, iAttrs);
+                        post: (scope, iElement, iAttrs, ctrl) => {
+                            scope.$$tableController.postLinkCell(scope, iElement, iAttrs);
                         }
                     }
-
-                    //Post compile
-                    //return (scope, iElement, iAttrs) => {
-                    //    //console.log('post cell compile');
-                    //    scope.$$tableController.postLinkCell(scope, iElement, row, iAttrs);
-                    //};
                 }
             }
         }])
-        .directive("dtTable", [() => {
+        .directive("dtTable", ['$compile', ($compile) => {
             return {
                 restrict: 'A', // Restricted it to A only. Thead elements are only valid inside table tag
                 priority: 1000,
                 controller: 'dtTableController',
                 scope: true, //whitin new scope
-                link: (scope, element, attrs, controller: dt.TableController) => {
-                    controller.setupTable();
-                }
+                compile: (tElement, tAttrs) => {
+                    //we have to detach header/footer as dt internaly manipulates them, we gonna lately compile them
+                    //ie. translate directive will not work if we dont detach header/footer here
+                    var headCols = $('thead>tr>th', tElement);
+                    var footCols = $('tfoot>tr>th', tElement);
+                    var children = tElement.children().detach(); 
+                    return (scope, element, attrs, controller) => {
+                        element.append(children); //reattach header/footer
+                        controller.setupTable();
+                        $compile(headCols)(scope);
+                        $compile(footCols)(scope);
+                    }
+                },
             };
         }]);
 

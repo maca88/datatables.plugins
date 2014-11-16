@@ -71,6 +71,9 @@
                 defaultHtml: '',
                 hasIcon: (row) => { return true; }
             },
+            cell: {
+                className: 'no-focus',
+            },
             behavior: 'default', //accordion
             destroyOnClose: false,
             buttonPanel: {
@@ -103,8 +106,10 @@
                     }
                 },
             }, 
-            trClass: 'sub',
-            tdClass: '',
+            expandRow: {
+                trClass: 'sub',
+                tdClass: 'no-focus',
+            },
             rowCreated: null,
             rowExpanded: null,
             rowDestroying: null,
@@ -137,6 +142,8 @@
             btnGroup: null,
             buttons: []
         };
+        events:string[] = []
+
         public bindingAdapterInstance: IRowDetailsBindingAdapter;
         public lastOpenedRow;
 
@@ -148,6 +155,7 @@
             this.setupAdapters();
             this.registerCallbacks();
             this.createDomElements();
+            this.setupEvents();
 
             $.each(this.dt.settings.aoColumns, (i, col) => {
                 if (!col.iconColumn) return;
@@ -195,6 +203,67 @@
             this.setupBindingAdapter();
         }
 
+        private setupEvents() {
+            var api = this.dt.api;
+            var settings = this.dt.settings;
+            var namespace = '.dt.DT_RowDetails';
+            var drawEvent = 'draw' + namespace;
+            var colvisEvent = 'column-visibility' + namespace;
+            var destroyEvent = 'destroy' + namespace;
+            var data = settings.aoData;
+            //this.events = [drawEvent, colvisEvent, destroyEvent];
+
+            api.off(drawEvent + ' ' + colvisEvent + ' ' + destroyEvent);
+
+            // On each draw, insert the required elements into the document
+            api.on(drawEvent, (e, ctx) => {
+                if (settings !== ctx) {
+                    return;
+                }
+
+                api.rows({ page: 'current' }).eq(0).each((idx) => {
+                    // Internal data grab
+                    var row = data[idx];
+
+                    if (row._detailsShow) {
+                        api.row(idx).details.show();
+                    }
+                });
+            });
+
+            // Column visibility change - update the colspan
+            api.on(colvisEvent, (e, ctx, idx, vis) => {
+                if (settings !== ctx) {
+                    return;
+                }
+
+                // Update the colspan for the details rows (note, only if it already has
+                // a colspan)
+                var row, visible = $.fn.DataTable.ext.internal._fnVisbleColumns(ctx);
+
+                for (var i = 0, ien = data.length; i < ien; i++) {
+                    row = data[i];
+
+                    if (row._details) {
+                        row._details.children('td[colspan]').attr('colspan', visible);
+                    }
+                }
+            });
+
+            // Table destroyed - nuke any child rows
+            api.on(destroyEvent, (e, ctx) => {
+                if (settings !== ctx) {
+                    return;
+                }
+
+                for (var i = 0, ien = data.length; i < ien; i++) {
+                    if (data[i]._DT_RowDetails) {
+                        api.row(i).details.destroy();
+                    }
+                }
+            });
+        }
+
         private setupBindingAdapter() {
             if (!this.settings.bindingAdapter) {
                 if (angular !== undefined)
@@ -207,8 +276,10 @@
         private createDomElements() {
             var $tableNode = $(this.dt.api.table().node());
             $tableNode.on('click', '.' + this.settings.icon.className, (e) => {
-                if ($(e.target).closest('table').get(0) !== $tableNode.get(0)) return;
+                //if ($(e.target).closest('table').get(0) !== $tableNode.get(0))
+                //    return; 
                 e.preventDefault();
+                e.stopPropagation(); //stop propagation in order to work toggle for nested tables
                 var row = this.dt.api.row($(e.target).closest('tr'));
                 if (row.length == 0) return; //happens when user click on header row
                 row.details.toggle(this.settings);
@@ -218,28 +289,40 @@
             var columns = this.dt.api.settings()[0].oInit.columns;
             $.each(columns, (idx, column) => {
                 if (column.iconColumn !== true) return;
-                var iconColumn =  this.dt.settings.aoColumns[idx];
+                var iconColumn = this.dt.settings.aoColumns[idx];
 
                 iconColumn.mRender = column.render = (innerData, type, rowData, meta) => {
                     var hasIcon = true;
+
+                    var dtSettings = meta.settings;
+
+                    //add custom cell props
+                    if (type === "display") {
+                        var dtRow = dtSettings.aoData[meta.row];
+                        if (dtRow.anCells && dtRow.anCells.length > meta.col) {
+                            var dtCell = dtRow.anCells[meta.col];
+                            $(dtCell).addClass(this.settings.cell.className);
+                        }
+                    }
+
                     if ($.isFunction(this.settings.icon.hasIcon))
                         hasIcon = this.settings.icon.hasIcon.call(this.dt.api, rowData);
                     if (!hasIcon)
                         return this.settings.icon.defaultHtml || '';
 
                     var openIcon = $('<div/>', {
-                        'class': this.settings.className + ' dt-open-icon',
+                        'class': this.settings.icon.className + ' dt-open-icon',
                         'html': (this.settings.icon.openHtml || '')
                     });
                     var closeIcon = $('<div/>', {
-                        'class': this.settings.className + ' dt-close-icon',
+                        'class': this.settings.icon.className + ' dt-close-icon',
                         'style': 'display: none',
                         'html': (this.settings.icon.closeHtml || '')
                     });
 
-                    var cell = $('<div/>', { 'class': 'dt-cell-icon' });
-                    cell.append(openIcon, closeIcon);
-                    return cell.html();
+                    var cellTmpl = $('<div/>', { 'class': 'dt-cell-icon' });
+                    cellTmpl.append(openIcon, closeIcon);
+                    return cellTmpl.html();
                 };
                 iconColumn.fnGetData = (rowData, type, meta) => {
                     return iconColumn.mRender(null, type, rowData, meta);
@@ -411,10 +494,10 @@
         var ctx = this.settings()[0];
         var created = $('<tr><td/></tr>')
             .addClass('dt-detail-row')
-            .addClass(settings.trClass)
+            .addClass(settings.expandRow.trClass)
             .hide();
         $('td', created)
-            .addClass(settings.tdClass)
+            .addClass(settings.expandRow.tdClass)
             .html(content)
             .attr('colspan', $.fn.DataTable.ext.internal._fnVisbleColumns(ctx));
 

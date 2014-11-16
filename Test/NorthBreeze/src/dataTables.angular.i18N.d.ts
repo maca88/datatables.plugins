@@ -45,7 +45,7 @@
         public mergeResources(language: string, resources: any): void;
         public setLanguage(language: string): void;
     }
-    class AngularTranslateI18Service implements I18NService {
+    class AngularTranslateI18NService implements I18NService {
         private resources;
         private $interpolate;
         private $translate;

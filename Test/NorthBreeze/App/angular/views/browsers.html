@@ -56,12 +56,12 @@
         </thead>
         <tbody>
             <tr ng-repeat="row in dtTable.selectedRows">
-                <td ng-bind="row.index"></td>
-                <td><input ng-model="row.data.engine" type="text" /></td>
-                <td><input ng-model="row.data.browser" type="text" /></td>
-                <td><input ng-model="row.data.platform" type="text" /></td>
-                <td><input ng-model="row.data.version" type="text" /></td>
-                <td><input ng-model="row.data.grade" type="text" /></td>
+                <td ng-bind="row.index()"></td>
+                <td><input ng-model="row.data().engine" type="text" /></td>
+                <td><input ng-model="row.data().browser" type="text" /></td>
+                <td><input ng-model="row.data().platform" type="text" /></td>
+                <td><input ng-model="row.data().version" type="text" /></td>
+                <td><input ng-model="row.data().grade" type="text" /></td>
             </tr>
         </tbody>
     </table>

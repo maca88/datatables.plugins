@@ -473,6 +473,9 @@ KeyTable = function ( oInit )
 					oSettings._iDisplayStart = 0;
 				}
 				_oDatatable.oApi._fnCalculateEnd( oSettings );
+
+                /* Re-draw the table */
+			    _oDatatable.oApi._fnDraw( oSettings );
 			}
 
 			/* Page backwards */
@@ -487,10 +490,10 @@ KeyTable = function ( oInit )
 				  oSettings._iDisplayStart = 0;
 				}
 				_oDatatable.oApi._fnCalculateEnd( oSettings );
-			}
 
-			/* Re-draw the table */
-			_oDatatable.oApi._fnDraw( oSettings );
+                /* Re-draw the table */
+			    _oDatatable.oApi._fnDraw( oSettings );
+			}
 
 			/* Restore the key capture */
 			_bKeyCapture = bKeyCaptureCache;
@@ -641,7 +644,7 @@ KeyTable = function ( oInit )
 		{
 			nTarget = nTarget.parentNode;
 		}
-
+        if ($(nTarget).hasClass('no-focus')) return;
 		_fnSetFocus( nTarget, null, e );
 		_fnCaptureKeys();
 	}

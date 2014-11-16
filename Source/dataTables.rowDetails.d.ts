@@ -29,6 +29,9 @@
                 defaultHtml: string;
                 hasIcon: (row: any) => boolean;
             };
+            cell: {
+                className: string;
+            };
             behavior: string;
             destroyOnClose: boolean;
             buttonPanel: {
@@ -53,8 +56,10 @@
                     click: (e: any) => void;
                 };
             };
-            trClass: string;
-            tdClass: string;
+            expandRow: {
+                trClass: string;
+                tdClass: string;
+            };
             rowCreated: any;
             rowExpanded: any;
             rowDestroying: any;
@@ -71,12 +76,14 @@
         public dt: any;
         public initialized: boolean;
         public dom: any;
+        public events: string[];
         public bindingAdapterInstance: IRowDetailsBindingAdapter;
         public lastOpenedRow: any;
         constructor(api: any, settings: any);
         static intergateWithBootstrap(): void;
         static animateElement(elem: any, animation: any, action: any, completeAction?: any): void;
         private setupAdapters();
+        private setupEvents();
         private setupBindingAdapter();
         private createDomElements();
         private setupButtons();

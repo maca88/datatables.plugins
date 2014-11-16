@@ -18,7 +18,7 @@
             return settings.resultEntityType || settings.query.resultEntityType;
         };
 
-        BreezeRemoteFilterAdapter.prototype.processQuery = function (eManager, query, start, length, data) {
+        BreezeRemoteFilterAdapter.prototype.processQuery = function (eManager, query, start, length, data, extraData) {
             //var clientToServerNameFn = eManager.metadataStore.namingConvention.clientPropertyNameToServer;
             var select = "";
             var order = "";
@@ -82,8 +82,8 @@
 
             var params = {};
 
-            if (this.settings.sendExtraData)
-                params['$data'] = $.isFunction(this.settings.sendExtraData) ? this.settings.sendExtraData.call(this, data) : data;
+            if (extraData)
+                params['$data'] = extraData;
             if (this.settings.method !== 'GET')
                 params['$method'] = this.settings.method;
             if (this.settings.encoding != null)
@@ -156,7 +156,7 @@
             return settings.resultEntityType || settings.query.defaultType;
         };
 
-        JayDataRemoteFilterAdapter.prototype.processQuery = function (eManager, query, start, length, data) {
+        JayDataRemoteFilterAdapter.prototype.processQuery = function (eManager, query, start, length, data, extraData) {
             //Example: select("{ i: it.Id, t: it.Title }")
             var pIdx = 0;
             var select = "";
@@ -234,6 +234,12 @@
             return query.withInlineCount();
         };
 
+        JayDataRemoteFilterAdapter.prototype.getExtraData = function (data) {
+            if (this.settings.sendExtraData === false)
+                return null;
+            return $.isFunction(this.settings.sendExtraData) ? this.settings.sendExtraData.call(this, data) : data;
+        };
+
         JayDataRemoteFilterAdapter.prototype.prepareRequest = function (that, requestData, query, data) {
             var url = that.providerConfiguration.serviceUrl;
             var host = that.providerConfiguration.oDataServiceHost;
@@ -242,7 +248,7 @@
             if (queryText == queryText2) {
                 requestData[0].method = this.settings.method;
                 if (this.settings.sendExtraData) {
-                    var extraData = $.isFunction(this.settings.sendExtraData) ? this.settings.sendExtraData.call(this, data) : data;
+                    var extraData = this.getExtraData(data);
                     if (this.settings.method == 'GET') {
                         if (requestData[0].requestUri.indexOf('?') < 0)
                             requestData[0].requestUri += '?' + $.param(extraData);
@@ -333,7 +339,8 @@
                 lower: -1,
                 upper: null,
                 lastResponse: null,
-                clear: false
+                clear: false,
+                extraData: null
             };
             this.settings = $.extend({}, RemoteFilter.defaultSettings, settings);
             this.dt.settings = api.settings()[0];
@@ -418,8 +425,10 @@
             this.cache.upper = requestStart + (requestLength * this.settings.prefetchPages);
             requestLength = requestLength * this.settings.prefetchPages;
 
-            var query = this.adapterInstance.processQuery(this.settings.entityManager, this.settings.query, requestStart, requestLength, data);
+            var extraData = this.getExtraData(data);
+            var query = this.adapterInstance.processQuery(this.settings.entityManager, this.settings.query, requestStart, requestLength, data, extraData);
             this.cache.lastRequest = this.getCachedRequest(data);
+            this.cache.extraData = JSON.stringify(extraData);
 
             if ($.isFunction(this.settings.beforeQueryExecution))
                 query = this.settings.beforeQueryExecution.call(this, query, data);
@@ -461,10 +470,17 @@
             return cache;
         };
 
+        RemoteFilter.prototype.getExtraData = function (data) {
+            if (this.settings.sendExtraData === false)
+                return null;
+            return $.isFunction(this.settings.sendExtraData) ? this.settings.sendExtraData.call(this, data) : data;
+        };
+
         RemoteFilter.prototype.canGetDataFromCache = function (data) {
             var dataEnd = data.start + data.length;
             var currentRequest = this.getCachedRequest(data);
-            return !this.cache.clear && this.cache.lower >= 0 && data.start >= this.cache.lower && dataEnd <= this.cache.upper && JSON.stringify(currentRequest) === JSON.stringify(this.cache.lastRequest);
+            var extraData = this.getExtraData(data);
+            return !this.cache.clear && this.cache.lower >= 0 && data.start >= this.cache.lower && dataEnd <= this.cache.upper && this.cache.extraData === JSON.stringify(extraData) && JSON.stringify(currentRequest) === JSON.stringify(this.cache.lastRequest);
         };
 
         RemoteFilter.prototype.customAjax = function (data, fn) {

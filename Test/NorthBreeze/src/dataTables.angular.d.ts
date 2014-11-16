@@ -138,8 +138,8 @@ declare module dt {
         private setupRowBinding();
         public preLinkRow(scope: any, row: any, attrs: any): void;
         public postLinkRow(scope: any, row: any, attrs: any): void;
-        public preLinkCell(scope: any, $cellNode: any, $rowNode: any, attrs: any): void;
-        public postLinkCell(scope: any, $cellNode: any, $rowNode: any, attrs: any): void;
+        public preLinkCell(scope: any, $cellNode: any, attrs: any): void;
+        public postLinkCell(scope: any, $cellNode: any, attrs: any): void;
         private digestDisplayedPage(api?);
         private mergeTableAttributes();
         private cloneOptions(options);

@@ -75,7 +75,7 @@
             if (TableController.checkAngularModulePresence('gettext'))
                 type = GetTextI18NService;
             else if (TableController.checkAngularModulePresence('pascalprecht.translate'))
-                type = AngularTranslateI18Service;
+                type = AngularTranslateI18NService;
             else
                 type = DefaultI18NService;
             this.service = this.$injector.instantiate(type, { resources: this.resources });
@@ -154,7 +154,7 @@
         }
     }
 
-    export class AngularTranslateI18Service implements I18NService {
+    export class AngularTranslateI18NService implements I18NService {
 
         private resources;
         private $interpolate;

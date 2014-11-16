@@ -3,6 +3,7 @@ angular.module('app', ['dt'])
     .controller('mainController', ($scope) => {
             $scope.options = {
                 ajax: '../../../customers.txt',
+                debug: true,
                 columns: [
                     { title: 'Name' },
                     { title: 'Position' },

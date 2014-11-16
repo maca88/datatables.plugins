@@ -4,7 +4,7 @@
         getEntityManager(settings): any;
         getResultEntityType(settings): any;
         executeQuery(query, start, length, data, successCallback, errorCallback): void;
-        processQuery(eManager, query, start, length, data): any;
+        processQuery(eManager, query, start, length, data, extraData): any;
         getEntityPropertiesMap(entityType?): any;
     }
 
@@ -30,7 +30,7 @@
             return settings.resultEntityType || settings.query.resultEntityType;
         }
 
-        public processQuery(eManager, query, start, length, data) {
+        public processQuery(eManager, query, start, length, data, extraData) {
             //var clientToServerNameFn = eManager.metadataStore.namingConvention.clientPropertyNameToServer;
             var select = "";
             var order = "";
@@ -94,8 +94,8 @@
 
             var params = {};
 
-            if (this.settings.sendExtraData)
-                params['$data'] = $.isFunction(this.settings.sendExtraData) ? this.settings.sendExtraData.call(this, data) : data;
+            if (extraData)
+                params['$data'] = extraData;
             if (this.settings.method !== 'GET')
                 params['$method'] = this.settings.method;
             if (this.settings.encoding != null)
@@ -174,7 +174,7 @@
             return settings.resultEntityType || settings.query.defaultType;
         }
 
-        public processQuery(eManager, query, start, length, data) {
+        public processQuery(eManager, query, start, length, data, extraData) {
             //Example: select("{ i: it.Id, t: it.Title }")
             var pIdx = 0;
             var select = "";
@@ -251,6 +251,11 @@
             return query.withInlineCount();
         }
 
+        private getExtraData(data) {
+            if (this.settings.sendExtraData === false) return null;
+            return $.isFunction(this.settings.sendExtraData) ? this.settings.sendExtraData.call(this, data) : data;
+        }
+
         private prepareRequest(that, requestData, query, data) {
             var url = that.providerConfiguration.serviceUrl;
             var host = that.providerConfiguration.oDataServiceHost;
@@ -259,7 +264,7 @@
             if (queryText == queryText2) {
                 requestData[0].method = this.settings.method;
                 if (this.settings.sendExtraData) {
-                    var extraData = $.isFunction(this.settings.sendExtraData) ? this.settings.sendExtraData.call(this, data) : data;
+                    var extraData = this.getExtraData(data);
                     if (this.settings.method == 'GET') {
                         if (requestData[0].requestUri.indexOf('?') < 0)
                             requestData[0].requestUri += '?' + $.param(extraData);
@@ -364,6 +369,7 @@
             upper: null,
             lastResponse: null,
             clear: false,
+            extraData: null
         };
         private adapterInstance;
         private initQuery;
@@ -447,8 +453,10 @@
             this.cache.upper = requestStart + (requestLength * this.settings.prefetchPages);
             requestLength = requestLength * this.settings.prefetchPages;
 
-            var query = this.adapterInstance.processQuery(this.settings.entityManager, this.settings.query, requestStart, requestLength, data);
+            var extraData = this.getExtraData(data);
+            var query = this.adapterInstance.processQuery(this.settings.entityManager, this.settings.query, requestStart, requestLength, data, extraData);
             this.cache.lastRequest = this.getCachedRequest(data);
+            this.cache.extraData = JSON.stringify(extraData);
 
             if ($.isFunction(this.settings.beforeQueryExecution))
                 query = this.settings.beforeQueryExecution.call(this, query, data);
@@ -491,13 +499,20 @@
             return cache;
         }
 
+        private getExtraData(data) {
+            if (this.settings.sendExtraData === false) return null;
+            return $.isFunction(this.settings.sendExtraData) ? this.settings.sendExtraData.call(this, data) : data;
+        }
+
         private canGetDataFromCache(data): boolean {
             var dataEnd = data.start + data.length;
             var currentRequest = this.getCachedRequest(data);
+            var extraData = this.getExtraData(data);
             return !this.cache.clear &&
                 this.cache.lower >= 0 &&
                 data.start >= this.cache.lower &&
                 dataEnd <= this.cache.upper &&
+                this.cache.extraData === JSON.stringify(extraData) &&
                 JSON.stringify(currentRequest) === JSON.stringify(this.cache.lastRequest);
         }
 

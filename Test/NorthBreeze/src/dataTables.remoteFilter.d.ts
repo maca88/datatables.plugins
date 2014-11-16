@@ -3,7 +3,7 @@
         getEntityManager(settings: any): any;
         getResultEntityType(settings: any): any;
         executeQuery(query: any, start: any, length: any, data: any, successCallback: any, errorCallback: any): void;
-        processQuery(eManager: any, query: any, start: any, length: any, data: any): any;
+        processQuery(eManager: any, query: any, start: any, length: any, data: any, extraData: any): any;
         getEntityPropertiesMap(entityType?: any): any;
     }
     class BreezeRemoteFilterAdapter implements IRemoteFilterAdapter {
@@ -12,7 +12,7 @@
         constructor(api: any, settings: any);
         public getEntityManager(settings: any): any;
         public getResultEntityType(settings: any): any;
-        public processQuery(eManager: any, query: any, start: any, length: any, data: any): any;
+        public processQuery(eManager: any, query: any, start: any, length: any, data: any, extraData: any): any;
         public executeQuery(query: any, start: any, length: any, data: any, successCallback: any, errorCallback: any): void;
         public getEntityPropertiesMap(entityType?: any): {};
     }
@@ -22,7 +22,8 @@
         constructor(api: any, settings: any);
         public getEntityManager(settings: any): any;
         public getResultEntityType(settings: any): any;
-        public processQuery(eManager: any, query: any, start: any, length: any, data: any): any;
+        public processQuery(eManager: any, query: any, start: any, length: any, data: any, extraData: any): any;
+        private getExtraData(data);
         private prepareRequest(that, requestData, query, data);
         public executeQuery(query: any, start: any, length: any, data: any, successCallback: any, errorCallback: any): void;
         public getEntityPropertiesMap(entityType?: any): {};
@@ -57,6 +58,7 @@
         private makeAjaxRequest(data, fn);
         private getDtResponse(response, data);
         private getCachedRequest(data);
+        private getExtraData(data);
         private canGetDataFromCache(data);
         private customAjax(data, fn);
         private registerCallbacks();

@@ -85,7 +85,7 @@
                 var table = this.tableController;
                 var opts = table.settings.options;
                 var selectable = table.$attrs.dtSelectable;
-                var settings = opts.tableTools = opts.tableTools || {};
+                var settings = opts.tableTools = opts.tableTools || { aButtons: [] };
                 var tblScope = table.$scope;
 
                 this.settings = $.extend({}, SelectableTablePlugin.defaultSettings, angular.isObject(opts.selectable) ? opts.selectable : {});
@@ -109,7 +109,7 @@
                             selCol.width = this.settings.column.width;
                         if (!selCol.className)
                             selCol.className = this.settings.column.className;
-                        if (!selCol.title)
+                        if (!selCol.title && opts.tableTools.sRowSelect != "single")
                             selCol.title = this.settings.column.headerTemplate;
                         selCol.type = "html";
                         if (!selCol.templateHtml)
@@ -129,7 +129,7 @@
                 var origPreSelected = settings.fnPreRowSelect;
                 var deselectingRows = [];
                 var gotDeselectEvent = false;
-                var deselectRows = function () {
+                var deselectRows = function (clearCache) {
                     for (i = 0, len = deselectingRows.length; i < len; i++) {
                         deselectingRows[i]._DTTT_selected = false;
                         if (deselectingRows[i].nTr) {
@@ -137,6 +137,8 @@
                         }
                     }
                     deselectingRows.length = 0;
+                    if (clearCache)
+                        that.dt.settings._DT_SelectedRowsCached.length = 0;
                 };
                 settings.fnPreRowSelect = function (e, nodes, select) {
                     var _this = this;
@@ -147,7 +149,7 @@
                         result = origPreSelected.call(this, e, nodes);
 
                     //we got the event that triggered the deselection
-                    if (e && nodes && nodes.length && deselectingRows.length && select) {
+                    if (e && nodes && nodes.length && select) {
                         gotDeselectEvent = true;
                         if (that.canChangeSelection(e.target))
                             deselectRows.call(this);
@@ -167,7 +169,7 @@
                                 gotDeselectEvent = false;
                                 return;
                             }
-                            deselectRows.call(_this);
+                            deselectRows.call(_this, true);
                         }, 100);
 
                         return false;
@@ -184,6 +186,8 @@
                 settings.fnRowSelected = function (nodes) {
                     that.resetSelectableCache();
 
+                    tblScope.$emit('dt.rowSelected', nodes);
+
                     //We have to digest the parent table scope in order to refresh bindings that are related to datatable instance
                     if (!tblScope.$parent.$$phase)
                         tblScope.$parent.$digest();
@@ -196,6 +200,8 @@
                 var origPostDeselected = settings.fnRowDeselected;
                 settings.fnRowDeselected = function (nodes) {
                     that.resetSelectableCache();
+
+                    tblScope.$emit('dt.rowDeselected', nodes);
 
                     //We have to digest the parent table scope in order to refresh bindings that are related to datatable instance
                     if (!tblScope.$parent.$$phase)
@@ -245,15 +251,11 @@
                 for (i = 0, iLen = data.length; i < iLen; i++) {
                     if (data[i]._DTTT_selected) {
                         var dtRow = this.dt.api.row(i);
-                        cache.push({
-                            index: i,
-                            data: dtRow.data(),
-                            node: dtRow.node(),
-                            row: dtRow
-                        });
+                        cache.push(dtRow);
                     }
                 }
                 settings._DT_SelectedRowsCached = cache;
+                this.tableController.$scope.$emit('dt.selectionChanged');
             };
             SelectableTablePlugin.defaultSettings = {
                 column: {
@@ -278,5 +280,14 @@
 (function (window, document, undefined) {
     $.fn.DataTable.Api.register('toggleRowSelection()', function () {
         this.allRowsSelected = !(this.allRowsSelected);
+    });
+
+    $.fn.DataTable.Api.register('removeSelectedRows()', function () {
+        var data = this.settings()[0].aoData;
+        for (var i = (data.length - 1); i >= 0; i--) {
+            if (data[i]._DTTT_selected) {
+                this.row(i).remove();
+            }
+        }
     });
 }(window, document, undefined));
