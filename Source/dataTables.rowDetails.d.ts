@@ -26,6 +26,7 @@
                 className: string;
                 closeHtml: string;
                 openHtml: string;
+                loadingHtml: string;
                 defaultHtml: string;
                 hasIcon: (row: any) => boolean;
             };
@@ -56,6 +57,10 @@
                     click: (e: any) => void;
                 };
             };
+            row: {
+                expandClass: string;
+                collapseClass: string;
+            };
             expandRow: {
                 trClass: string;
                 tdClass: string;
@@ -74,6 +79,7 @@
         static templates: {};
         public settings: any;
         public dt: any;
+        public destroying: boolean;
         public initialized: boolean;
         public dom: any;
         public events: string[];

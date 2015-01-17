@@ -53,7 +53,6 @@
       <DependentUpon>browsers.html</DependentUpon>
     </Content>
     <Content Include="App\angular\views\command.html" />
-    <Content Include="App\angular\views\editable.html" />
     <Content Include="App\angular\views\home.html" />
     <Content Include="App\angular\views\i18n.html" />
     <Content Include="App\angular\views\performance.js">
@@ -74,6 +73,13 @@
       <DependentUpon>orders.html</DependentUpon>
     </Content>
     <Content Include="App\browserCtrl.js" />
+    <Content Include="App\datatables\views\colPin.html" />
+    <Content Include="App\datatables\views\remoteState.html" />
+    <Content Include="App\datatables\views\entityFilter.html" />
+    <Content Include="App\datatables\views\formFilter.html" />
+    <Content Include="App\datatables\views\rowDetails.html" />
+    <Content Include="App\datatables\views\advancedFilter.html" />
+    <Content Include="App\datatables\views\resize.html" />
     <Content Include="App\employeeEditorCtrl.js" />
     <Content Include="App\jaydata\views\customers.html" />
     <Content Include="App\jaydata\views\customers.js">
@@ -111,13 +117,13 @@
     <Content Include="Content\font-awesome.min.css" />
     <Content Include="Content\select2-bootstrap.css" />
     <Content Include="Examples\data.txt" />
-    <Content Include="Examples\pin.resize.state.html" />
-    <Content Include="Examples\resize-autolayout-fullwidth.html" />
-    <Content Include="Examples\resize-complex-header-bootstrap.html" />
-    <Content Include="Examples\resize-complex-header.html" />
-    <Content Include="Examples\resize-dblClick.html" />
-    <Content Include="Examples\resize-fixed-headers.html" />
-    <Content Include="Examples\resize-fixedlayout-fullwidth.html" />
+    <Content Include="App\datatables\examples\pin.resize.state.html" />
+    <Content Include="App\datatables\examples\resize-autolayout-fullwidth.html" />
+    <Content Include="App\datatables\examples\resize-complex-header-bootstrap.html" />
+    <Content Include="App\datatables\examples\resize-complex-header.html" />
+    <Content Include="App\datatables\examples\resize-dblClick.html" />
+    <Content Include="App\datatables\examples\resize-fixed-headers.html" />
+    <Content Include="App\datatables\examples\resize-fixedlayout-fullwidth.html" />
     <Content Include="fonts\fontawesome-webfont.svg" />
     <Content Include="fonts\glyphicons-halflings-regular.svg" />
     <Content Include="JayData_readme.txt" />
@@ -588,7 +594,6 @@
     <Folder Include="App\angular\examples\selectable\" />
     <Folder Include="App\common\directives\" />
     <Folder Include="App\common\services\" />
-    <Folder Include="App\datatables\views\" />
     <Folder Include="libs\datatables\media\" />
   </ItemGroup>
   <ItemGroup>

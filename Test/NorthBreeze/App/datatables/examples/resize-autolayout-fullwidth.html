@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
         <link href="//datatables.net/download/build/nightly/jquery.dataTables.css" rel="stylesheet" type="text/css" />
-        <link href="../src/dataTables.colResize.css" rel="stylesheet" type="text/css" />
+        <link href="../../../src/dataTables.colResize.css" rel="stylesheet" type="text/css" />
 
         <style media="screen" type="text/css">
             body {
@@ -29,11 +29,14 @@
                 min-width: 980px;
                 margin: 0 auto;
             }
+            table.dataTable th, table.dataTable td {
+                overflow: hidden;
+            }
         </style>
 
-        <script src="../Scripts/jquery-1.9.1.js"></script>
+        <script src="../../../Scripts/jquery-1.9.1.js"></script>
         <script src="//datatables.net/download/build/nightly/jquery.dataTables.js"></script>
-        <script src="../src/dataTables.colResize.js"></script>
+        <script src="../../../src/dataTables.colResize.js"></script>
         <meta charset=utf-8 />
         <title>DataTables - JS Bin</title>
 

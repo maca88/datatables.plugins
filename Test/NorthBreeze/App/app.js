@@ -15,38 +15,31 @@ var app = angular.module('app', ['ngRoute', 'dt', 'breeze.angular', 'jaydata', '
 
 // Define route objects, which are used by the routeProvider (for loading ng-view) and by the RouteCtrl (for displaying navigation bar)
 app.modules = [
-    {
-        name: 'main',
-        title: 'Home',
-        isOpen: false,
-        controller: function($scope) {
-            $scope.vm = {
-                date: new Date(),
-                 
-            };
-            $scope.open = function($event) {
-                $event.preventDefault();
-                $event.stopPropagation();
-
-                $scope.opened = true;
-            };
-        },
-        baseTemplateUrl: 'App/main/views/',
-        routes: [
-            { path: '/', name: 'Home', templateUrl: 'home.html', }
-        ]
-    },
-    /*
+    //{
+    //    name: 'main',
+    //    title: 'Datatables',
+    //    isOpen: false,
+    //    baseTemplateUrl: 'App/main/views/',
+    //    routes: [
+    //        { path: '/', name: 'Home', templateUrl: 'home.html', }
+    //    ]
+    //},
+    
     {
         name: 'datatables',
-        title: 'DataTables plugins',
-        baseTemplateUrl: 'App/datatables/views',
+        title: 'DataTables',
+        baseTemplateUrl: 'App/datatables/views/',
         basePath: '/datatables/',
         routes: [
-            { path: 'home', name: 'Customers', templateUrl: 'App/views/customers.html' },
-            { path: '/customers', name: 'Customers', templateUrl: 'App/views/customers.html' },
+            { path: 'resize', name: 'ColResize', templateUrl: 'resize.html' },
+            { path: 'colPin', name: 'ColPin', templateUrl: 'colPin.html' },
+            { path: 'remoteState', name: 'RemoteState', templateUrl: 'remoteState.html' },
+            { path: 'entityFilter', name: 'EntityFilter', templateUrl: 'entityFilter.html' },
+            { path: 'formFilter', name: 'FormFilter', templateUrl: 'formFilter.html' },
+            { path: 'rowDetails', name: 'RowDetails', templateUrl: 'rowDetails.html' },
+            { path: 'advancedFilter', name: 'AdvancedFilter', templateUrl: 'advancedFilter.html' },
         ]
-    },*/
+    },
     {
         name: 'angular',
         title: 'DataTables & Angular',
@@ -56,7 +49,6 @@ app.modules = [
         routes: [
             { path: 'home', name: 'Home', templateUrl: 'home.html' },
 
-            { path: 'editable', name: 'Editable', templateUrl: 'editable.html' },
             { path: 'i18n', name: 'i18n', templateUrl: 'i18n.html' },
             { path: 'command', name: 'Command', templateUrl: 'command.html' },
             { path: 'selectable', name: 'Selectable', templateUrl: 'selectable.html' },
@@ -65,10 +57,6 @@ app.modules = [
             { path: 'browsers', name: 'Browsers', templateUrl: 'browsers.html', controller: 'AngularExamples.BrowsersController' },
             { path: 'performance', name: 'Performance', templateUrl: 'performance.html', controller: 'AngularExamples.PerformanceController' },
 
-            //Editable plugin
-            { path: 'editable-ui-select2', name: 'Editable select2', templateUrl: 'editableUiSelect2.html', controller: 'AngularExamples.EditableUiSelect2Controller' }
-
-            
         ]
     },
     {

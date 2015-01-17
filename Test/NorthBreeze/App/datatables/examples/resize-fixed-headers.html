@@ -1,26 +1,29 @@
 ﻿<!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <link href="../libs/bootstrap/css/bootstrap.css" rel="stylesheet" type="text/css" />
-    <link href="../libs/datatables/css/jquery.dataTables.css" rel="stylesheet" type="text/css" />
-    <link href="../libs/datatables/extensions/ColReorder/css/dataTables.colReorder.css" rel="stylesheet" type="text/css" />
-    <link href="../libs/datatables/extensions/Scroller/css/dataTables.scroller.css" rel="stylesheet" type="text/css" />
-    <link href="../libs/datatables/extensions/FixedHeader/css/dataTables.fixedHeader.css" rel="stylesheet" type="text/css" />
-    <link href="../src/dataTables.colPin.css" rel="stylesheet" type="text/css" />
-    <link href="../src/dataTables.colResize.css" rel="stylesheet" type="text/css" />
+    <link href="../../../libs/bootstrap/css/bootstrap.css" rel="stylesheet" type="text/css" />
+    <link href="../../../libs/datatables/css/jquery.dataTables.css" rel="stylesheet" type="text/css" />
+    <link href="../../../libs/datatables/extensions/ColReorder/css/dataTables.colReorder.css" rel="stylesheet" type="text/css" />
+    <link href="../../../libs/datatables/extensions/Scroller/css/dataTables.scroller.css" rel="stylesheet" type="text/css" />
+    <link href="../../../libs/datatables/extensions/FixedHeader/css/dataTables.fixedHeader.css" rel="stylesheet" type="text/css" />
+    <link href="../../../src/dataTables.colPin.css" rel="stylesheet" type="text/css" />
+    <link href="../../../src/dataTables.colResize.css" rel="stylesheet" type="text/css" />
 
     <style media="screen" type="text/css">
         table.dataTable {
             margin: 0;
         }
+        table.dataTable th, table.dataTable td {
+            overflow: hidden;
+        }
     </style>
 
-    <script src="../Scripts/jquery-1.9.1.js"></script>
-    <script src="../libs/datatables/js/jquery.dataTables.js"></script>
-    <script src="../libs/datatables/extensions/Scroller/js/dataTables.scroller.js"></script>
-    <script src="../libs/datatables/extensions/ColReorder/js/dataTables.colReorder.js"></script>
-    <script src="../libs/datatables/extensions/FixedHeader/js/dataTables.fixedHeader.js"></script>
-    <script src="../src/dataTables.colResize.js"></script>
+    <script src="../../../Scripts/jquery-1.9.1.js"></script>
+    <script src="../../../libs/datatables/js/jquery.dataTables.js"></script>
+    <script src="../../../libs/datatables/extensions/Scroller/js/dataTables.scroller.js"></script>
+    <script src="../../../libs/datatables/extensions/ColReorder/js/dataTables.colReorder.js"></script>
+    <script src="../../../libs/datatables/extensions/FixedHeader/js/dataTables.fixedHeader.js"></script>
+    <script src="../../../src/dataTables.colResize.js"></script>
     <meta charset=utf-8 />
     <title>DataTables - JS Bin</title>
 
@@ -28,7 +31,7 @@
         $(function () {
 
             var opts = {
-                "ajax": "data.txt",
+                "ajax": "/Examples/data.txt",
                 "columns": [
                     { "data": "name" },
                     { "data": "position", width: '600px' },

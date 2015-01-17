@@ -16,10 +16,34 @@
         }
         private settings;
 
+        private static cloneBreezeQuery(that) {
+            // copying QueryOptions is safe because they are are immutable;
+            var copy = $.extend(new breeze.EntityQuery(), that, [
+                "resourceName",
+                "fromEntityType",
+                "wherePredicate",
+                "orderByClause",
+                "selectClause",
+                "skipCount",
+                "takeCount",
+                "expandClause",
+                "inlineCountEnabled",
+                "noTrackingEnabled",
+                "usesNameOnServer",
+                "queryOptions",
+                "entityManager",
+                "dataService",
+                "resultEntityType"
+            ]);
+            copy.parameters = $.extend({}, that.parameters);
+            return copy;
+        }
+
         constructor(api, settings) {
             this.dt.api = api;
             this.dt.settings = api.settings()[0];
             this.settings = settings;
+            this.settings.entityManager = this.getEntityManager(settings);
         }
 
         public getEntityManager(settings) {
@@ -37,11 +61,7 @@
             var columnPredicates = [];
             var globalPredicates = [];
 
-            //Clear query params TODO: CLONE
-            query.orderByClause = null;
-            query.parameters = {};
-            query.wherePredicate = null;
-            query.selectClause = null;
+            query = BreezeRemoteFilterAdapter.cloneBreezeQuery(this.settings.query);
 
             //Columns
             $.each(data.columns, (i, column) => {
@@ -509,6 +529,7 @@
             var currentRequest = this.getCachedRequest(data);
             var extraData = this.getExtraData(data);
             return !this.cache.clear &&
+                this.cache.lastResponse &&
                 this.cache.lower >= 0 &&
                 data.start >= this.cache.lower &&
                 dataEnd <= this.cache.upper &&

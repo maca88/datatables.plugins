@@ -65,7 +65,7 @@
 
         ColPin.prototype.setupBindingAdapter = function () {
             if (!this.settings.bindingAdapter) {
-                if (angular !== undefined)
+                if (window.hasOwnProperty('angular'))
                     this.settings.bindingAdapter = dt.AngularColPinAdapter;
             }
             if (!this.settings.bindingAdapter)

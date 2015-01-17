@@ -26,11 +26,11 @@
         }
 
         public rowCreated(row, rowDetails): void {
-            var rowScope = angular.element(row.node()).scope();
+            var rowScope:any = angular.element(row.node()).scope();
             if (!rowScope) return;
             rowDetails.attr('dt-row-details', '');
             this.dt.settings.oInit.angular.$compile(rowDetails)(rowScope);
-            if (!rowScope.$$phase) rowScope.$digest();
+            if (rowScope.$root && !rowScope.$root.$$phase) rowScope.$digest();
         }
 
         public rowExpanded(row, rowDetails, iconCell): void {
@@ -63,16 +63,17 @@
     export class RowDetails {
         
         public static defaultSettings = {
-            animation: 'slide',
+            animation: 'none',
             icon: {
                 className: 'row-detail-icon',
                 closeHtml: '<button><span class="row-detail-icon">Close</span></button>',
                 openHtml: '<button><span class="row-detail-icon">Open</span></button>',
+                loadingHtml: 'Loading',
                 defaultHtml: '',
                 hasIcon: (row) => { return true; }
             },
             cell: {
-                className: 'no-focus',
+                className: '',
             },
             behavior: 'default', //accordion
             destroyOnClose: false,
@@ -105,10 +106,14 @@
                         this.dt.api.table().rows().collapseAll();
                     }
                 },
-            }, 
+            },
+            row: {
+                expandClass: '',
+                collapseClass: ''  
+            },
             expandRow: {
-                trClass: 'sub',
-                tdClass: 'no-focus',
+                trClass: '',
+                tdClass: '',
             },
             rowCreated: null,
             rowExpanded: null,
@@ -137,6 +142,7 @@
             settings: null,
             api: null
         };
+        public destroying: boolean = false;
         public initialized: boolean = false;
         public dom: any = {
             btnGroup: null,
@@ -168,6 +174,7 @@
         public static intergateWithBootstrap() {
             dt.RowDetails.defaultSettings.icon.openHtml = '<span class="glyphicon glyphicon-plus row-detail-icon"></span>';
             dt.RowDetails.defaultSettings.icon.closeHtml = '<span class="glyphicon glyphicon-minus row-detail-icon"></span>';
+            dt.RowDetails.defaultSettings.icon.loadingHtml = '<span class="glyphicon glyphicon-refresh row-detail-icon"></span>';
             dt.RowDetails.defaultSettings.buttonPanel.classes.push('btn-group');
             dt.RowDetails.defaultSettings.buttons.expandAll.tagName = 'div';
             dt.RowDetails.defaultSettings.buttons.expandAll.classes.push('btn btn-default btn-sm');
@@ -266,7 +273,7 @@
 
         private setupBindingAdapter() {
             if (!this.settings.bindingAdapter) {
-                if (angular !== undefined)
+                if (window.hasOwnProperty('angular'))
                     this.settings.bindingAdapter = dt.AngularRowDetailsAdapter;
             }
             if (!this.settings.bindingAdapter) return;
@@ -314,6 +321,10 @@
                         'class': this.settings.icon.className + ' dt-open-icon',
                         'html': (this.settings.icon.openHtml || '')
                     });
+                    var loadingIcon = $('<div/>', {
+                        'class': this.settings.icon.className + ' dt-loading-icon',
+                        'html': (this.settings.icon.loadingHtml || '')
+                    }).hide();
                     var closeIcon = $('<div/>', {
                         'class': this.settings.icon.className + ' dt-close-icon',
                         'style': 'display: none',
@@ -321,7 +332,7 @@
                     });
 
                     var cellTmpl = $('<div/>', { 'class': 'dt-cell-icon' });
-                    cellTmpl.append(openIcon, closeIcon);
+                    cellTmpl.append(openIcon, closeIcon, loadingIcon);
                     return cellTmpl.html();
                 };
                 iconColumn.fnGetData = (rowData, type, meta) => {
@@ -393,7 +404,7 @@
 
 (function(window, document, undefined) {
 
-    if (angular) {
+    if (window.hasOwnProperty('angular')) {
         angular.module('dt')
             .directive('dtRowDetails', [
                 () => {
@@ -469,6 +480,8 @@
         var rowDetails: dt.RowDetails = dtSettings.rowDetails;
         if (!rowDetails)
             throw 'RowDetails plugin is not initialized';
+        if (rowDetails.destroying) return false;
+        rowDetails.destroying = true;
         var details = this.details();
         if (details == null) return false;
         if (rowDetails.bindingAdapterInstance)
@@ -483,6 +496,7 @@
             dtRow._details = undefined;
             dtRow._detailsShow = undefined;
         }
+        rowDetails.destroying = false;
         return true;
     });
     $.fn.DataTable.Api.register('row().details.create()', function (content, settings) {
@@ -630,13 +644,20 @@
         var behavior = rowDetails.settings.behavior;
 
         var row = this;
+        var $rowNode = $(row.node());
         var subRow = row.details();
         //var dtRow = dtSettings.aoData[row.index()];
+
+        $rowNode.removeClass(settings.row.collapseClass);
+        $rowNode.addClass(settings.row.expandClass);
+        var td = $rowNode.find('.' + settings.icon.className).closest('td'); //Icon td
+
+        $('.dt-open-icon', td).hide();
+        $('.dt-loading-icon', td).show();
 
         var filledAction = () => {
             if (row.details.isOpen()) return;
 
-            var td = $(row.node()).find('.' + settings.icon.className).closest('td'); //Icon td
             subRow = row.details();
             if (!subRow) return; //fillDetails failed because of detached cell
             subRow.css('display', '');
@@ -655,18 +676,22 @@
                 }
             );
 
-            $('.dt-open-icon', td).hide();
+            $('.dt-loading-icon', td).hide();
             $('.dt-close-icon', td).show();
 
             rowDetails.lastOpenedRow = row;
         };
 
-        if (!subRow) {
-            this.details.fill(filledAction, settings);
-        } else {
-            row.details.show();
-            filledAction();
-        }
+        //we have to fill the details in another thread otherwise loading icon will not be shown
+        setTimeout(() => {
+            if (!subRow) {
+                this.details.fill(filledAction, settings);
+            } else {
+                row.details.show();
+                filledAction();
+            }
+        });
+        
     });
     $.fn.DataTable.Api.register('row().details.collapse()', function (settings) {
         var rowDetails = this.settings()[0].rowDetails;
@@ -675,9 +700,13 @@
         settings = $.extend(true, {}, rowDetails.settings, settings);
         if (!this.details.isOpen()) return;
 
-        var td = $(this.node()).find('.' + settings.icon.className).closest('td'); //Icon td
         var row = this;
+        var $rowNode = $(row.node());
 
+        $rowNode.addClass(settings.row.collapseClass);
+        $rowNode.removeClass(settings.row.expandClass);
+        var td = $rowNode.find('.' + settings.icon.className).closest('td'); //Icon td
+        
         var destroyOnClose = settings.destroyOnClose == true;
         var detailsRows = row.details();
         var details = $('div.innerDetails', detailsRows);
@@ -745,7 +774,7 @@
 
 
     var checkAngularModulePresence = (moduleName) => {
-        if (angular === undefined)
+        if (!window.hasOwnProperty('angular'))
             return false;
         try {
             angular.module(moduleName);

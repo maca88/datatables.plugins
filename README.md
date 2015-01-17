@@ -19,9 +19,7 @@ The demo can be seen [HERE](http://hartis.si/datatables/).
 ## Table of Contents
 * <b>Plugins</b>
   * [dataTables.rowDetails](#datatablesrowdetails)
-  * [dataTables.breezeFilter](#datatablesbreezefilter)
-  * [dataTables.breezeRemote](#datatablesbreezeremote)
-  * [dataTables.breezeEditable](#datatablesbreezeeditable)
+  * [dataTables.remoteFilter](#datatablesremotefilter)
   * [dataTables.remoteState](#datatablesremotestate)
   * [dataTables.advancedFilter](#datatablesadvancedfilter)
   * [dataTables.colPin](#datatablescolpin)
@@ -29,10 +27,7 @@ The demo can be seen [HERE](http://hartis.si/datatables/).
   * [dataTables.formFilter](#datatablesformfilter)
 * <b>AngularJs integrations</b>
   * [angular.dataTables](#angulardatatables)
-  * [angular.dataTables.rowDetails](#angulardatatablesrowdetails)
-  * [angular.dataTables.tableTools](#angulardatatablestabletools)
-  * [angular.dataTables.breezeEditable](#angulardatatablesbreezeeditable)
-  * [angular.dataTables.colPin](#angulardatatablescolpin)
+  * [angular.dataTables.selectable](#angulardatatablestabletools)
 
 ## Plugins:
 
@@ -54,17 +49,68 @@ If you want to specify the template for the open and close icons you can do by p
 ```js
 ...
 rowDetails: {
-    animation: 'slide',
+    animation: 'none',
     icon: {
-        'class': 'row-detail-icon',
-        'closeHtml': '<button><span class="row-detail-icon">Close</span></button>',
-        'openHtml': '<button><span class="row-detail-icon">Open</span></button>',
-        'defaultHtml': '',
-        'hasIcon': function (row) { return true; }
+        className: 'row-detail-icon',
+        closeHtml: '<button><span class="row-detail-icon">Close</span></button>',
+        openHtml: '<button><span class="row-detail-icon">Open</span></button>',
+        loadingHtml: 'Loading',
+        defaultHtml: '',
+        hasIcon: (row) => { return true; }
     },
+    cell: {
+        className: '',
+    },
+    behavior: 'default', //accordion
     destroyOnClose: false,
-    trClass: 'sub',
-    tdClass: ''
+    buttonPanel: {
+        attrs: {},
+        classes: []
+    },
+    buttons: {
+        expandAll: {
+            visible: false,
+            tagName: 'button',
+            html: null,
+            attrs: {},
+            classes: [],
+            click: function(e) {
+                e.preventDefault();
+                if (!this.dt.api.table().hasRows()) return;
+                this.dt.api.table().rows().expandAll();
+            }
+        },
+        collapseAll: {
+            visible: false,
+            tagName: 'button',
+            html: null,
+            attrs: {},
+            classes: [],
+            click: function (e) {
+                e.preventDefault();
+                if (!this.dt.api.table().hasRows()) return;
+                this.dt.api.table().rows().collapseAll();
+            }
+        },
+    },
+    row: {
+        expandClass: '',
+        collapseClass: ''  
+    },
+    expandRow: {
+        trClass: '',
+        tdClass: '',
+    },
+    rowCreated: null,
+    rowExpanded: null,
+    rowDestroying: null,
+    rowCollapsed: null,
+    bindingAdapter: null,
+    template: null,
+    language: {
+        'collapseAll': 'Collapse all',
+        'expandAll': 'Expand all'
+    }
 }
 ...
 ```
@@ -78,84 +124,160 @@ rowDetailCreated takes 3 parameters. (1. dt row, 2. details node wrapper in jQue
 <tt>animation</tt> specify what animation will be used when open/close icon will be clicked. Options: 'slide' (uses: slideDown/slideUp) and 'none' (uses: hide/show) <br />
 
 <tt>icon.class</tt> the class used to create a jQuery delegate for click event<br />
-<tt>icon.closeHtml</tt> the template for the close icon (dont forget to use icon.class in order the click delegate to work)<br />
-<tt>icon.openHtml</tt> the template for the open icon (dont forget to use icon.class in order the click delegate to work)<br />
+<tt>icon.closeHtml</tt> the template for the close icon (don't forget to use icon.class in order the click delegate to work)<br />
+<tt>icon.openHtml</tt> the template for the open icon (don't forget to use icon.class in order the click delegate to work)<br />
+<tt>icon.loadingHtml</tt> the template for loading process, this template will be displayed when open icon is clicked and removed when the expanded row is shown<br />
 <tt>icon.hasIcon</tt> function that get the row data as parameter and has to return a boolean, where true means that open or close icon will be shown and false means that icon.defaultHtml will be shown.<br />
 <tt>icon.defaultHtml</tt> the template that will be used when a row has not an icon (is not expandable)<br />
+
+<tt>cell.class</tt>class for the cell where the expand/collapse icon is located<br />
+
+<tt>behaviuor</tt> used to specify the behaviour for the plugin. Options: 'default' (multiple rows can be expanded at once) and 'accordion' (only one row can be expanded at once)<br />
 <tt>destroyOnClose</tt> specify whether the row details will be removed from the dom or will remain hidden<br />
-<tt>trClass</tt> class to apply to the tr tag or row details<br />
-<tt>tdClass</tt> class to apply to the td tag of row details<br />
+
+<tt>buttonPanel.attrs</tt>specify additional attributes for the button panel (panel for expandAll and collapseAll buttons)<br />
+<tt>buttonPanel.classes</tt>classes that will be applied to the button panel<br />
+
+<tt>buttons</tt>object that contains all the buttons that will be displayed in the button panel<br />
+
+<tt>row.expandClass</tt>class for the rows that are currently expanded<br />
+<tt>row.collapseClass</tt>class for the rows that are currently collapsed<br />
+
+<tt>expandRow.trClass</tt> class for the tr tag that is created when a row is expanded<br />
+<tt>expandRow.tdClass</tt> class for the td tag that is created when a row is expanded<br />
+
+<tt>rowCreated</tt>callback that is called when a expand row is created. Takes 2 parameters: 1. dt row, 2. details node wrapper in jQuery<br />
+<tt>rowExpanded</tt>callback that is called when a expand row is expanded. Takes 2 parameters: 1. dt row, 2. details node wrapper in jQuery<br />
+<tt>rowDestroying</tt>callback that is called before an expanded row is destroyed. Takes 2 parameters: 1. dt row, 2. icon cell wrapped in jQuery<br />
+<tt>rowCollapsed</tt>callback that is called when a expand row was collapsed. Takes 2 parameters: 1. dt row, 2. icon cell wrapped in jQuery<br />
+
+<tt>bindingAdapter</tt>specify adapter for binding framework like angular. Angular adapter is built-in and will be automatically applied when angular is present on the site. Below is the interface for the adapter:<br />
+```js
+...
+interface IRowDetailsBindingAdapter {
+    rowCreated(row, rowDetails): void;
+    rowExpanded(row, rowDetails, iconCell): void;
+    rowCollapsed(row, rowDetails, iconCell): void;
+    destroyDetails(details): void;
+    cacheTemplate(url: string, template: string): void;
+    getTemplate(url: string): string;
+}
+...
+```
+
+Example using dataTables.rowDetails with AngularJS. angular.dataTables must be also included in order to work
+
+<b>Sample :</b>
+```html
+<div id="row-details-tpl" ng-non-bindable style="display: none">
+  <h4>SubItems</h4>
+  <table class="table table-striped table-bordered" dt-table dt-data="item.subItems" dt-options="subItemOptions">
+    <thead>
+      <tr>
+        <th dt-data="prop1">Prop1</th>
+      </tr>
+    </thead>
+  </table>
+</div>
+
+<table dt-table dt-data="data" dt-options="options" dt-row-detail-tpl="#row-details-tpl">
+  <thead>
+    <tr>
+      <th dt-row-detail-icon></th>
+      <th dt-data="engine">Rendering engine</th>
+      <th dt-data="browser">Browser</th>
+    </tr>
+  </thead>
+</table>
+```
+
+
+<tt>template</tt>the template for the expanded row. Can be a string that contains a selector or inline html or an object for a remote template:<br />
+```js
+...
+{
+    url: 'someurl', (required)
+    requesting: null, //callback that is called before the request. Takes 2 parameters: 1. dt row, 2. details node wrapper in jQuery (optional)
+    ajax: null //ajax settings that will be used in jQuery.ajax call (optional)
+}
+...
+```
 
 If you want to programmatically open or close details you can do this with the functions that this plugin exposes:
 
-<tt>row().closeDetails()</tt> for closing row details<br />
-<tt>row().openDetails()</tt> for open row details<br />
-<tt>row().toggleDetails()</tt> for open/close row details<br />
-<tt>row().isOpen()</tt> check whether row details are opened or not<br />
+<tt>row().details.collapse()</tt> for collapsing an expanded row<br />
+<tt>row().details.expand()</tt> for expanding a collapsed row<br />
+<tt>row().details.toggle()</tt> for expand/collapse a row<br />
+<tt>row().details.isOpen()</tt> check whether a row is expanded or not<br />
 
 
 
-### dataTables.breezeFilter
+### dataTables.entityFilter
 
-This plugin provide a select box to filter breeze entities. This will only work when you bind breeze entities to DataTables. In order to enable this plugin you have to add char 'G' to the dom (i.e. lfrGtip)
+This plugin provide a select box to filter entities. In order to enable this plugin you have to add char 'G' to the dom (i.e. lfrGtip). 
+This plugin has a BreezeJs and JayData adapted built-in that will be automatically set when BreezeJS or JayData exist on the site.
 
 <b>Default configurations :</b>
 ```js
-breezeFilter: {
-        selectedState: 'default',
-        states: {
-            'default': { 'filter': ['Added', 'Modified', 'Unchanged', 'Detached'] },
-            'all': { 'filter': [] },
-            'added': { 'filter': ['Added'] },
-            'modified': { 'filter': ['Modified'] },
-            'unchanged': { 'filter': ['Unchanged'] },
-            'edited': { 'filter': ['Added', 'Modified'] },
-            'detached': { 'filter': ['Detached'] },
-            'deleted': { 'filter': ['Deleted'] }
-        },
-        dom: {
-            containerClass: '',
-            selectClass: 'form-control'  
-        },
-        language: {
-            'entityFilter': 'Entity filter',
-            'default': 'Default',
-            'all': 'All',
-            'added': 'Added',
-            'modified': 'Modified',
-            'unchanged': 'Unchanged',
-            'edited': 'Edited',
-            'detached': 'Detached',
-            'deleted': 'Deleted'
-        }
+entityFilter: {
+    selectedState: 'default',
+    adapter: null,
+    states: {
+        'default': { 'filter': ['Added', 'Modified', 'Unchanged', 'Detached', 'NotTracked'] },
+        'all': { 'filter': [] },
+        'added': { 'filter': ['Added'] },
+        'modified': { 'filter': ['Modified'] },
+        'unchanged': { 'filter': ['Unchanged'] },
+        'edited': { 'filter': ['Added', 'Modified'] },
+        'detached': { 'filter': ['Detached'] },
+        'deleted': { 'filter': ['Deleted'] }
+    },
+    dom: {
+        containerClass: '',
+        selectClass: 'form-control'  
+    },
+    language: {
+        'entityFilter': 'Entity filter',
+        'default': 'Default',
+        'all': 'All',
+        'added': 'Added',
+        'modified': 'Modified',
+        'unchanged': 'Unchanged',
+        'edited': 'Edited',
+        'detached': 'Detached',
+        'deleted': 'Deleted'
     }
 ```
-This filter will check the property entityAspect.entityState.name value and check if the state name exist in the current selected filter. Note that empty array means that all states are matched.
+Filtering is done by checking the state of the entity. Note that empty array means that all states are matched.
 
-### dataTables.breezeRemote
+### dataTables.remoteFilter
 
 <b>Dependencies:</b> Breezejs
 
-This plugin enables paging/searching/ordering on the server side using breeze query engine. In order to enable this plugin you have to define breezeRemote property in DataTables configuration.
+This plugin enables paging/searching/ordering on the server side using an adapter that is provided to the plugin. BreezeJs and JayData adapters are built-in and will be automatically applied when exist on site.
+In order to enable this plugin you have to define remoteFilter property in DataTables configuration.
 
 <b>Default configurations :</b>
 ```js
-breezeRemote: {
-	prefetchPages: 1,
-	method: 'GET',
-	sendExtraData: false,
-	encoding: null,
-	query: null,
-	entityManager: null,
-	resultEntityType: null, 
-	projectOnlyTableColumns: false,
-	beforeQueryExecution: null
+remoteFilter: {
+	adapter: null,
+    prefetchPages: 1,
+    tracking: true,
+    method: 'GET',
+    sendExtraData: false,
+    encoding: null,
+    query: null, //breeze.EntityQuery
+    entityManager: null, //breeze.EntityManager
+    resultEntityType: null, //breeze.EntityType or string (optional, used for automaticaly detect types, alternatively can be passed by toType function of breeze.EntityType)
+    projectOnlyTableColumns: false,
+    beforeQueryExecution: null //function
 }
 ```
 
 <b>Properties:</b>
 
 <tt>prefetchPages</tt> number of pages to prefetch. The idea was taken from [DataTables pipelining](http://datatables.net/examples/server_side/pipeline.html)<br />
+<tt>tracking</tt> specify whether the fetched entities will be tracked by BreezeJs or JayData<br />
 <tt>method</tt> method to be used when getting data from the server. For POST method [breezeajaxpostjs](http://www.breezejs.com/breeze-labs/breezeajaxpostjs) must be included in order to work correctly<br />
 <tt>sendExtraData</tt> can be a boolean or a function that is used to filter the data that will be send to the server.<br />
 <tt>encoding</tt> specifies the encoding used when requesting the server. Possible values: ‘JSON’ or x-www-form-urlencoded (the default). [breezeajaxpostjs](http://www.breezejs.com/breeze-labs/breezeajaxpostjs) must be included in order to work <br />
@@ -164,62 +286,6 @@ breezeRemote: {
 <tt>resultEntityType</tt> the entity name that will be returned by the server. can be breeze.EntityType or string (optional, used for automaticaly detect types, alternatively can be passed by toType function of breeze.EntityQuery)<br />
 <tt>projectOnlyTableColumns</tt> specify if only the column that are defined in the table will be fetched. Note if this option is set to true then server results will be plain objects (not breeze.Entity)<br />
 <tt>beforeQueryExecution</tt> is a callback that will be called before the request will be send to the server<br />
-
-### dataTables.breezeEditable
-
-<b>Dependencies:</b> datatables.tableTools, datatables.KeyTable, Bootstrap (Popover plugin)
-
-This plugin enables to editing breeze entities with the help of official DataTables plugins TableTools and KeyTable. For validation messages Bootstrap popover plugin is used.
-
-<b>Note: this plugin has nothing to do with the official DataTables Editor plugin and is not meant to be a replacement, as this plugin will only work with breeze Entities, that have built-in the logic for validation/addition/deletion/restoration of the data. If you want editing of  non-breeze entities this plugin is not for you. </b>
-
-<b>Note: at the moment a custom KeyTable library has to be used in order to work</b>
-
-<b>Default configurations :</b>
-```js
-breezeEditable: {
-	entityType: string,
-	createEntity: function(name: string): breeze.Entity,
-	typesTemplate: {
-		String: function(prop: breeze.DataProperty, entity: breeze.Entity, manualBinding: bool),
-		Int64: function(prop: breeze.DataProperty, entity: breeze.Entity, manualBinding: bool),
-		Int32: function(prop: breeze.DataProperty, entity: breeze.Entity, manualBinding: bool),
-		Int16: function(prop: breeze.DataProperty, entity: breeze.Entity, manualBinding: bool),
-		Byte: function(prop: breeze.DataProperty, entity: breeze.Entity, manualBinding: bool),
-		Decimal: function(prop: breeze.DataProperty, entity: breeze.Entity, manualBinding: bool),
-		Double: function(prop: breeze.DataProperty, entity: breeze.Entity, manualBinding: bool),
-		Single: function(prop: breeze.DataProperty, entity: breeze.Entity, manualBinding: bool),
-		DateTime: function(prop: breeze.DataProperty, entity: breeze.Entity, manualBinding: bool),
-		DateTimeOffset: function(prop: breeze.DataProperty, entity: breeze.Entity, manualBinding: bool),
-		Time: function(prop: breeze.DataProperty, entity: breeze.Entity, manualBinding: bool),
-		Boolean: function(prop: breeze.DataProperty, entity: breeze.Entity, manualBinding: bool),
-		Guid: function(prop: breeze.DataProperty, entity: breeze.Entity, manualBinding: bool),
-		Binary: function(prop: breeze.DataProperty, entity: breeze.Entity, manualBinding: bool),
-		Undefined: function(prop: breeze.DataProperty, entity: breeze.Entity, manualBinding: bool),
-	},
-	editorControlSelector: string,
-	startCellEditing: function(td: Element, x: int, y: int, oData: dtRowData, oColumn: dtColumnData),
-	endCellEditing: function(td: Element, entity: breeze.Entity, editorCtrl, prop: breeze.DataProperty, x: int, y: int),
-	tableFocused: function(e: Event) - context is DataTables api instance,
-	entityAddded: function(item: breeze.Entity) - context is TableTools instance,
-	entitiesRejected: function(items: breeze.Entity[]) - context is TableTools instance,
-	entitiesDeleted: function(items: breeze.Entity[]) - context is TableTools instance,
-	entitiesRestored: function(items: breeze.Entity[]) - context is TableTools instance
-}
-```
-<tt>entityType</tt> the entity type<br />
-<tt>createEntity</tt> a function that creates a new entity, usually this will be the createEntity function of the breeze.EntityManager<br />
-<tt>typesTemplate</tt> an object that contains edit templates for all types supported by breeze<br />
-<tt>editorControlSelector</tt>jQuery selector for the editor control.<br />
-<tt>startCellEditing</tt>callback before the editor template get focused<br />
-<tt>endCellEditing</tt>callback when the editor get out of focus (blurred)<br />
-<tt>tableFocused</tt>callback when the table get focused<br />
-<tt>entityAddded</tt>callback when an entity is added<br />
-<tt>entitiesRejected</tt>callback when an entity is rejected<br />
-<tt>entitiesRejected</tt>callback when entities are rejected<br />
-<tt>entitiesDeleted</tt>callback when entities are deleted<br />
-<tt>entitiesRestored</tt>callback when entities are restored<br />
-
 
 
 ### dataTables.remoteState
@@ -488,18 +554,18 @@ advancedFilter: {
 
 <b>Dependencies :</b> dataTables.fixedColumns
 
-The ColPin plugin is used for pinning columns, so that they are always visible, even when scrolling horizontally. Under the hood ColPin uses the official DataTables plugin called FixedColumns. By clicking on the pin, the column will be automatically pinned to the left side of the table and the pin icon will be colored red. We can obtain a mirrored effect by holding shift + click, this way the column will be pinned on the right side. For unpinning the column, we just habe to click again on the icon and the column will not be pinned anymore. To use this plugin you have to add the char 'I' to your dom. (i.e. lfrItip).
+The ColPin plugin is used for pinning columns, so that they are always visible, even when scrolling horizontally. Under the hood ColPin uses the official DataTables plugin called FixedColumns. By clicking on the pin, the column will be automatically pinned to the left side of the table and the pin icon will be colored red. We can obtain a mirrored effect by holding shift + click, this way the column will be pinned on the right side. For unpinning the column, we just habe to click again on the icon and the column will not be pinned anymore. To use this plugin you have to add the char 'I' to your dom. (i.e. lfrItip). When angular is detected the plugin will automatically set the built-in angular adapter.
 
 <b>Default configurations :</b>
 ```js
 {
-	dom: {
-		pinIcon: {
-			iconClass: 'glyphicon glyphicon-pushpin',
-			pinnedClass: 'pinned',
-			unpinnedClass: 'unpinned'
-		}
-	}
+    classes: {
+        iconClass: 'pin',
+        pinnedClass: 'pinned',
+        unpinnedClass: 'unpinned'
+    },
+    fixedColumns: null,
+    bindingAdapter: null,
 }
 ```
 
@@ -521,8 +587,6 @@ The FormFilter is used for the integration of html forms with the DataTables fil
 	clientFilter: null, //function(currentFormsData, data, dataIndex, rowData)
 }
 ```
-
-<b>Note: at the moment a custom DataTables library has to be used in order to work</b>
 
 ## AngularJs integrations:
 
@@ -560,12 +624,12 @@ When defining a column in html the following attributes are possible for th tag:
 
 <tt>dt-data</tt> http://datatables.net/reference/option/columns.data <br />
 <tt>dt-name</tt> http://datatables.net/reference/option/columns.name <br />
-<tt>dt-class</tt> http://datatables.net/reference/option/columns.className <br />
+<tt>dt-class-name</tt> http://datatables.net/reference/option/columns.className <br />
 <tt>dt-orderable</tt> http://datatables.net/reference/option/columns.orderable <br />
 <tt>dt-searchable</tt> http://datatables.net/reference/option/columns.searchable <br />
 <tt>dt-width</tt> http://datatables.net/reference/option/columns.width <br />
-<tt>dt-def-content</tt> http://datatables.net/reference/option/columns.defaultContent <br />
-<tt>dt-order-dtype</tt> http://datatables.net/reference/option/columns.orderDataType <br />
+<tt>dt-default-content</tt> http://datatables.net/reference/option/columns.defaultContent <br />
+<tt>dt-order-data-type</tt> http://datatables.net/reference/option/columns.orderDataType <br />
 
 <b>NOTE:<b> the title will be the content inside th element
 
@@ -624,63 +688,30 @@ If you want to define the template in code define template property in the colum
 ```
 Note that in the expression you cannot use special properties like in the template option, but in opposite to the template option this option can be searchable and orderable.
 
+In the above sample you can see the special dt-row-detail-tpl attribute on the table tag that defines the row details template and dt-row-detail-icon on the th tag specifying the icon column. 
 
-### angular.dataTables.rowDetails
+### angular.dataTables.selectable
 
-<b>Dependencies :</b> angular.dataTables, dataTables.rowDetails
+<b>Dependencies:</b> angular.dataTables, datatables.tableTools
 
-This plugin integrates dataTables.rowDetails with AngularJS.
+This plugin integrates the official TableTools extension with AngularJS. It add a special property selectedRows to the DataTable instance that can be binded in the view template. Property selectedRows returns an array of DataTables row instances.
 
-<b>Sample :</b>
+<b>Sample usage:</b>
 ```html
-<div id="row-details-tpl" ng-non-bindable style="display: none">
-  <h4>SubItems</h4>
-  <table class="table table-striped table-bordered" dt-table dt-data="item.subItems" dt-options="subItemOptions">
-    <thead>
-      <tr>
-        <th dt-data="prop1">Prop1</th>
-      </tr>
-    </thead>
-  </table>
-</div>
-
-<table dt-table dt-data="data" dt-options="options" dt-row-detail-tpl="#row-details-tpl">
+<table dt-table dt-data="data" dt-options="options" dt-selectable="os">
   <thead>
     <tr>
-      <th dt-row-detail-icon></th>
-      <th dt-data="engine">Rendering engine</th>
+      <th dt-selectable-column="true"></th>
       <th dt-data="browser">Browser</th>
+      <th dt-data="platform">Platform(s)</th>
+      <th dt-data="version">Engine version</th>
     </tr>
   </thead>
 </table>
 ```
-In the above sample you can see the special dt-row-detail-tpl attribute on the table tag that defines the row details template and dt-row-detail-icon on the th tag specifying the icon column. 
 
-### angular.dataTables.tableTools
+### angular.dataTables.command
 
-<b>Dependencies :</b> angular.dataTables, datatables.tableTools
+<b>Dependencies:</b> angular.dataTables
 
-This plugin integrates the official TableTools extension with AngularJS. It add a special property rowsSelected to the DataTable instance that can be binded in the view template. Property rowsSelected returns an array of objects that have the following properties:
-
-<tt>index</tt> row index<br />
-<tt>data</tt> data of the row<br />
-<tt>node</tt> row node<br />
-<tt>row</tt> the api instance of the row <br />
-
-
-### angular.dataTables.breezeEditable
-
-<b>Dependencies :</b> dataTables.breezeEditable, angular.dataTables, angular.datatables.tableTools
-
-This plugin integrates the dataTables.breezeEditable with AngularJS.
-
-
-### angular.dataTables.colPin
-
-<b>Dependencies :</b> angular.dataTables, dataTables.colPin
-
-This plugin integrates the dataTables.colPin with AngularJS.
-
-
-
-
+TODO

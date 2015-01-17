@@ -9,6 +9,7 @@
     class BreezeRemoteFilterAdapter implements IRemoteFilterAdapter {
         private dt;
         private settings;
+        private static cloneBreezeQuery(that);
         constructor(api: any, settings: any);
         public getEntityManager(settings: any): any;
         public getResultEntityType(settings: any): any;
