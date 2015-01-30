@@ -1,3 +1,11 @@
 ﻿table.cell-overflow-hidden th, table.cell-overflow-hidden td {
     overflow: hidden;
 }
+/*Fix for WebKit bug 423352*/
+table.dataTable tr {
+   -webkit-transform: scale3d(1,1,1);
+}
+
+table.dataTable th, table.dataTable td {
+    -webkit-transform: translateZ(0);
+}
