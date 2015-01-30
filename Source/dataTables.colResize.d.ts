@@ -1,5 +1,6 @@
 ﻿declare module dt {
     class ColResize {
+        private $;
         static defaultSettings: {
             minWidth: number;
             maxWidth: any;
@@ -12,7 +13,7 @@
         private initialized;
         private dt;
         private dom;
-        constructor(api: any, settings: any);
+        constructor($: any, api: any, settings: any);
         public initialize(): void;
         private setupColumn(col);
         private setupFixedHeader();

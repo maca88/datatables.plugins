@@ -369,6 +369,7 @@
             prefetchPages: 1,
             tracking: true,
             method: 'GET',
+            caching: true,
             sendExtraData: false,
             encoding: null,
             query: null, //breeze.EntityQuery
@@ -384,6 +385,7 @@
             settings: null
         };
         private cache = {
+            enabled: true,
             lastRequest: null,
             lower: -1,
             upper: null,
@@ -400,6 +402,7 @@
             this.dt.api = api;
             this.registerCallbacks();
             this.dt.settings.remoteFilter = this; //save the settings so that others can use it (i.e. customAjax function)
+            this.cache.enabled = this.settings.caching;
             if (!this.dt.settings.oInit.bServerSide && !this.dt.settings.oInit.serverSide)
                 throw 'serverSide option must be set to true for remoteFilter to work';
             if (!settings.query)
@@ -528,7 +531,8 @@
             var dataEnd = data.start + data.length;
             var currentRequest = this.getCachedRequest(data);
             var extraData = this.getExtraData(data);
-            return !this.cache.clear &&
+            return this.cache.enabled &&
+                !this.cache.clear &&
                 this.cache.lastResponse &&
                 this.cache.lower >= 0 &&
                 data.start >= this.cache.lower &&

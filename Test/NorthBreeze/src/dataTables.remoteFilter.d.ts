@@ -35,6 +35,7 @@
             prefetchPages: number;
             tracking: boolean;
             method: string;
+            caching: boolean;
             sendExtraData: boolean;
             encoding: any;
             query: any;
