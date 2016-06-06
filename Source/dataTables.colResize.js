@@ -868,7 +868,17 @@
                     footCol.width(thWidth);
                 }
             }
+
+            this.resizeFixedColumns();
+
             return true;
+        };
+
+        ColResize.prototype.resizeFixedColumns = function() {
+            var fc = this.dt.api.fixedColumns();
+            if (fc) {
+                fc.relayout();
+            }
         };
 
         ColResize.prototype.onMouseMove = function (e, col) {
